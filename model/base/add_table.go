@@ -114,6 +114,10 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	modelMap[travelEmployee.TableName()] = travelEmployee
 	primaryKeyMap[travelEmployee.TableName()] = travelEmployee.PrimaryKey()
 
+	travelChatContact := TravelChatContact{}
+	modelMap[travelChatContact.TableName()] = travelChatContact
+	primaryKeyMap[travelChatContact.TableName()] = travelChatContact.PrimaryKey()
+
 	customerLeadPool := CustomerLeadPool{}
 	modelMap[customerLeadPool.TableName()] = customerLeadPool
 	primaryKeyMap[customerLeadPool.TableName()] = customerLeadPool.PrimaryKey()

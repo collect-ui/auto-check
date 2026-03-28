@@ -272,3 +272,40 @@ service:
           err_msg: 请选择要删除的员工
     filter:
       employee_id__in: "[employee_id_list]"
+
+  - key: travel_chat_contact_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_chat_contact
+    params:
+      contact_list:
+        check:
+          template: "{{must .contact_list}}"
+          err_msg: 通讯录列表不能为空
+
+  - key: travel_chat_contact_list
+    http: true
+    module: model_list
+    table: travel_chat_contact
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      pagination:
+        default: true
+      page:
+        default: 1
+      size:
+        default: 100
+      search:
+        default: ""
+    filter:
+      agency_id__eq: "[agency_id]"
+    search_like_fields:
+      - contact_nick_name
+      - nick_name
+      - wx_id
+    order:
+      - message_time
+      - desc
