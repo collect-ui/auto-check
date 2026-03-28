@@ -42,7 +42,103 @@
     "agencyCount": 0,
     "currentAgency": {},
     "employeeList": [],
-    "employeeCount": 0
+    "employeeCount": 0,
+    "chatTabActiveKey": "chat",
+    "selectedChatUser": null,
+    "chatList": [
+      {
+        "id": 1,
+        "isGroup": 1,
+        "contactNickName": "景百达许可证保函保险报税到期26.3",
+        "contactWxId": "48190107046@chatroom",
+        "nickName": "金佑担保&全国旅游保函专员-小唐",
+        "ownerWxId": "wxid_0mx9njjatw3422",
+        "ownerHead": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
+        "content": "好的",
+        "messageTime": 1774590819000,
+        "unreadCount": 3
+      },
+      {
+        "id": 2,
+        "isGroup": 0,
+        "nickName": "A 7/30 湖南张家界-黎锋已续",
+        "wxId": "wxid_0mx9njjatw3422",
+        "head": "https://wx.qlogo.cn/mmhead/ver_1/liayCqd0hbQiaxnx2vTubHfxZ2YJS58Dw1Jxcqfgu1HcPov8GNlM97AQy1SxyYwia4lsSqpKUXWwaezUyfYMJZPpTApz2vkkml6Lkiat5GkkfKrtMFk9JxpJwAP68YqRpa9ic/96",
+        "content": "[握手][握手][握手]",
+        "messageTime": 1774430656036,
+        "unreadCount": 0
+      },
+      {
+        "id": 3,
+        "isGroup": 1,
+        "contactNickName": "湖南旅游同业交流群",
+        "contactWxId": "hunan_travel_group@chatroom",
+        "nickName": "计调芳菲13307441213",
+        "ownerWxId": "wxid_xbszb9sqxa0x22",
+        "ownerHead": "https://wx.qlogo.cn/mmhead/ver_1/LEgwfl3JWTdtQHPSDRXocpeU7QfTpxgblXyyGG8SQPHXZlahBtA2gXatZfiaOOuD5uZzzmmbTzzOR5Pw51LqcN1hVGVoYc2VzoQ5PInG9WmQ/132",
+        "content": "明天有张家界的团吗？",
+        "messageTime": 1774500000000,
+        "unreadCount": 12
+      }
+    ],
+    "chatDetailList": [
+      {
+        "id": 1,
+        "sender": "wxid_0mx9njjatw3422",
+        "senderName": "金佑担保&全国旅游保函专员-小唐",
+        "senderAvatar": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
+        "content": "好的，保函已经办理完成",
+        "messageTime": 1774590819000,
+        "isSelf": false
+      },
+      {
+        "id": 2,
+        "sender": "current_user",
+        "senderName": "我",
+        "senderAvatar": "",
+        "content": "谢谢，麻烦发一下电子版",
+        "messageTime": 1774590825000,
+        "isSelf": true
+      },
+      {
+        "id": 3,
+        "sender": "wxid_0mx9njjatw3422",
+        "senderName": "金佑担保&全国旅游保函专员-小唐",
+        "senderAvatar": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
+        "content": "已发送到您的邮箱",
+        "messageTime": 1774590830000,
+        "isSelf": false
+      }
+    ],
+    "callRecordList": [
+      {
+        "id": 1,
+        "phoneNumber": "13800138000",
+        "contactName": "张三",
+        "callType": "outgoing",
+        "duration": 120,
+        "callTime": 1774590800000,
+        "status": "answered"
+      },
+      {
+        "id": 2,
+        "phoneNumber": "13900139000",
+        "contactName": "李四",
+        "callType": "incoming",
+        "duration": 45,
+        "callTime": 1774580000000,
+        "status": "answered"
+      },
+      {
+        "id": 3,
+        "phoneNumber": "13700137000",
+        "contactName": "王五",
+        "callType": "missed",
+        "duration": 0,
+        "callTime": 1774570000000,
+        "status": "missed"
+      }
+    ]
   },
   "initAction": [
     {
@@ -776,76 +872,637 @@
                   ]
                 }
               ],
-              "bottomToolBar": [
-                {
-                  "tag": "pagination",
-                  "visible": "${!!currentAgency.agency_id}",
-                  "showSizeChanger": true,
-                  "align": "end",
-                  "pageSize": "${employeeSearchForm.size}",
-                  "current": "${employeeSearchForm.page}",
-                  "total": "${employeeCount}",
-                  "action": [
-                    {
-                      "tag": "reload-init-action",
-                      "group": "employeeList"
-                    }
-                  ],
-                  "showTotal": true
-                }
-              ],
               "children": [
                 {
-                  "tag": "table",
-                  "selection": "${employeeSelection}",
-                  "rowSelection": "multiple",
-                  "columnDefs": [
+                  "tag": "tabs",
+                  "activeKey": "${chatTabActiveKey}",
+                  "tabBarStyle": {
+                    "marginBottom": "0"
+                  },
+                  "action": [
                     {
-                      "headerName": "#",
-                      "width": 60,
-                      "valueGetter": "node.rowIndex + 1",
-                      "sortable": false,
-                      "pinned": "left"
-                    },
-                    {
-                      "pinned": "left",
-                      "checkboxSelection": true,
-                      "headerCheckboxSelection": true,
-                      "headerName": "姓名",
-                      "field": "nick_name"
-                    },
-                    {
-                      "headerName": "手机号",
-                      "field": "phone"
-                    },
-                    {
-                      "headerName": "微信别名",
-                      "field": "ower_wx_alias"
-                    },
-                    {
-                      "headerName": "微信ID",
-                      "field": "wx_id"
-                    },
-                    {
-                      "headerName": "头像",
-                      "field": "head",
-                      "cellRender": {
-                        "tag": "image",
-                        "visible": "${!!row.head}",
-                        "src": "${row.head}",
-                        "style": {
-                          "width": "32px",
-                          "height": "32px",
-                          "borderRadius": "50%"
-                        }
+                      "tag": "update-store",
+                      "trigger": "onChange",
+                      "value": {
+                        "chatTabActiveKey": "${value}"
                       }
-                    },
-                    {
-                      "headerName": "创建时间",
-                      "field": "create_time"
                     }
                   ],
-                  "rowData": "${employeeList}"
+                  "items": [
+                    {
+                      "key": "employee",
+                      "label": "员工列表",
+                      "children": [
+                        {
+                          "tag": "table",
+                          "selection": "${employeeSelection}",
+                          "rowSelection": "multiple",
+                          "columnDefs": [
+                            {
+                              "headerName": "#",
+                              "width": 60,
+                              "valueGetter": "node.rowIndex + 1",
+                              "sortable": false,
+                              "pinned": "left"
+                            },
+                            {
+                              "pinned": "left",
+                              "checkboxSelection": true,
+                              "headerCheckboxSelection": true,
+                              "headerName": "姓名",
+                              "field": "nick_name"
+                            },
+                            {
+                              "headerName": "手机号",
+                              "field": "phone"
+                            },
+                            {
+                              "headerName": "微信别名",
+                              "field": "ower_wx_alias"
+                            },
+                            {
+                              "headerName": "微信ID",
+                              "field": "wx_id"
+                            },
+                            {
+                              "headerName": "头像",
+                              "field": "head",
+                              "cellRender": {
+                                "tag": "image",
+                                "visible": "${!!row.head}",
+                                "src": "${row.head}",
+                                "style": {
+                                  "width": "32px",
+                                  "height": "32px",
+                                  "borderRadius": "50%"
+                                }
+                              }
+                            },
+                            {
+                              "headerName": "创建时间",
+                              "field": "create_time"
+                            }
+                          ],
+                          "rowData": "${employeeList}"
+                        }
+                      ]
+                    },
+                    {
+                      "key": "chat",
+                      "label": "聊天记录",
+                      "children": [
+                        {
+                          "tag": "panel-group",
+                          "direction": "horizontal",
+                          "className": "h100",
+                          "style": {
+                            "height": "calc(100% - 40px)"
+                          },
+                          "children": [
+                            {
+                              "tag": "panel",
+                              "defaultSize": 40,
+                              "minSize": 30,
+                              "className": "h100 border-right",
+                              "children": [
+                                {
+                                  "tag": "layout-fit",
+                                  "className": "h100",
+                                  "title": "聊天列表",
+                                  "searchToolBar": [
+                                    {
+                                      "tag": "input",
+                                      "isSearch": true,
+                                      "prefixIcon": "SearchOutlined",
+                                      "enterButton": "搜索",
+                                      "allowClear": true,
+                                      "placeholder": "搜索聊天",
+                                      "style": {
+                                        "width": "100%"
+                                      }
+                                    }
+                                  ],
+                                  "children": [
+                                    {
+                                      "tag": "listview",
+                                      "keyField": "id",
+                                      "itemData": "${chatList}",
+                                      "rowClickAction": [
+                                        {
+                                          "tag": "update-store",
+                                          "value": {
+                                            "selectedChatUser": "${row}"
+                                          }
+                                        }
+                                      ],
+                                      "itemAttr": {
+                                        "tag": "card",
+                                        "size": "small",
+                                        "className": "cursor-pointer",
+                                        "style": {
+                                          "display": "block",
+                                          "width": "100%",
+                                          "margin": "0 0 6px 0",
+                                          "borderRadius": "12px",
+                                          "border": "${selectedChatUser&&selectedChatUser.id===row.id?'1px solid #1677ff':'1px solid #f0f0f0'}",
+                                          "boxShadow": "${selectedChatUser&&selectedChatUser.id===row.id?'0 8px 20px rgba(22,119,255,0.16)':'0 4px 14px rgba(15,23,42,0.08)'}",
+                                          "background": "${selectedChatUser&&selectedChatUser.id===row.id?'linear-gradient(135deg,#eef6ff 0%,#ffffff 100%)':'#ffffff'}"
+                                        },
+                                        "bodyStyle": {
+                                          "padding": "11px 12px"
+                                        },
+                                        "hoverable": true,
+                                        "children": [
+                                          {
+                                            "tag": "row",
+                                            "style": {
+                                              "alignItems": "center"
+                                            },
+                                            "children": [
+                                              {
+                                                "tag": "col",
+                                                "span": 4,
+                                                "style": {
+                                                  "display": "flex",
+                                                  "justifyContent": "center"
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "image",
+                                                    "visible": "${!!(row.isGroup==1?row.ownerHead:row.head)}",
+                                                    "src": "${row.isGroup==1?row.ownerHead:row.head}",
+                                                    "style": {
+                                                      "width": "36px",
+                                                      "height": "36px",
+                                                      "borderRadius": "50%",
+                                                      "overflow": "hidden",
+                                                      "border": "1px solid #dbeafe"
+                                                    }
+                                                  },
+                                                  {
+                                                    "tag": "div",
+                                                    "visible": "${!(row.isGroup==1?row.ownerHead:row.head)}",
+                                                    "style": {
+                                                      "width": "36px",
+                                                      "height": "36px",
+                                                      "borderRadius": "50%",
+                                                      "display": "flex",
+                                                      "alignItems": "center",
+                                                      "justifyContent": "center",
+                                                      "background": "${selectedChatUser&&selectedChatUser.id===row.id?'#1677ff':'#e6f4ff'}",
+                                                      "color": "${selectedChatUser&&selectedChatUser.id===row.id?'#ffffff':'#1677ff'}",
+                                                      "fontSize": "14px",
+                                                      "fontWeight": 700
+                                                    },
+                                                    "children": "${((row.isGroup==1?row.contactNickName:row.nickName)||'聊').slice(0,1)}"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "tag": "col",
+                                                "span": 20,
+                                                "style": {
+                                                  "minWidth": 0
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "row",
+                                                    "style": {
+                                                      "alignItems": "center",
+                                                      "marginBottom": "4px"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "col",
+                                                        "span": 18,
+                                                        "style": {
+                                                          "minWidth": 0
+                                                        },
+                                                        "children": [
+                                                          {
+                                                            "tag": "div",
+                                                            "style": {
+                                                              "fontSize": "14px",
+                                                              "lineHeight": "22px",
+                                                              "fontWeight": 600,
+                                                              "color": "#1f2937",
+                                                              "whiteSpace": "nowrap",
+                                                              "overflow": "hidden",
+                                                              "textOverflow": "ellipsis"
+                                                            },
+                                                            "children": "${row.isGroup==1?row.contactNickName:row.nickName}"
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "tag": "col",
+                                                        "span": 6,
+                                                        "style": {
+                                                          "textAlign": "right"
+                                                        },
+                                                        "children": [
+                                                          {
+                                                            "tag": "div",
+                                                            "style": {
+                                                              "fontSize": "12px",
+                                                              "color": "#6b7280"
+                                                            },
+                                                            "children": "${formatDate(row.messageTime,'HH:mm')}"
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "row",
+                                                    "style": {
+                                                      "alignItems": "center"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "col",
+                                                        "span": 18,
+                                                        "style": {
+                                                          "minWidth": 0
+                                                        },
+                                                        "children": [
+                                                          {
+                                                            "tag": "div",
+                                                            "style": {
+                                                              "fontSize": "13px",
+                                                              "lineHeight": "20px",
+                                                              "color": "#6b7280",
+                                                              "whiteSpace": "nowrap",
+                                                              "overflow": "hidden",
+                                                              "textOverflow": "ellipsis"
+                                                            },
+                                                            "children": "${row.content}"
+                                                          }
+                                                        ]
+                                                      },
+                                                      {
+                                                        "tag": "col",
+                                                        "span": 6,
+                                                        "style": {
+                                                          "textAlign": "right"
+                                                        },
+                                                        "children": [
+                                                          {
+                                                            "tag": "div",
+                                                            "visible": "${row.unreadCount>0}",
+                                                            "style": {
+                                                              "display": "inline-block",
+                                                              "padding": "1px 6px",
+                                                              "background": "#ef4444",
+                                                              "color": "#ffffff",
+                                                              "borderRadius": "10px",
+                                                              "fontSize": "12px",
+                                                              "fontWeight": 600
+                                                            },
+                                                            "children": "${row.unreadCount}"
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "panel-resize",
+                              "style": {
+                                "width": "8px",
+                                "backgroundColor": "#f2f3f5",
+                                "cursor": "col-resize"
+                              }
+                            },
+                            {
+                              "tag": "panel",
+                              "defaultSize": 60,
+                              "minSize": 40,
+                              "className": "h100",
+                              "children": [
+                                {
+                                  "tag": "layout-fit",
+                                  "className": "h100",
+                                  "title": "${selectedChatUser?(selectedChatUser.isGroup==1?selectedChatUser.contactNickName:selectedChatUser.nickName):'聊天详情'}",
+                                  "children": [
+                                    {
+                                      "tag": "div",
+                                      "visible": "${!selectedChatUser}",
+                                      "style": {
+                                        "height": "100%",
+                                        "display": "flex",
+                                        "alignItems": "center",
+                                        "justifyContent": "center",
+                                        "color": "#6b7280",
+                                        "fontSize": "14px"
+                                      },
+                                      "children": "请选择左侧聊天开始查看"
+                                    },
+                                    {
+                                      "tag": "div",
+                                      "visible": "${!!selectedChatUser}",
+                                      "className": "h100 overflow-auto padding10",
+                                      "children": [
+                                        {
+                                          "tag": "div",
+                                          "style": {
+                                            "display": "flex",
+                                            "flexDirection": "column",
+                                            "gap": "12px"
+                                          },
+                                          "children": [
+                                            {
+                                              "tag": "foreach",
+                                              "foreach": "${chatDetailList}",
+                                              "item": "item",
+                                              "children": [
+                                                {
+                                                  "tag": "div",
+                                                  "style": {
+                                                    "display": "flex",
+                                                    "alignItems": "flex-start",
+                                                    "justifyContent": "${item.isSelf?'flex-end':'flex-start'}",
+                                                    "marginBottom": "8px"
+                                                  },
+                                                  "children": [
+                                                    {
+                                                      "tag": "div",
+                                                      "visible": "${!item.isSelf}",
+                                                      "style": {
+                                                        "marginRight": "8px"
+                                                      },
+                                                      "children": [
+                                                        {
+                                                          "tag": "image",
+                                                          "visible": "${!!item.senderAvatar}",
+                                                          "src": "${item.senderAvatar}",
+                                                          "style": {
+                                                            "width": "32px",
+                                                            "height": "32px",
+                                                            "borderRadius": "50%"
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "div",
+                                                          "visible": "${!item.senderAvatar}",
+                                                          "style": {
+                                                            "width": "32px",
+                                                            "height": "32px",
+                                                            "borderRadius": "50%",
+                                                            "background": "#e6f4ff",
+                                                            "display": "flex",
+                                                            "alignItems": "center",
+                                                            "justifyContent": "center",
+                                                            "color": "#1677ff",
+                                                            "fontSize": "12px",
+                                                            "fontWeight": 600
+                                                          },
+                                                          "children": "${(item.senderName||'用').slice(0,1)}"
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "tag": "div",
+                                                      "style": {
+                                                        "maxWidth": "70%"
+                                                      },
+                                                      "children": [
+                                                        {
+                                                          "tag": "div",
+                                                          "visible": "${!item.isSelf}",
+                                                          "style": {
+                                                            "fontSize": "12px",
+                                                            "color": "#6b7280",
+                                                            "marginBottom": "2px"
+                                                          },
+                                                          "children": "${item.senderName}"
+                                                        },
+                                                        {
+                                                          "tag": "div",
+                                                          "style": {
+                                                            "background": "${item.isSelf?'#1677ff':'#f3f4f6'}",
+                                                            "color": "${item.isSelf?'#ffffff':'#1f2937'}",
+                                                            "padding": "8px 12px",
+                                                            "borderRadius": "12px",
+                                                            "borderTopLeftRadius": "${item.isSelf?'12px':'4px'}",
+                                                            "borderTopRightRadius": "${item.isSelf?'4px':'12px'}",
+                                                            "fontSize": "14px",
+                                                            "lineHeight": "1.5",
+                                                            "wordBreak": "break-word"
+                                                          },
+                                                          "children": "${item.content}"
+                                                        },
+                                                        {
+                                                          "tag": "div",
+                                                          "style": {
+                                                            "fontSize": "11px",
+                                                            "color": "#9ca3af",
+                                                            "textAlign": "${item.isSelf?'right':'left'}",
+                                                            "marginTop": "4px"
+                                                          },
+                                                          "children": "${formatDate(item.messageTime,'HH:mm')}"
+                                                        }
+                                                      ]
+                                                    },
+                                                    {
+                                                      "tag": "div",
+                                                      "visible": "${item.isSelf}",
+                                                      "style": {
+                                                        "marginLeft": "8px"
+                                                      },
+                                                      "children": [
+                                                        {
+                                                          "tag": "div",
+                                                          "style": {
+                                                            "width": "32px",
+                                                            "height": "32px",
+                                                            "borderRadius": "50%",
+                                                            "background": "#e6f4ff",
+                                                            "display": "flex",
+                                                            "alignItems": "center",
+                                                            "justifyContent": "center",
+                                                            "color": "#1677ff",
+                                                            "fontSize": "12px",
+                                                            "fontWeight": 600
+                                                          },
+                                                          "children": "我"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "key": "call",
+                      "label": "电话记录",
+                      "children": [
+                        {
+                          "tag": "layout-fit",
+                          "className": "h100",
+                          "title": "通话记录",
+                          "searchToolBar": [
+                            {
+                              "tag": "input",
+                              "isSearch": true,
+                              "prefixIcon": "SearchOutlined",
+                              "enterButton": "搜索",
+                              "allowClear": true,
+                              "placeholder": "搜索联系人",
+                              "style": {
+                                "width": "100%"
+                              }
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "listview",
+                              "keyField": "id",
+                              "itemData": "${callRecordList}",
+                              "itemAttr": {
+                                "tag": "card",
+                                "size": "small",
+                                "style": {
+                                  "display": "block",
+                                  "width": "100%",
+                                  "margin": "0 0 8px 0",
+                                  "borderRadius": "12px",
+                                  "border": "1px solid #f0f0f0"
+                                },
+                                "bodyStyle": {
+                                  "padding": "12px"
+                                },
+                                "hoverable": true,
+                                "children": [
+                                  {
+                                    "tag": "row",
+                                    "style": {
+                                      "alignItems": "center"
+                                    },
+                                    "children": [
+                                      {
+                                        "tag": "col",
+                                        "span": 4,
+                                        "style": {
+                                          "display": "flex",
+                                          "justifyContent": "center"
+                                        },
+                                        "children": [
+                                          {
+                                            "tag": "div",
+                                            "style": {
+                                              "width": "36px",
+                                              "height": "36px",
+                                              "borderRadius": "50%",
+                                              "display": "flex",
+                                              "alignItems": "center",
+                                              "justifyContent": "center",
+                                              "background": "${item.callType=='outgoing'?'#dcfce7':item.callType=='incoming'?'#e0f2fe':'#fee2e2'}",
+                                              "color": "${item.callType=='outgoing'?'#16a34a':item.callType=='incoming'?'#0369a1':'#dc2626'}",
+                                              "fontSize": "16px"
+                                            },
+                                            "children": [
+                                              {
+                                                "tag": "icon",
+                                                "icon": "${item.callType=='outgoing'?'PhoneOutgoing':item.callType=='incoming'?'PhoneIncoming':'PhoneMissed'}"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "tag": "col",
+                                        "span": 16,
+                                        "style": {
+                                          "minWidth": 0
+                                        },
+                                        "children": [
+                                          {
+                                            "tag": "div",
+                                            "style": {
+                                              "fontSize": "14px",
+                                              "lineHeight": "22px",
+                                              "fontWeight": 600,
+                                              "color": "#1f2937"
+                                            },
+                                            "children": "${item.contactName||item.phoneNumber}"
+                                          },
+                                          {
+                                            "tag": "div",
+                                            "style": {
+                                              "fontSize": "13px",
+                                              "color": "#6b7280",
+                                              "display": "flex",
+                                              "alignItems": "center",
+                                              "gap": "8px"
+                                            },
+                                            "children": [
+                                              {
+                                                "tag": "span",
+                                                "children": "${item.phoneNumber}"
+                                              },
+                                              {
+                                                "tag": "span",
+                                                "children": "${item.callType=='outgoing'?'拨出':item.callType=='incoming'?'来电':'未接'}"
+                                              },
+                                              {
+                                                "tag": "span",
+                                                "visible": "${item.duration>0}",
+                                                "children": "${Math.floor(item.duration/60)}分${item.duration%60}秒"
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "tag": "col",
+                                        "span": 4,
+                                        "style": {
+                                          "textAlign": "right"
+                                        },
+                                        "children": [
+                                          {
+                                            "tag": "div",
+                                            "style": {
+                                              "fontSize": "12px",
+                                              "color": "#6b7280"
+                                            },
+                                            "children": "${formatDate(item.callTime,'MM-DD HH:mm')}"
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
