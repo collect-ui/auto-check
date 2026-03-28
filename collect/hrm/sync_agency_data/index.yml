@@ -123,6 +123,139 @@ service:
           viewDataRangeType: "[viewDataRangeType]"
         save_field: phone_list
       
-      # 3. 直接返回phone_list
+       # 3. 直接返回phone_list
       - key: param2result
         field: "[phone_list]"
+
+  - key: sync_wechat_user
+    name: 同步微信用户
+    module: empty
+    http: true
+    log: true
+    modify_config: "travel_employee_modify.json"
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    handler_params:
+      # 1. 获取微信用户列表
+      - key: service2field
+        name: 获取微信用户列表
+        service:
+          service: hrm.get_travel_agency_phone_list
+          agency_id: "[agency_id]"
+          start: 1
+          limit: 1000
+        save_field: wechat_list
+      
+
+      
+      # 3. 映射微信字段到本地字段名
+      - key: update_array
+        foreach: "[wechat_list]"
+        item: item
+        fields:
+          - field: wx_id
+            template: "[item.wxId]"
+          - field: nick_name
+            template: "[item.nickName]"
+          - field: ower_wx_alias
+            template: "[item.owerWxAlias]"
+          - field: phone
+            template: "[item.phone]"
+      
+      # 4. 获取本地员工列表
+      - key: service2field
+        name: 获取本地员工列表
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          pagination: false
+        save_field: local_list
+      
+      # 5. 比较差异
+      - key: get_modify_data
+        name: 比较微信与本地用户差异
+        save_field: change_list
+      
+      # 6. 分离新增、修改、删除列表
+      - key: filter_arr
+        foreach: "[change_list]"
+        item: item
+        if_template: "{{eq .item.operation \"add\"}}"
+        save_field: add_list
+      
+      - key: filter_arr
+        foreach: "[change_list]"
+        item: item
+        if_template: "{{eq .item.operation \"modify\"}}"
+        save_field: modify_list
+      
+      - key: filter_arr
+        foreach: "[change_list]"
+        item: item
+        if_template: "{{eq .item.operation \"remove\"}}"
+        save_field: remove_list
+      
+      # 7. 处理新增用户
+      - key: update_array
+        enable: "{{gt (len .add_list) 0}}"
+        foreach: "[add_list]"
+        item: item
+        fields:
+          - field: employee_id
+            template: "{{uuid}}"
+          - field: agency_id
+            template: "[agency_id]"
+          - field: create_time
+            template: "{{current_date_time}}"
+          - field: create_user
+            template: "{{.session_user_id}}"
+          - field: status
+            template: "normal"
+          - field: wx_target
+            template: "1"
+      
+      - key: service2field
+        enable: "{{gt (len .add_list) 0}}"
+        name: 批量新增用户
+        service:
+          service: hrm.travel_employee_bulk_create
+          employee_list: "[add_list]"
+      
+      # 8. 处理修改用户
+      - key: update_array
+        enable: "{{gt (len .modify_list) 0}}"
+        foreach: "[modify_list]"
+        item: item
+        fields:
+          - field: modify_time
+            template: "{{current_date_time}}"
+          - field: modify_user
+            template: "{{.session_user_id}}"
+      
+      - key: service2field
+        enable: "{{gt (len .modify_list) 0}}"
+        name: 批量修改用户
+        service:
+          service: hrm.travel_employee_bulk_update
+          employee_list: "[modify_list]"
+      
+      # 9. 处理删除用户
+      - key: prop_arr
+        enable: "{{gt (len .remove_list) 0}}"
+        foreach: "[remove_list]"
+        value: "[employee_id]"
+        save_field: remove_id_list
+      
+      - key: service2field
+        enable: "{{gt (len .remove_id_list) 0}}"
+        name: 批量删除用户
+        service:
+          service: hrm.travel_employee_bulk_delete
+          employee_id_list: "[remove_id_list]"
+      
+      # 10. 返回同步结果用于调试
+      - key: param2result
+        field: "[change_list]"

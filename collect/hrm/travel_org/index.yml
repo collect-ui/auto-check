@@ -237,4 +237,38 @@ service:
       - modify_time
       - modify_user
     update_values:
-      status: "deleted"
+       status: "deleted"
+
+  - key: travel_employee_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_employee
+    model_field: employee_list
+    params:
+      employee_list:
+        check:
+          template: "{{must .employee_list}}"
+          err_msg: 员工列表不能为空
+
+  - key: travel_employee_bulk_update
+    http: true
+    module: bulk_update
+    table: travel_employee
+    params:
+      employee_list:
+        check:
+          template: "{{must .employee_list}}"
+          err_msg: 员工列表不能为空
+
+  - key: travel_employee_bulk_delete
+    log: true
+    http: true
+    module: model_delete
+    table: travel_employee
+    params:
+      employee_id_list:
+        check:
+          template: "{{must .employee_id_list}}"
+          err_msg: 请选择要删除的员工
+    filter:
+      employee_id__in: "[employee_id_list]"

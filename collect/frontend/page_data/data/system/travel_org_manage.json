@@ -619,6 +619,33 @@
                 {
                   "tag": "button",
                   "type": "primary",
+                  "icon": "SyncOutlined",
+                  "size": "small",
+                  "title": "同步微信用户",
+                  "children": "同步微信",
+                  "visible": "${!!currentAgency.agency_id}",
+                  "disabled": "${!currentAgency.agency_id}",
+                  "confirm": {
+                    "title": "确认同步吗？",
+                    "description": "将从微信同步用户数据，新增的会创建，修改的会更新，本地有但微信没有的会删除"
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "api": "post:/template_data/data?service=hrm.sync_wechat_user",
+                      "data": {
+                        "agency_id": "${currentAgency.agency_id}"
+                      }
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "group": "employeeList"
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "type": "primary",
                   "icon": "PlusOutlined",
                   "size": "small",
                   "title": "新增员工",
@@ -803,7 +830,7 @@
                       "headerName": "头像",
                       "field": "head",
                       "cellRender": {
-                        "tag": "img",
+                        "tag": "image",
                         "visible": "${!!row.head}",
                         "src": "${row.head}",
                         "style": {
@@ -979,11 +1006,7 @@
               "orientation": "left",
               "children": "微信同步设置"
             },
-            {
-              "tag": "div",
-              "className": "text-gray-500 text-sm mb16",
-              "children": "配置微信企业号同步相关参数"
-            },
+  
             {
               "tag": "row",
               "gutter": 20,
