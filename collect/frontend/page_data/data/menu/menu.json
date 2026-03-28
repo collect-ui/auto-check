@@ -236,5 +236,14 @@
     "api": "post:/template_data/data?service=frontend.travel_org_manage",
     "url": "/framework/travel_org_manage",
     "data": "system/travel_org_manage.json"
+  },
+  {
+    "menu_code": "customer_assign_manage",
+    "menu_name": "游客管理与分配",
+    "icon": "UserSwitchOutlined",
+    "router_group": "/framework",
+    "api": "post:/template_data/data?service=frontend.customer_assign_manage",
+    "url": "/framework/customer_assign_manage",
+    "data": "system/customer_assign_manage.json"
   }
 ]

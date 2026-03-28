@@ -173,6 +173,16 @@ service:
         field: data
     data_file: data/system/travel_org_manage.json
 
+  - key: customer_assign_manage
+    http: true
+    module: empty
+    handler_params:
+      - key: file2datajson
+        save_field: data
+      - key: param2result
+        field: data
+    data_file: data/system/customer_assign_manage.json
+
   - key: menu_manage
     http: true
     module: empty

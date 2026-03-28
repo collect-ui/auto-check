@@ -11,7 +11,7 @@ type PriceDocProject struct {
 	Name              *string `gorm:"column:name" json:"name"`                 // 用户昵称
 	CreateTime        *string `gorm:"column:create_time" json:"create_time"`   // 用户昵称
 	ProjectName       *string `gorm:"column:project_name" json:"project_name"` // 用户昵称
-	OrderIndex        *int32 `gorm:"column:order_index" json:"order_index"`   // 用户昵称
+	OrderIndex        *int32  `gorm:"column:order_index" json:"order_index"`   // 用户昵称
 
 }
 

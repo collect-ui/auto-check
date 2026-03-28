@@ -8,15 +8,15 @@ const PriceDocQingName = "price_doc_qing"
 
 type PriceDocQing struct {
 	PriceDocQingID string   `gorm:"column:price_doc_qing_id;primaryKey" json:"price_doc_qing_id"`
-	Name       *string  `gorm:"column:name" json:"name"` // 用户昵称
-	Unit       *string  `gorm:"column:unit" json:"unit"` // 用户昵称
-	Price      *float64 `gorm:"column:price" json:"price"`
-	Code       *string  `gorm:"column:code" json:"code"` // 用户昵称
-	OrderIndex *int32   `gorm:"column:order_index" json:"order_index"`
-	CreateTime *string  `gorm:"column:create_time" json:"create_time"`
-	ProjectID  *string  `gorm:"column:project_id" json:"project_id"`
-	DocTreeID  *string  `gorm:"column:doc_tree_id" json:"doc_tree_id"`
-	Ancestors  *string  `gorm:"column:ancestors" json:"ancestors"`
+	Name           *string  `gorm:"column:name" json:"name"` // 用户昵称
+	Unit           *string  `gorm:"column:unit" json:"unit"` // 用户昵称
+	Price          *float64 `gorm:"column:price" json:"price"`
+	Code           *string  `gorm:"column:code" json:"code"` // 用户昵称
+	OrderIndex     *int32   `gorm:"column:order_index" json:"order_index"`
+	CreateTime     *string  `gorm:"column:create_time" json:"create_time"`
+	ProjectID      *string  `gorm:"column:project_id" json:"project_id"`
+	DocTreeID      *string  `gorm:"column:doc_tree_id" json:"doc_tree_id"`
+	Ancestors      *string  `gorm:"column:ancestors" json:"ancestors"`
 }
 
 // TableName UserAccount's table name

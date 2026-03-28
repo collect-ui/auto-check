@@ -4,6 +4,8 @@ service:
     path: "travel_org/index.yml"
   - name: "销售客服维护"
     path: "sales_cs_user/index.yml"
+  - name: "客户管理与分配"
+    path: "customer_assign/index.yml"
   - name: "用户管理"
     path: "user/index.yml"
   - name: "角色管理"
@@ -26,3 +28,6 @@ service:
 
   - name: user_change_history
     path: "user_change_history/index.yml"
+
+  - name: "旅行社数据同步"
+    path: "sync_agency_data/index.yml"

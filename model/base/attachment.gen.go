@@ -8,13 +8,13 @@ const TableNameAttachement = "attachment"
 
 type Attachment struct {
 	AttachmentID string  `gorm:"column:attachment_id;primaryKey" json:"attachment_id"`
-	Path          *string `gorm:"column:path" json:"path"`           // 用户昵称
-	RealPath      *string `gorm:"column:real_path" json:"real_path"` // 用户昵称
-	Size          *string `gorm:"column:size" json:"size"`           // 用户昵称
-	Filename      *string `gorm:"column:filename" json:"filename"`   // 用户昵称
-	Filetype      *string `gorm:"column:filetype" json:"filetype"`   // 用户昵称
-	Title         string  `gorm:"column:title;not null" json:"title"`
-	OrderIndex    *int32  `gorm:"column:order_index" json:"order_index"`
+	Path         *string `gorm:"column:path" json:"path"`           // 用户昵称
+	RealPath     *string `gorm:"column:real_path" json:"real_path"` // 用户昵称
+	Size         *string `gorm:"column:size" json:"size"`           // 用户昵称
+	Filename     *string `gorm:"column:filename" json:"filename"`   // 用户昵称
+	Filetype     *string `gorm:"column:filetype" json:"filetype"`   // 用户昵称
+	Title        string  `gorm:"column:title;not null" json:"title"`
+	OrderIndex   *int32  `gorm:"column:order_index" json:"order_index"`
 }
 
 // TableName UserAccount's table name

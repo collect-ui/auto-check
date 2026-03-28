@@ -9,14 +9,14 @@ const TableNameCourseAttendance = "course_attendance"
 // UserAccount mapped from table <user_account>
 
 type CourseAttendance struct {
-	CourseAttendanceID  string  `gorm:"column:course_attendance_id;primaryKey" json:"course_attendance_id"`
-	CourseID            string `gorm:"column:course_id" json:"course_id"` // 用户昵称
-	TrainingProjectID string  `gorm:"column:training_project_id;not null" json:"training_project_id"`
-	StudentID           string  `gorm:"column:student_id;not null" json:"student_id"`
-	Movies              *string `gorm:"column:movies" json:"movies"`
-	CreateTime          *string `gorm:"column:create_time" json:"create_time"`
-	Spend               *string `gorm:"column:spend" json:"spend"`
-	CourseType          *string `gorm:"column:course_type" json:"course_type"`
+	CourseAttendanceID string  `gorm:"column:course_attendance_id;primaryKey" json:"course_attendance_id"`
+	CourseID           string  `gorm:"column:course_id" json:"course_id"` // 用户昵称
+	TrainingProjectID  string  `gorm:"column:training_project_id;not null" json:"training_project_id"`
+	StudentID          string  `gorm:"column:student_id;not null" json:"student_id"`
+	Movies             *string `gorm:"column:movies" json:"movies"`
+	CreateTime         *string `gorm:"column:create_time" json:"create_time"`
+	Spend              *string `gorm:"column:spend" json:"spend"`
+	CourseType         *string `gorm:"column:course_type" json:"course_type"`
 }
 
 // TableName UserAccount's table name

@@ -110,9 +110,21 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	modelMap[travelAgency.TableName()] = travelAgency
 	primaryKeyMap[travelAgency.TableName()] = travelAgency.PrimaryKey()
 
-	travelAgencyUserRel := TravelAgencyUserRel{}
-	modelMap[travelAgencyUserRel.TableName()] = travelAgencyUserRel
-	primaryKeyMap[travelAgencyUserRel.TableName()] = travelAgencyUserRel.PrimaryKey()
+	travelEmployee := TravelEmployee{}
+	modelMap[travelEmployee.TableName()] = travelEmployee
+	primaryKeyMap[travelEmployee.TableName()] = travelEmployee.PrimaryKey()
+
+	customerLeadPool := CustomerLeadPool{}
+	modelMap[customerLeadPool.TableName()] = customerLeadPool
+	primaryKeyMap[customerLeadPool.TableName()] = customerLeadPool.PrimaryKey()
+
+	customerLeadAssign := CustomerLeadAssign{}
+	modelMap[customerLeadAssign.TableName()] = customerLeadAssign
+	primaryKeyMap[customerLeadAssign.TableName()] = customerLeadAssign.PrimaryKey()
+
+	customerLeadAssignLog := CustomerLeadAssignLog{}
+	modelMap[customerLeadAssignLog.TableName()] = customerLeadAssignLog
+	primaryKeyMap[customerLeadAssignLog.TableName()] = customerLeadAssignLog.PrimaryKey()
 
 	return modelMap, primaryKeyMap
 }

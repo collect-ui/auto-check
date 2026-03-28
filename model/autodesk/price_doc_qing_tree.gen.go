@@ -8,12 +8,12 @@ const PriceDocQingTreeName = "price_doc_qing_tree"
 
 type PriceDocQingTree struct {
 	PriceDocQingTreeID string  `gorm:"column:price_doc_qing_tree_id;primaryKey" json:"attachment_id"`
-	Name           *string `gorm:"column:name" json:"name"`           // 用户昵称
-	Code           *string `gorm:"column:code" json:"code"`           // 用户昵称
-	ParentID       *string `gorm:"column:parent_id" json:"parent_id"` // 用户昵称
-	OrderIndex     *int32  `gorm:"column:order_index" json:"order_index"`
-	CreateTime     *string `gorm:"column:create_time" json:"create_time"`
-	ProjectID       *string `gorm:"column:project_id" json:"project_id"`
+	Name               *string `gorm:"column:name" json:"name"`           // 用户昵称
+	Code               *string `gorm:"column:code" json:"code"`           // 用户昵称
+	ParentID           *string `gorm:"column:parent_id" json:"parent_id"` // 用户昵称
+	OrderIndex         *int32  `gorm:"column:order_index" json:"order_index"`
+	CreateTime         *string `gorm:"column:create_time" json:"create_time"`
+	ProjectID          *string `gorm:"column:project_id" json:"project_id"`
 }
 
 // TableName UserAccount's table name

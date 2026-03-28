@@ -71,6 +71,9 @@ services:
   - key: work_task
     name: 工作任务
     path: 'work_task/service.yml'
+  - key: spider_qi_work
+    name: qi_work爬虫
+    path: 'spider_qi_work/service.yml'
 
 
 

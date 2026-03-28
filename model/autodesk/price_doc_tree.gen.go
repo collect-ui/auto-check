@@ -12,7 +12,7 @@ type PriceDocTree struct {
 	ParentID       *string `gorm:"column:parent_id" json:"parent_id"` // 用户昵称
 	OrderIndex     *int32  `gorm:"column:order_index" json:"order_index"`
 	CreateTime     *string `gorm:"column:create_time" json:"create_time"`
-	ProjectID       *string `gorm:"column:project_id" json:"project_id"`
+	ProjectID      *string `gorm:"column:project_id" json:"project_id"`
 }
 
 // TableName UserAccount's table name

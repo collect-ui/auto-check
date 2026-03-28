@@ -14,7 +14,7 @@ type Img struct {
 	CreateUser *string `gorm:"column:create_user" json:"create_user"`
 	Content    *string `gorm:"column:content" json:"content"`
 	Path       *string `gorm:"column:path" json:"path"`
-	Type        *string `gorm:"column:type" json:"type"`
+	Type       *string `gorm:"column:type" json:"type"`
 }
 
 func (*Img) TableName() string {

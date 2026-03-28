@@ -4,45 +4,45 @@
   "initStore": {
     "agencyDialogVisible": false,
     "agencyOp": "add",
-    "relationDialogVisible": false,
-    "relationOp": "add",
-    "passwordDialogVisible": false,
+    "employeeDialogVisible": false,
+    "employeeOp": "add",
     "agencySelection": [],
-    "relationSelection": [],
+    "employeeSelection": [],
     "agencySearchForm": {
       "page": 1,
       "size": 50,
       "search": ""
     },
-    "relationSearchForm": {
+    "employeeSearchForm": {
       "page": 1,
       "size": 20,
       "search": ""
     },
     "agencyForm": {
       "biz_type": "travel",
-      "checkin_status": "pending",
-      "status": "normal"
+      "status": "normal",
+      "checkin_status": "not_checked_in",
+      "wx_sync_enabled": "no",
+      "wx_sync_account": "",
+      "wx_sync_password": "",
+      "wx_sync_access_token": "",
+      "wx_sync_expire_time": 0,
+      "wx_sync_user_id": "",
+      "wx_sync_department_id": "",
+      "wx_sync_role_id": "",
+      "wx_sync_company_id": "",
+      "wx_last_sync_time": "",
+      "wx_sync_error_count": 0
     },
-    "relationForm": {
-      "username": "",
-      "nick": "",
-      "password": "",
-      "phone": "",
-      "role_type": "sales",
-      "supervisor_user_id": "",
+    "employeeForm": {
+
       "status": "normal"
-    },
-    "passwordForm": {
-      "password": ""
     },
     "agencyList": [],
     "agencyCount": 0,
     "currentAgency": {},
-    "relationList": [],
-    "relationCount": 0,
-    "userList": [],
-    "supervisorList": []
+    "employeeList": [],
+    "employeeCount": 0
   },
   "initAction": [
     {
@@ -54,19 +54,6 @@
       "adapt": {
         "agencyList": "${data}",
         "agencyCount": "${count}"
-      }
-    },
-    {
-      "tag": "ajax",
-      "group": "userList",
-      "api": "post:/template_data/data?service=hrm.user_list",
-      "data": {
-        "pagination": false,
-        "count": false,
-        "size": 500
-      },
-      "adapt": {
-        "userList": "${data}"
       }
     }
   ],
@@ -82,8 +69,8 @@
         {
           "tag": "panel",
           "id": "left_agency_panel",
-          "defaultSize": 24,
-          "minSize": 24,
+          "defaultSize": 20,
+          "minSize": 16,
           "className": "h100 padding-right10",
           "children": [
             {
@@ -186,6 +173,8 @@
                         {
                           "tag": "input",
                           "isSearch": true,
+                          "prefixIcon": "SearchOutlined",
+                          "enterButton": "搜索",
                           "allowClear": true,
                           "style": {
                             "width": "100%"
@@ -247,8 +236,8 @@
                       "value": {
                         "currentAgency": "${row}",
                         "agencySelection": "${[row]}",
-                        "relationSelection": [],
-                        "relationSearchForm": {
+                        "employeeSelection": [],
+                        "employeeSearchForm": {
                           "page": 1,
                           "size": 20,
                           "search": ""
@@ -257,11 +246,7 @@
                     },
                     {
                       "tag": "reload-init-action",
-                      "group": "relationList"
-                    },
-                    {
-                      "tag": "reload-init-action",
-                      "group": "supervisorList"
+                      "group": "employeeList"
                     }
                   ],
                   "itemAttr": {
@@ -378,22 +363,11 @@
                                     "style": {
                                       "padding": "1px 8px",
                                       "borderRadius": "10px",
-                                      "background": "#f0f7ff",
-                                      "color": "#1d4ed8",
+                                      "background": "#f0f9ff",
+                                      "color": "#0369a1",
                                       "fontWeight": 600
                                     },
-                                    "children": "${'主管 '+(row.supervisor_count||0)}"
-                                  },
-                                  {
-                                    "tag": "span",
-                                    "style": {
-                                      "padding": "1px 8px",
-                                      "borderRadius": "10px",
-                                      "background": "#fff7ed",
-                                      "color": "#c2410c",
-                                      "fontWeight": 600
-                                    },
-                                    "children": "${'销售 '+(row.sales_count||0)}"
+                                    "children": "${'员工 '+(row.employee_count||0)}"
                                   }
                                 ]
                               }
@@ -419,7 +393,7 @@
         {
           "tag": "panel",
           "id": "right_relation_panel",
-          "defaultSize": 76,
+          "defaultSize": 80,
           "minSize": 35,
           "className": "h100 padding-left10",
           "children": [
@@ -640,14 +614,14 @@
               "tag": "layout-fit",
               "visible": "${!!currentAgency.agency_id}",
               "className": "h100",
-              "title": "组织关系",
+              "title": "员工管理",
               "topRight": [
                 {
                   "tag": "button",
                   "type": "primary",
                   "icon": "PlusOutlined",
                   "size": "small",
-                  "title": "新增组织成员",
+                  "title": "新增员工",
                   "children": "新增",
                   "visible": "${!!currentAgency.agency_id}",
                   "disabled": "${!currentAgency.agency_id}",
@@ -655,13 +629,13 @@
                     {
                       "tag": "update-store",
                       "value": {
-                        "relationDialogVisible": true,
-                        "relationOp": "add"
+                        "employeeDialogVisible": true,
+                        "employeeOp": "add"
                       }
                     },
                     {
                       "tag": "reset-form",
-                      "formName": "relationForm"
+                      "formName": "employeeForm"
                     }
                   ]
                 },
@@ -669,47 +643,26 @@
                   "tag": "button",
                   "icon": "EditOutlined",
                   "size": "small",
-                  "title": "编辑组织成员",
+                  "title": "编辑员工",
                   "children": "编辑",
                   "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${relationSelection.length != 1}",
+                  "disabled": "${employeeSelection.length != 1}",
                   "action": [
                     {
                       "tag": "update-store",
                       "value": {
-                        "relationDialogVisible": true,
-                        "relationOp": "edit"
+                        "employeeDialogVisible": true,
+                        "employeeOp": "edit"
                       }
                     },
                     {
                       "tag": "reset-form",
-                      "formName": "relationForm"
+                      "formName": "employeeForm"
                     },
                     {
                       "tag": "update-form",
-                      "formName": "relationForm",
-                      "value": "${relationSelection[0]}"
-                    }
-                  ]
-                },
-                {
-                  "tag": "button",
-                  "icon": "LockOutlined",
-                  "size": "small",
-                  "title": "修改密码",
-                  "children": "改密",
-                  "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${relationSelection.length != 1}",
-                  "action": [
-                    {
-                      "tag": "reset-form",
-                      "formName": "passwordForm"
-                    },
-                    {
-                      "tag": "update-store",
-                      "value": {
-                        "passwordDialogVisible": true
-                      }
+                      "formName": "employeeForm",
+                      "value": "${employeeSelection[0]}"
                     }
                   ]
                 },
@@ -717,30 +670,26 @@
                   "tag": "button",
                   "icon": "DeleteOutlined",
                   "size": "small",
-                  "title": "删除组织成员",
+                  "title": "删除员工",
                   "children": "删除",
                   "danger": true,
                   "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${relationSelection.length <= 0}",
+                  "disabled": "${employeeSelection.length <= 0}",
                   "confirm": {
                     "title": "确认删除吗？",
-                    "description": "${'确认删除'+relationSelection.length+'条关系吗？'}"
+                    "description": "${'确认删除'+employeeSelection.length+'个员工吗？'}"
                   },
                   "action": [
                     {
                       "tag": "ajax",
-                      "api": "post:/template_data/data?service=hrm.travel_org_user_delete",
+                      "api": "post:/template_data/data?service=hrm.travel_employee_delete",
                       "data": {
-                        "relation_id_list": "${relationSelection.map(item=>item.relation_id)}"
+                        "employee_id_list": "${employeeSelection.map(item=>item.employee_id)}"
                       }
                     },
                     {
                       "tag": "reload-init-action",
-                      "group": "relationList"
-                    },
-                    {
-                      "tag": "reload-init-action",
-                      "group": "supervisorList"
+                      "group": "employeeList"
                     }
                   ]
                 }
@@ -748,7 +697,7 @@
               "searchToolBar": [
                 {
                   "tag": "form",
-                  "name": "relation-search-form",
+                  "name": "employee-search-form",
                   "visible": "${!!currentAgency.agency_id}",
                   "style": {
                     "width": "100%"
@@ -757,30 +706,31 @@
                     {
                       "tag": "form-item",
                       "name": "search",
-                      "label": "成员搜索",
+                      "label": "员工搜索",
                       "style": {
-                        "width": "100%",
                         "marginBottom": "8px"
                       },
                       "children": [
                         {
                           "tag": "input",
                           "isSearch": true,
+                          "prefixIcon": "SearchOutlined",
+                          "enterButton": "搜索",
                           "allowClear": true,
                           "style": {
                             "width": "100%"
                           },
-                          "placeholder": "主管/销售姓名或登录名",
+                          "placeholder": "姓名、手机号、微信别名或微信ID",
                           "onSearchAction": [
                             {
                               "tag": "update-store",
                               "value": {
-                                "relationSearchForm.page": 1
+                                "employeeSearchForm.page": 1
                               }
                             },
                             {
                               "tag": "reload-init-action",
-                              "group": "relationList"
+                              "group": "employeeList"
                             }
                           ],
                           "action": [
@@ -788,8 +738,8 @@
                               "tag": "update-store",
                               "trigger": "onChange",
                               "value": {
-                                "relationSearchForm.search": "${value}",
-                                "relationSearchForm.page": 1
+                                "employeeSearchForm.search": "${value}",
+                                "employeeSearchForm.page": 1
                               }
                             }
                           ]
@@ -805,13 +755,13 @@
                   "visible": "${!!currentAgency.agency_id}",
                   "showSizeChanger": true,
                   "align": "end",
-                  "pageSize": "${relationSearchForm.size}",
-                  "current": "${relationSearchForm.page}",
-                  "total": "${relationCount}",
+                  "pageSize": "${employeeSearchForm.size}",
+                  "current": "${employeeSearchForm.page}",
+                  "total": "${employeeCount}",
                   "action": [
                     {
                       "tag": "reload-init-action",
-                      "group": "relationList"
+                      "group": "employeeList"
                     }
                   ],
                   "showTotal": true
@@ -820,7 +770,7 @@
               "children": [
                 {
                   "tag": "table",
-                  "selection": "${relationSelection}",
+                  "selection": "${employeeSelection}",
                   "rowSelection": "multiple",
                   "columnDefs": [
                     {
@@ -834,32 +784,41 @@
                       "pinned": "left",
                       "checkboxSelection": true,
                       "headerCheckboxSelection": true,
-                      "headerName": "登录名",
-                      "field": "username"
-                    },
-                    {
                       "headerName": "姓名",
-                      "field": "nick"
-                    },
-                    {
-                      "headerName": "角色",
-                      "field": "role_type",
-                      "valueFormatter": "${params.value==='supervisor'?'主管':'销售'}"
-                    },
-                    {
-                      "headerName": "直属主管",
-                      "field": "supervisor_name"
+                      "field": "nick_name"
                     },
                     {
                       "headerName": "手机号",
                       "field": "phone"
                     },
                     {
+                      "headerName": "微信别名",
+                      "field": "ower_wx_alias"
+                    },
+                    {
+                      "headerName": "微信ID",
+                      "field": "wx_id"
+                    },
+                    {
+                      "headerName": "头像",
+                      "field": "head",
+                      "cellRender": {
+                        "tag": "img",
+                        "visible": "${!!row.head}",
+                        "src": "${row.head}",
+                        "style": {
+                          "width": "32px",
+                          "height": "32px",
+                          "borderRadius": "50%"
+                        }
+                      }
+                    },
+                    {
                       "headerName": "创建时间",
                       "field": "create_time"
                     }
                   ],
-                  "rowData": "${relationList}"
+                  "rowData": "${employeeList}"
                 }
               ]
             }
@@ -870,6 +829,7 @@
     {
       "tag": "dialog",
       "title": "${agencyOp=='add'?'新增旅行社':'编辑旅行社'}",
+      "width":"50%",
       "open": "${agencyDialogVisible}",
       "action": [
         {
@@ -906,7 +866,7 @@
         {
           "tag": "form",
           "name": "agencyForm",
-          "initialValues": "${agencyForm}",
+          "initialValues": {},
           "labelCol": {
             "span": 6
           },
@@ -984,26 +944,6 @@
             },
             {
               "tag": "form-item",
-              "name": "checkin_status",
-              "label": "入住状态",
-              "children": [
-                {
-                  "tag": "select",
-                  "options": [
-                    {
-                      "value": "pending",
-                      "label": "待入住"
-                    },
-                    {
-                      "value": "active",
-                      "label": "已入住"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "tag": "form-item",
               "name": "description",
               "label": "备注",
               "children": [
@@ -1012,73 +952,290 @@
                   "placeholder": "可填写旅行社组织说明"
                 }
               ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "tag": "dialog",
-      "title": "修改成员密码",
-      "open": "${passwordDialogVisible}",
-      "action": [
-        {
-          "tag": "submit-form",
-          "formName": "passwordForm"
-        },
-        {
-          "tag": "ajax",
-          "api": "post:/template_data/data?service=hrm.update_user_by_username",
-          "appendFormFields": "passwordForm",
-          "data": {
-            "username": "${relationSelection.length>0?relationSelection[0].username:''}"
-          }
-        },
-        {
-          "tag": "update-store",
-          "value": {
-            "passwordDialogVisible": false
-          }
-        },
-        {
-          "tag": "reset-form",
-          "formName": "passwordForm"
-        }
-      ],
-      "children": [
-        {
-          "tag": "form",
-          "name": "passwordForm",
-          "initialValues": "${passwordForm}",
-          "labelCol": {
-            "span": 6
-          },
-          "children": [
+            },
             {
               "tag": "form-item",
-              "label": "当前成员",
+              "name": "checkin_status",
+              "label": "状态",
               "children": [
                 {
-                  "tag": "div",
-                  "children": "${relationSelection.length>0?(relationSelection[0].nick+'（'+relationSelection[0].username+'）'):'-'}"
+                  "tag": "select",
+                  "placeholder": "请选择状态",
+                  "options": [
+                    {
+                      "label": "未入住",
+                      "value": "not_checked_in"
+                    },
+                    {
+                      "label": "已入住",
+                      "value": "checked_in"
+                    }
+                  ]
                 }
               ]
             },
             {
-              "tag": "form-item",
-              "name": "password",
-              "label": "新密码",
-              "rules": [
-                {
-                  "required": true,
-                  "message": "请输入新密码"
-                }
-              ],
+              "tag": "divider",
+              "orientation": "left",
+              "children": "微信同步设置"
+            },
+            {
+              "tag": "div",
+              "className": "text-gray-500 text-sm mb16",
+              "children": "配置微信企业号同步相关参数"
+            },
+            {
+              "tag": "row",
+              "gutter": 20,
               "children": [
                 {
-                  "tag": "input",
-                  "showPassword": true,
-                  "placeholder": "请输入新密码"
+                  "tag": "col",
+                  "span": 8,
+                  "children": [
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_enabled",
+                      "label": "同步启用",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "select",
+                          "placeholder": "请选择",
+                          "style": {
+                            "width": "100%"
+                          },
+                          "options": [
+                            {
+                              "label": "启用",
+                              "value": "yes"
+                            },
+                            {
+                              "label": "禁用",
+                              "value": "no"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_account",
+                      "label": "同步账号",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入账号",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_password",
+                      "label": "同步密码",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入密码",
+                          "type": "password",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_access_token",
+                      "label": "访问令牌",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入访问令牌",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "col",
+                  "span": 8,
+                  "children": [
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_expire_time",
+                      "label": "过期时间",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "2025-03-28 12:00:00",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_user_id",
+                      "label": "用户ID",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入用户ID",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_department_id",
+                      "label": "部门ID",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入部门ID",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_role_id",
+                      "label": "角色ID",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入角色ID",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "col",
+                  "span": 8,
+                  "children": [
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_company_id",
+                      "label": "公司ID",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入公司ID",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_last_sync_time",
+                      "label": "最后同步",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "2025-03-28 12:00:00",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "form-item",
+                      "name": "wx_sync_error_count",
+                      "label": "错误计数",
+                      "labelCol": {
+                        "span": 8
+                      },
+                      "wrapperCol": {
+                        "span": 16
+                      },
+                      "children": [
+                        {
+                          "tag": "input",
+                          "placeholder": "请输入数字",
+                          "style": {
+                            "width": "100%"
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
@@ -1088,93 +1245,61 @@
     },
     {
       "tag": "dialog",
-      "title": "${relationOp=='add'?'新增组织成员':'编辑组织成员'}",
-      "open": "${relationDialogVisible}",
-      "confirmAndContinue": "${relationOp=='add'}",
+      "title": "${employeeOp=='add'?'新增用户':'编辑用户'}",
+      "open": "${employeeDialogVisible}",
+      "confirmAndContinue": "${employeeOp=='add'}",
       "action": [
         {
           "tag": "submit-form",
-          "formName": "relationForm"
+          "formName": "employeeForm"
         },
         {
           "tag": "ajax",
-          "enable": "${relationOp=='add'}",
-          "api": "post:/template_data/data?service=hrm.travel_org_user_save",
-          "appendFormFields": "relationForm",
+          "enable": "${employeeOp=='add'}",
+          "api": "post:/template_data/data?service=hrm.travel_employee_save",
+          "appendFormFields": "employeeForm",
           "data": {
             "agency_id": "${currentAgency.agency_id}"
           }
         },
         {
           "tag": "ajax",
-          "enable": "${relationOp=='edit'}",
-          "api": "post:/template_data/data?service=hrm.update_user_by_user_id",
-          "appendFormFields": "relationForm",
+          "enable": "${employeeOp=='edit'}",
+          "api": "post:/template_data/data?service=hrm.travel_employee_update",
+          "appendFormFields": "employeeForm",
           "data": {
-            "user_id": "${relationSelection.length>0?relationSelection[0].user_id:''}"
-          }
-        },
-        {
-          "tag": "ajax",
-          "enable": "${relationOp=='edit'}",
-          "api": "post:/template_data/data?service=hrm.travel_org_user_update",
-          "appendFormFields": "relationForm",
-          "data": {
-            "relation_id": "${relationSelection.length>0?relationSelection[0].relation_id:''}",
-            "agency_id": "${currentAgency.agency_id}",
-            "user_id": "${relationSelection.length>0?relationSelection[0].user_id:''}"
+            "employee_id": "${employeeSelection.length>0?employeeSelection[0].employee_id:''}"
           }
         },
         {
           "tag": "reload-init-action",
-          "group": "relationList"
-        },
-        {
-          "tag": "reload-init-action",
-          "group": "supervisorList"
+          "group": "employeeList"
         },
         {
           "tag": "reset-form",
-          "enable": "${relationOp=='add' && confirmAndContinue}",
-          "formName": "relationForm"
+          "enable": "${employeeOp=='add' && confirmAndContinue}",
+          "formName": "employeeForm"
         },
         {
           "tag": "update-store",
           "enable": "${!confirmAndContinue}",
           "value": {
-            "relationDialogVisible": false
+            "employeeDialogVisible": false
           }
         }
       ],
       "children": [
         {
           "tag": "form",
-          "name": "relationForm",
-          "initialValues": "${relationForm}",
+          "name": "employeeForm",
+          "initialValues": "${employeeForm}",
           "labelCol": {
             "span": 6
           },
           "children": [
             {
               "tag": "form-item",
-              "name": "username",
-              "label": "用户名",
-              "rules": [
-                {
-                  "required": true,
-                  "message": "请输入用户名"
-                }
-              ],
-              "children": [
-                {
-                  "tag": "input",
-                  "placeholder": "请输入登录用户名"
-                }
-              ]
-            },
-            {
-              "tag": "form-item",
-              "name": "nick",
+              "name": "nick_name",
               "label": "姓名",
               "rules": [
                 {
@@ -1191,20 +1316,34 @@
             },
             {
               "tag": "form-item",
-              "name": "password",
-              "label": "密码",
-              "visible": "${relationOp==='add'}",
-              "rules": [
-                {
-                  "required": true,
-                  "message": "请输入密码"
-                }
-              ],
+              "name": "alias",
+              "label": "别名",
               "children": [
                 {
                   "tag": "input",
-                  "type": "password",
-                  "placeholder": "请输入初始密码"
+                  "placeholder": "请输入别名（可选）"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "head",
+              "label": "头像URL",
+              "children": [
+                {
+                  "tag": "input",
+                  "placeholder": "请输入头像URL"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "ower_wx_alias",
+              "label": "微信别名",
+              "children": [
+                {
+                  "tag": "input",
+                  "placeholder": "请输入微信别名"
                 }
               ]
             },
@@ -1221,56 +1360,45 @@
             },
             {
               "tag": "form-item",
-              "label": "当前成员",
-              "visible": "${relationOp==='edit'}",
+              "name": "phone_user",
+              "label": "手机用户标识",
               "children": [
                 {
-                  "tag": "div",
-                  "children": "${relationSelection.length>0?(relationSelection[0].nick+'（'+relationSelection[0].username+'）'):'-'}"
+                  "tag": "input",
+                  "placeholder": "请输入手机用户标识"
                 }
               ]
             },
             {
               "tag": "form-item",
-              "name": "role_type",
-              "label": "组织角色",
-              "rules": [
-                {
-                  "required": true,
-                  "message": "请选择角色"
-                }
-              ],
+              "name": "user_id",
+              "label": "用户ID",
               "children": [
                 {
-                  "tag": "select",
-                  "options": [
-                    {
-                      "value": "supervisor",
-                      "label": "主管"
-                    },
-                    {
-                      "value": "sales",
-                      "label": "销售"
-                    }
-                  ]
+                  "tag": "input",
+                  "placeholder": "请输入用户ID"
                 }
               ]
             },
             {
               "tag": "form-item",
-              "name": "supervisor_user_id",
-              "label": "直属主管",
-              "visible": "${getFormValue('relationForm','role_type')=='sales'}",
+              "name": "wx_id",
+              "label": "微信ID",
               "children": [
                 {
-                  "tag": "select",
-                  "fieldNames": {
-                    "label": "nick",
-                    "value": "user_id"
-                  },
-                  "optionRender": "${row.nick+'（'+row.username+'）'}",
-                  "options": "${supervisorList}",
-                  "placeholder": "销售必须选择直属主管"
+                  "tag": "input",
+                  "placeholder": "请输入微信ID"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "wx_target",
+              "label": "微信目标",
+              "children": [
+                {
+                  "tag": "input",
+                  "placeholder": "请输入微信目标"
                 }
               ]
             },
@@ -1283,7 +1411,7 @@
                   "tag": "input",
                   "isTextarea": true,
                   "rows": 3,
-                  "placeholder": "可填写组织说明"
+                  "placeholder": "可填写备注信息"
                 }
               ]
             }
@@ -1293,37 +1421,20 @@
     }
   ],
   "actionGroupDefine": {
-    "relationList": [
+    "employeeList": [
       {
         "tag": "ajax",
         "enable": "${currentAgency.agency_id}",
-        "group": "relationList",
-        "api": "post:/template_data/data?service=hrm.travel_org_user_list",
-        "appendFields": "${relationSearchForm}",
-        "appendFormFields": "relation-search-form",
+        "group": "employeeList",
+        "api": "post:/template_data/data?service=hrm.travel_employee_list",
+        "appendFields": "${employeeSearchForm}",
+        "appendFormFields": "employee-search-form",
         "data": {
           "agency_id": "${currentAgency.agency_id}"
         },
         "adapt": {
-          "relationList": "${data}",
-          "relationCount": "${count}"
-        }
-      }
-    ],
-    "supervisorList": [
-      {
-        "tag": "ajax",
-        "enable": "${currentAgency.agency_id}",
-        "group": "supervisorList",
-        "api": "post:/template_data/data?service=hrm.travel_org_user_list",
-        "data": {
-          "agency_id": "${currentAgency.agency_id}",
-          "role_type": "supervisor",
-          "pagination": false,
-          "count": false
-        },
-        "adapt": {
-          "supervisorList": "${data}"
+          "employeeList": "${data}",
+          "employeeCount": "${count}"
         }
       }
     ]

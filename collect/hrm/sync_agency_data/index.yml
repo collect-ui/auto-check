@@ -1,0 +1,128 @@
+service:
+  - key: get_qi_work_token
+    name: 获取企业微信token
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    handler_params:
+      # 1. 获取旅行社信息（使用to_obj转为对象）
+      - key: service2field
+        name: 获取旅行社信息
+        service:
+          service: hrm.travel_agency_list
+          agency_id: "[agency_id]"
+          to_obj: true
+        save_field: agency_info
+      
+      # 2. 场景A：Token有效，从数据库返回字段
+      - key: params2result
+        name: Token有效，从数据库返回字段
+        enable: "{{and .agency_info.wx_sync_access_token (gt .agency_info.wx_sync_expire_time (unix_time 0 `second`))}}"
+        fields:
+          - from: "[agency_info.wx_sync_access_token]"
+            to: "access_token"
+          - from: "[agency_info.wx_sync_company_id]"
+            to: "companyId"
+          - from: "[agency_info.wx_sync_user_id]"
+            to: "userId"
+          - from: "[agency_info.wx_sync_department_id]"
+            to: "departmentId"
+          - from: "[agency_info.wx_sync_role_id]"
+            to: "roleId"
+          - from: "[agency_info.wx_sync_user_id]"
+            to: "controlId"
+          - from: "[agency_info.wx_sync_access_token]"
+            to: "authorization"
+            template: "Bearer {{.agency_info.wx_sync_access_token}}"
+      
+      # 3. 场景B：Token无效，重新登录
+      - key: service2field
+        name: 场景B：Token无效，重新登录
+        enable: "{{or (not .agency_info.wx_sync_access_token) (lt .agency_info.wx_sync_expire_time (unix_time 0 `second`))}}"
+        service:
+          service: spider_qi_work.login
+          username: "[agency_info.wx_sync_account]"
+          password: "[agency_info.wx_sync_password]"
+        save_field: login_result
+      
+      # 4. 从登录结果提取字段
+      - key: params2result
+        enable: "{{must .login_result}}"
+        fields:
+          - from: "[login_result.access_token]"
+            to: "authorization"
+            template: "Bearer {{.login_result.access_token}}"
+          - from: "[login_result.access_token]"
+            to: "access_token"
+          - from: "[login_result.companyId]"
+            to: "companyId"
+          - from: "[login_result.userId]"
+            to: "userId"
+          - from: "[login_result.departmentId]"
+            to: "departmentId"
+          - from: "[login_result.roleId]"
+            to: "roleId"
+          - from: "[login_result.userId]"
+            to: "controlId"
+      
+      # 5. 更新数据库中的token
+      - key: service2field
+        name: "更新缓存信息"
+        enable: "{{must .login_result}}"
+        service:
+          service: hrm.travel_agency_wx_update_simple
+          agency_id: "[agency_id]"
+          wx_sync_access_token: "[login_result.access_token]"
+          wx_sync_company_id: "[login_result.companyId]"
+          wx_sync_user_id: "[login_result.userId]"
+          wx_sync_department_id: "[login_result.departmentId]"
+          wx_sync_role_id: "[login_result.roleId]"
+          wx_sync_expire_time: "[login_result.expireTime]"
+
+  - key: get_travel_agency_phone_list
+    name: 获取旅行社手机列表
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      start:
+        default: 1
+      limit:
+        default: 20
+      viewDataRangeType:
+        default: 3
+    handler_params:
+      # 1. 获取企业微信token
+      - key: service2field
+        service:
+          service: hrm.get_qi_work_token
+          agency_id: "[agency_id]"
+        save_field: token_data
+      
+      # 2. 获取手机列表
+      - key: service2field
+        service:
+          service: spider_qi_work.query_user_wx
+          authorization: "[token_data.access_token]"
+          companyId: "[token_data.companyId]"
+          controlId: "[token_data.controlId]"
+          loginUserId: "[token_data.userId]"
+          createDepartmentId: "[token_data.departmentId]"
+          depId: "[token_data.departmentId]"
+          start: "[start]"
+          limit: "[limit]"
+          viewDataRangeType: "[viewDataRangeType]"
+        save_field: phone_list
+      
+      # 3. 直接返回phone_list
+      - key: param2result
+        field: "[phone_list]"

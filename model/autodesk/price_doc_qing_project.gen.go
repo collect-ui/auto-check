@@ -8,10 +8,10 @@ const PriceDocQingProjectName = "price_doc_qing_project"
 
 type PriceDocQingProject struct {
 	PriceDocQingProjectID string  `gorm:"column:price_doc_qing_project_id;primaryKey" json:"price_doc_qing_project_id"`
-	Name              *string `gorm:"column:name" json:"name"`                 // 用户昵称
-	CreateTime        *string `gorm:"column:create_time" json:"create_time"`   // 用户昵称
-	ProjectName       *string `gorm:"column:project_name" json:"project_name"` // 用户昵称
-	OrderIndex        *int32 `gorm:"column:order_index" json:"order_index"`   // 用户昵称
+	Name                  *string `gorm:"column:name" json:"name"`                 // 用户昵称
+	CreateTime            *string `gorm:"column:create_time" json:"create_time"`   // 用户昵称
+	ProjectName           *string `gorm:"column:project_name" json:"project_name"` // 用户昵称
+	OrderIndex            *int32  `gorm:"column:order_index" json:"order_index"`   // 用户昵称
 
 }
 

@@ -286,7 +286,7 @@ func processLayout(docxFile *docx.Docx, config map[string]interface{}, data map[
 		para := docxFile.AddParagraph()
 		title := processExpression(titleTemp.(string), data)
 		para.AddText(gocast.ToString(title)).Size("18").Bold()
-		
+
 	}
 	if utils.IsValueEmpty(errMsg) {
 		processChildren(docxFile, children, data)

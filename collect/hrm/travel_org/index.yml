@@ -3,6 +3,8 @@ service:
     http: true
     module: sql
     params:
+      agency_id:
+        default: ""
       search:
         template: "{{ if .search }}%{{.search}}%{{ end }}"
       page:
@@ -19,10 +21,15 @@ service:
         default: true
       count:
         default: true
+      to_obj:
+        default: false
     data_file: travel_agency_list.sql
     count_file: travel_agency_count.sql
     pagination: pagination
     count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
 
   - key: travel_agency_save
     http: true
@@ -41,10 +48,18 @@ service:
           err_msg: 商家编码不能为空
       biz_type:
         default: travel
-      checkin_status:
-        default: pending
       status:
         default: normal
+      checkin_status:
+        default: not_checked_in
+      wx_sync_enabled:
+        default: no
+      wx_sync_error_count:
+        default: 0
+        type: int
+      wx_sync_expire_time:
+        default: 0
+        type: int
       create_time:
         template: "{{current_date_time}}"
       create_user:
@@ -54,6 +69,7 @@ service:
     http: true
     module: model_update
     table: travel_agency
+    log: true
     params:
       agency_id:
         check:
@@ -67,6 +83,10 @@ service:
         check:
           template: "{{must .agency_code}}"
           err_msg: 商家编码不能为空
+      wx_sync_error_count:
+        type: int
+      wx_sync_expire_time:
+        type: int
     filter:
       agency_id: "[agency_id]"
 
@@ -82,7 +102,7 @@ service:
     filter:
       agency_id__in: "[agency_id_list]"
 
-  - key: travel_org_user_list
+  - key: travel_employee_list
     http: true
     module: sql
     params:
@@ -92,8 +112,6 @@ service:
           err_msg: agency_id不能为空
       search:
         template: "{{ if .search }}%{{.search}}%{{ end }}"
-      role_type:
-        default: ""
       page:
         type: int
         default: 1
@@ -108,144 +126,115 @@ service:
         default: true
       count:
         default: true
-    data_file: travel_org_user_list.sql
-    count_file: travel_org_user_count.sql
+    data_file: travel_employee_list.sql
+    count_file: travel_employee_count.sql
     pagination: pagination
     count: "[count]"
 
-  - key: travel_org_user_save
+  - key: travel_employee_save
     http: true
-    module: empty
+    module: model_save
+    table: travel_employee
     params:
-      user_id:
+      employee_id:
         template: "{{uuid}}"
       agency_id:
         check:
           template: "{{must .agency_id}}"
           err_msg: 旅行社不能为空
-      username:
+      nick_name:
         check:
-          template: "{{must .username}}"
-          err_msg: 用户名不能为空
-      nick:
-        check:
-          template: "{{must .nick}}"
+          template: "{{must .nick_name}}"
           err_msg: 姓名不能为空
-      password:
-        check:
-          template: "{{must .password}}"
-          err_msg: 密码不能为空
+      alias:
+        default: ""
+      head:
+        default: ""
+      ower_wx_alias:
+        default: ""
       phone:
         default: ""
-      role_type:
-        check:
-          template: "{{or (eq .role_type `supervisor`) (eq .role_type `sales`)}}"
-          err_msg: 角色仅支持supervisor或sales
-      supervisor_user_id:
-        default: ""
-      status:
-        default: normal
-      relation_id:
-        template: "{{uuid}}"
-      create_time:
-        template: "{{current_date_time}}"
-    handler_params:
-      - key: update_field
-        fields:
-          - field: supervisor_user_id
-            template: "{{if .supervisor_user_id}}{{.supervisor_user_id}}{{else}}{{end}}"
-      - key: check_field
-        enable: "{{eq .role_type `sales`}}"
-        fields:
-          - field: supervisor_user_id
-            template: "{{must .supervisor_user_id}}"
-            err_msg: 销售必须选择主管
-      - key: field2array
-        field: "[role_type]"
-        save_field: role_id_list
-      - key: service2field
-        service:
-          service: hrm.create_user_flow
-          user_id: "[user_id]"
-          username: "[username]"
-          nick: "[nick]"
-          password: "[password]"
-          phone: "[phone]"
-          status: "[status]"
-          role_id_list: "[role_id_list]"
-        save_field: created_user_id
-      - key: service2field
-        service:
-          service: hrm.travel_org_user_rel_save
-          relation_id: "[relation_id]"
-          agency_id: "[agency_id]"
-          user_id: "[created_user_id]"
-          role_type: "[role_type]"
-          supervisor_user_id: "[supervisor_user_id]"
-          status: "[status]"
-          create_time: "[create_time]"
-          create_user: "[session_user_id]"
-
-  - key: travel_org_user_rel_save
-    http: true
-    module: model_save
-    table: travel_agency_user_rel
-    params:
-      relation_id:
-        template: "{{uuid}}"
-      agency_id:
-        check:
-          template: "{{must .agency_id}}"
-          err_msg: 商家不能为空
+      phone_user:
+        type: int
+        default: 0
       user_id:
-        check:
-          template: "{{must .user_id}}"
-          err_msg: 用户不能为空
-      role_type:
-        check:
-          template: "{{or (eq .role_type `supervisor`) (eq .role_type `sales`)}}"
-          err_msg: 角色仅支持supervisor或sales
-      supervisor_user_id:
+        type: int
+        default: 0
+      wx_id:
         default: ""
+      wx_target:
+        type: int
+        default: 1
       status:
         default: normal
+      description:
+        default: ""
       create_time:
         template: "{{current_date_time}}"
       create_user:
         template: "{{.session_user_id}}"
-  - key: travel_org_user_update
+
+  - key: travel_employee_update
     http: true
     module: model_update
-    table: travel_agency_user_rel
+    table: travel_employee
     params:
-      relation_id:
+      employee_id:
         check:
-          template: "{{must .relation_id}}"
-          err_msg: 关系ID不能为空
-      role_type:
+          template: "{{must .employee_id}}"
+          err_msg: 员工ID不能为空
+      nick_name:
         check:
-          template: "{{or (eq .role_type `supervisor`) (eq .role_type `sales`)}}"
-          err_msg: 角色仅支持supervisor或sales
-      supervisor_user_id:
+          template: "{{must .nick_name}}"
+          err_msg: 姓名不能为空
+      alias:
         default: ""
-    handler_params:
-      - key: check_field
-        enable: "{{eq .role_type `sales`}}"
-        fields:
-          - field: supervisor_user_id
-            template: "{{must .supervisor_user_id}}"
-            err_msg: 销售必须选择主管
+      head:
+        default: ""
+      ower_wx_alias:
+        default: ""
+      phone:
+        default: ""
+      phone_user:
+        type: int
+        default: 0
+      user_id:
+        type: int
+        default: 0
+      wx_id:
+        default: ""
+      wx_target:
+        type: int
+        default: 1
+      status:
+        default: normal
+      description:
+        default: ""
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{.session_user_id}}"
     filter:
-      relation_id: "[relation_id]"
+      employee_id: "[employee_id]"
 
-  - key: travel_org_user_delete
+  - key: travel_employee_delete
     http: true
-    module: model_delete
-    table: travel_agency_user_rel
+    module: model_update
+    table: travel_employee
     params:
-      relation_id_list:
+      employee_id_list:
         check:
-          template: "{{must .relation_id_list}}"
-          err_msg: 请选择要删除的数据
+          template: "{{must .employee_id_list}}"
+          err_msg: 请选择要删除的员工
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{.session_user_id}}"
     filter:
-      relation_id__in: "[relation_id_list]"
+      employee_id__in: "[employee_id_list]"
+    update_fields:
+      - status
+      - modify_time
+      - modify_user
+    update_values:
+      status: "deleted"

@@ -6,7 +6,6 @@ package autodesk
 
 const TableNameTbProjectManagerConfig = "tb_project_manager_config"
 
-
 type TbProjectManagerConfig struct {
 	TbProjectManagerConfigID string  `gorm:"column:tb_project_manager_config_id;primaryKey" json:"tb_project_manager_config_id"` // ID
 	ProjectManager           *string `gorm:"column:project_manager" json:"project_manager"`                                      // 描述

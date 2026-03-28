@@ -13,7 +13,8 @@ type AnalysisAttendance struct {
 	templateService.BaseHandler
 }
 
-/**
+/*
+*
 @param checkin 一次考勤记录
 @dict 按照天的考勤
 */

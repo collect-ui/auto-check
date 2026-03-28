@@ -7,16 +7,14 @@ package doc
 const ImgDirName = "img_dir"
 
 type ImgDir struct {
-	ImgDirID string  `gorm:"column:img_dir_id;primaryKey" json:"img_dir_id"`
-	Name               *string `gorm:"column:name" json:"name"`               //
-	Code               *string `gorm:"column:code" json:"code"`               //
-	OrderIndex         *int32  `gorm:"column:order_index" json:"order_index"`
-	CreateTime         *string `gorm:"column:create_time" json:"create_time"`
-	CreateUser         *string `gorm:"column:create_user" json:"create_user"`
-	ParentID           *string `gorm:"column:parent_id" json:"parent_id"`
-
+	ImgDirID   string  `gorm:"column:img_dir_id;primaryKey" json:"img_dir_id"`
+	Name       *string `gorm:"column:name" json:"name"` //
+	Code       *string `gorm:"column:code" json:"code"` //
+	OrderIndex *int32  `gorm:"column:order_index" json:"order_index"`
+	CreateTime *string `gorm:"column:create_time" json:"create_time"`
+	CreateUser *string `gorm:"column:create_user" json:"create_user"`
+	ParentID   *string `gorm:"column:parent_id" json:"parent_id"`
 }
-
 
 func (*ImgDir) TableName() string {
 	return ImgDirName
