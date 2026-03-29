@@ -1566,308 +1566,109 @@
                                                         "children": "聊天记录"
                                                       },
                                                       {
-                                                        "tag": "div",
-                                                        "style": {
-                                                          "marginBottom": "20px"
-                                                        },
-                                                        "children": [
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "display": "flex",
-                                                              "flexDirection": "row",
-                                                              "alignItems": "flex-start",
-                                                              "gap": "10px",
-                                                              "marginBottom": "16px"
-                                                            },
-                                                            "children": [
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "flexShrink": 0
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "image",
-                                                                    "src": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
-                                                                    "style": {
-                                                                      "width": "36px",
-                                                                      "height": "36px",
-                                                                      "borderRadius": "50%",
-                                                                      "border": "1px solid #e5e7eb"
+                                                        "tag": "listview",
+                                                        "keyField": "id",
+                                                        "itemData": "${chatDetailList}",
+                                                        "itemAttr": {
+                                                          "tag": "div",
+                                                          "style": {
+                                                            "display": "block",
+                                                            "width": "100%",
+                                                            "margin": "0 0 16px 0"
+                                                          },
+                                                          "children": [
+                                                            {
+                                                              "tag": "div",
+                                                              "style": {
+                                                                "display": "flex",
+                                                                "flexDirection": "${row.isSelf?'row-reverse':'row'}",
+                                                                "alignItems": "flex-start",
+                                                                "gap": "10px"
+                                                              },
+                                                              "children": [
+                                                                {
+                                                                  "tag": "div",
+                                                                  "style": {
+                                                                    "flexShrink": 0
+                                                                  },
+                                                                  "children": [
+                                                                    {
+                                                                      "tag": "image",
+                                                                      "visible": "${!!row.ownerHead}",
+                                                                      "src": "${row.ownerHead}",
+                                                                      "style": {
+                                                                        "width": "36px",
+                                                                        "height": "36px",
+                                                                        "borderRadius": "50%",
+                                                                        "border": "1px solid #e5e7eb"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "tag": "div",
+                                                                      "visible": "${!row.ownerHead}",
+                                                                      "style": {
+                                                                        "width": "36px",
+                                                                        "height": "36px",
+                                                                        "borderRadius": "50%",
+                                                                        "display": "flex",
+                                                                        "alignItems": "center",
+                                                                        "justifyContent": "center",
+                                                                        "background": "#e5e7eb",
+                                                                        "color": "#6b7280",
+                                                                        "fontSize": "14px",
+                                                                        "fontWeight": 600
+                                                                      },
+                                                                      "children": "${(row.ownerNickName||'未').slice(0,1)}"
                                                                     }
-                                                                  }
-                                                                ]
-                                                              },
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "maxWidth": "70%"
+                                                                  ]
                                                                 },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "13px",
-                                                                      "color": "#6b7280",
-                                                                      "marginBottom": "4px"
-                                                                    },
-                                                                    "children": "金佑担保&全国旅游保函专员-小唐"
+                                                                {
+                                                                  "tag": "div",
+                                                                  "style": {
+                                                                    "maxWidth": "70%"
                                                                   },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "background": "#f3f4f6",
-                                                                      "color": "#111827",
-                                                                      "padding": "10px 14px",
-                                                                      "borderRadius": "14px",
-                                                                      "borderTopLeftRadius": "4px",
-                                                                      "fontSize": "14px",
-                                                                      "lineHeight": "22px",
-                                                                      "wordBreak": "break-word"
+                                                                  "children": [
+                                                                    {
+                                                                      "tag": "div",
+                                                                      "style": {
+                                                                        "fontSize": "13px",
+                                                                        "color": "#6b7280",
+                                                                        "marginBottom": "4px",
+                                                                        "textAlign": "${row.isSelf?'right':'left'}"
+                                                                      },
+                                                                      "children": "${row.ownerNickName||row.senderName||'未知'}"
                                                                     },
-                                                                    "children": "好的，保函已经办理完成"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "12px",
-                                                                      "color": "#9ca3af",
-                                                                      "marginTop": "4px"
+                                                                    {
+                                                                      "tag": "div",
+                                                                      "style": {
+                                                                        "background": "${row.isSelf?'#1677ff':'#f3f4f6'}",
+                                                                        "color": "${row.isSelf?'#ffffff':'#111827'}",
+                                                                        "padding": "10px 14px",
+                                                                        "borderRadius": "14px",
+                                                                        "borderTopLeftRadius": "${row.isSelf?'14px':'4px'}",
+                                                                        "borderTopRightRadius": "${row.isSelf?'4px':'14px'}",
+                                                                        "fontSize": "14px",
+                                                                        "lineHeight": "22px",
+                                                                        "wordBreak": "break-word"
+                                                                      },
+                                                                      "children": "${row.content}"
                                                                     },
-                                                                    "children": "03-28 14:33:39"
-                                                                  }
-                                                                ]
-                                                              }
-                                                            ]
-                                                          },
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "display": "flex",
-                                                              "flexDirection": "row-reverse",
-                                                              "alignItems": "flex-start",
-                                                              "gap": "10px",
-                                                              "marginBottom": "16px"
-                                                            },
-                                                            "children": [
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "flexShrink": 0
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "width": "36px",
-                                                                      "height": "36px",
-                                                                      "borderRadius": "50%",
-                                                                      "display": "flex",
-                                                                      "alignItems": "center",
-                                                                      "justifyContent": "center",
-                                                                      "background": "#e5e7eb",
-                                                                      "color": "#6b7280",
-                                                                      "fontSize": "14px",
-                                                                      "fontWeight": 600
-                                                                    },
-                                                                    "children": "我"
-                                                                  }
-                                                                ]
-                                                              },
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "maxWidth": "70%"
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "13px",
-                                                                      "color": "#6b7280",
-                                                                      "marginBottom": "4px",
-                                                                      "textAlign": "right"
-                                                                    },
-                                                                    "children": "我"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "background": "#1677ff",
-                                                                      "color": "#ffffff",
-                                                                      "padding": "10px 14px",
-                                                                      "borderRadius": "14px",
-                                                                      "borderTopRightRadius": "4px",
-                                                                      "fontSize": "14px",
-                                                                      "lineHeight": "22px",
-                                                                      "wordBreak": "break-word"
-                                                                    },
-                                                                    "children": "谢谢，麻烦发一下电子版"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "12px",
-                                                                      "color": "#9ca3af",
-                                                                      "marginTop": "4px",
-                                                                      "textAlign": "right"
-                                                                    },
-                                                                    "children": "03-28 14:33:45"
-                                                                  }
-                                                                ]
-                                                              }
-                                                            ]
-                                                          },
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "display": "flex",
-                                                              "flexDirection": "row",
-                                                              "alignItems": "flex-start",
-                                                              "gap": "10px",
-                                                              "marginBottom": "16px"
-                                                            },
-                                                            "children": [
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "flexShrink": 0
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "image",
-                                                                    "src": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
-                                                                    "style": {
-                                                                      "width": "36px",
-                                                                      "height": "36px",
-                                                                      "borderRadius": "50%",
-                                                                      "border": "1px solid #e5e7eb"
+                                                                    {
+                                                                      "tag": "div",
+                                                                      "style": {
+                                                                        "fontSize": "12px",
+                                                                        "color": "#9ca3af",
+                                                                        "marginTop": "4px",
+                                                                        "textAlign": "${row.isSelf?'right':'left'}"
+                                                                      },
+                                                                      "children": "${formatDate(row.messageTime,'MM-DD HH:mm:ss')}"
                                                                     }
-                                                                  }
-                                                                ]
-                                                              },
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "maxWidth": "70%"
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "13px",
-                                                                      "color": "#6b7280",
-                                                                      "marginBottom": "4px"
-                                                                    },
-                                                                    "children": "金佑担保&全国旅游保函专员-小唐"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "background": "#f3f4f6",
-                                                                      "color": "#111827",
-                                                                      "padding": "10px 14px",
-                                                                      "borderRadius": "14px",
-                                                                      "borderTopLeftRadius": "4px",
-                                                                      "fontSize": "14px",
-                                                                      "lineHeight": "22px",
-                                                                      "wordBreak": "break-word"
-                                                                    },
-                                                                    "children": "已发送到您的邮箱"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "12px",
-                                                                      "color": "#9ca3af",
-                                                                      "marginTop": "4px"
-                                                                    },
-                                                                    "children": "03-28 14:33:50"
-                                                                  }
-                                                                ]
-                                                              }
-                                                            ]
-                                                          },
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "display": "flex",
-                                                              "flexDirection": "row-reverse",
-                                                              "alignItems": "flex-start",
-                                                              "gap": "10px",
-                                                              "marginBottom": "16px"
-                                                            },
-                                                            "children": [
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "flexShrink": 0
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "width": "36px",
-                                                                      "height": "36px",
-                                                                      "borderRadius": "50%",
-                                                                      "display": "flex",
-                                                                      "alignItems": "center",
-                                                                      "justifyContent": "center",
-                                                                      "background": "#e5e7eb",
-                                                                      "color": "#6b7280",
-                                                                      "fontSize": "14px",
-                                                                      "fontWeight": 600
-                                                                    },
-                                                                    "children": "我"
-                                                                  }
-                                                                ]
-                                                              },
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "maxWidth": "70%"
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "13px",
-                                                                      "color": "#6b7280",
-                                                                      "marginBottom": "4px",
-                                                                      "textAlign": "right"
-                                                                    },
-                                                                    "children": "我"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "background": "#1677ff",
-                                                                      "color": "#ffffff",
-                                                                      "padding": "10px 14px",
-                                                                      "borderRadius": "14px",
-                                                                      "borderTopRightRadius": "4px",
-                                                                      "fontSize": "14px",
-                                                                      "lineHeight": "22px",
-                                                                      "wordBreak": "break-word"
-                                                                    },
-                                                                    "children": "收到，非常感谢！"
-                                                                  },
-                                                                  {
-                                                                    "tag": "div",
-                                                                    "style": {
-                                                                      "fontSize": "12px",
-                                                                      "color": "#9ca3af",
-                                                                      "marginTop": "4px",
-                                                                      "textAlign": "right"
-                                                                    },
-                                                                    "children": "03-28 14:34:05"
-                                                                  }
-                                                                ]
-                                                              }
-                                                            ]
-                                                          }
-                                                        ]
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
                                                       }
                                                     ]
                                                   }
