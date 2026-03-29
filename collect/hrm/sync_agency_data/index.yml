@@ -299,62 +299,87 @@ service:
           service: spider_qi_work.query_chat_list
           authorization: "[token_data.authorization]"
           companyId: "[token_data.companyId]"
-          controlId: "[token_data.companyId]"
+          controlId: "[token_data.controlId]"
           loginUserId: "[token_data.userId]"
           createDepartmentId: "[token_data.departmentId]"
           wxId: "[employee.wx_id]"
           nickName: "[employee.nick_name]"
-          userId: "[token_data.userId]"
+          userId: "[employee.user_id]"
           search: ""
           start: 1
           limit: 500
         save_field: chat_contact_raw_list
       
-      # # 3. 映射通讯录字段并添加agency_id
-      # - key: update_array
-      #   enable: "{{gt (len .chat_contact_raw_list) 0}}"
-      #   foreach: "[chat_contact_raw_list]"
-      #   item: item
-      #   fields:
-      #     - field: contact_id
-      #       template: "{{md5 .item.wxId .item.ownerWxId}}"
-      #     - field: agency_id
-      #       template: "[agency_id]"
-      #     - field: wx_id
-      #       template: "[item.wxId]"
-      #     - field: contact_nick_name
-      #       template: "[item.contactNickName]"
-      #     - field: nick_name
-      #       template: "[item.nickName]"
-      #     - field: head
-      #       template: "[item.head]"
-      #     - field: content
-      #       template: "[item.content]"
-      #     - field: message_time
-      #       template: "[item.messageTime]"
-      #     - field: owner_wx_id
-      #       template: "[item.ownerWxId]"
-      #     - field: person_count
-      #       template: "[item.personCount]"
-      #     - field: type
-      #       template: "[item.type]"
-      #     - field: wx_alias
-      #       template: "[item.wxAlias]"
-      #     - field: is_group
-      #       template: "{{if contains .item.wxId \"@chatroom\"}}1{{else}}0{{end}}"
-      #     - field: create_time
-      #       template: "{{current_date_time}}"
-      #     - field: modify_time
-      #       template: "{{current_date_time}}"
-      #   save_field: chat_contact_list
+       # 3. 映射通讯录字段并添加agency_id
+      - key: update_array
+        enable: "{{gt (len .chat_contact_raw_list) 0}}"
+        foreach: "[chat_contact_raw_list]"
+        item: item
+        fields:
+          - field: contact_id
+            template: "{{.item.wxId}}#{{.item.ownerWxId}}"
+          - field: agency_id
+            template: "[agency_id]"
+          - field: employee_id
+            template: "[employee_id]"
+          - field: wx_id
+            template: "[item.wxId]"
+          - field: contact_nick_name
+            template: "[item.contactNickName]"
+          - field: nick_name
+            template: "[item.nickName]"
+          - field: is_group
+            template: "{{ if str_contains .item.wxId `@chatroom`}}1{{else}}0{{end}}"
+
+          - field: content
+            template: "[item.content]"
+          - field: message_time
+            template: "[item.messageTime]"
+          - field: owner_wx_id
+            template: "[item.ownerWxId]"
+          - field: person_count
+            template: "[item.personCount]"
+          - field: wx_alias
+            template: "[item.wxAlias]"
+
+          - field: create_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+          - field: exists
+            template: "0"
+      - key: service2field
+        name: 获取本地聊天群
+        service:
+          service: hrm.travel_chat_contact_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+        save_field: local_chat_contact_list
+      - key: update_array_from_array
+        name: ""
+        foreach: "[chat_contact_raw_list]"
+        item: item
+        field: "[contact_id]"
+        right: "[local_chat_contact_list]"
+        right_field: "[contact_id]"
+        fields:
+          - field: exists
+            template: "1"
+      - key: filter_arr
+        name: 过滤新增数组
+        foreach: "[chat_contact_raw_list]"
+        item: item
+        if_template: "{{eq .item.exists `0`}}"
+        save_field: add_list
+
       
-      # # 4. 批量保存通讯录（增量新增）
-      # - key: service2field
-      #   enable: "{{gt (len .chat_contact_list) 0}}"
-      #   name: 批量保存通讯录
-      #   service:
-      #     service: hrm.travel_chat_contact_bulk_create
-      #     contact_list: "[chat_contact_list]"
+       # 4. 批量保存通讯录（增量新增）
+      - key: service2field
+        enable: "{{gt (len .add_list) 0}}"
+        name: 批量保存通讯录
+        service:
+          service: hrm.travel_chat_contact_bulk_create
+          contact_list: "[add_list]"
       
       # 5. 返回同步结果
       - key: params2result
@@ -363,3 +388,5 @@ service:
             to: contact_list
           - from: "[chat_contact_raw_list]"
             to: chat_contact_raw_list
+          - from: "[add_list]"
+            to: add_list

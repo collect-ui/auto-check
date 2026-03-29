@@ -1,0 +1,16 @@
+service:
+  - key: travel_chat_contact_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_chat_contact
+    model_field: contact_list
+    params:
+      contact_list:
+        check:
+          template: "{{must .contact_list}}"
+          err_msg: 通讯录列表不能为空
+
+  - key: travel_chat_contact_list
+    http: true
+    module: sql
+    data_file: travel_chat_contact_list.sql

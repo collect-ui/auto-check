@@ -31,3 +31,6 @@ service:
 
   - name: "旅行社数据同步"
     path: "sync_agency_data/index.yml"
+
+  - name: "通讯录"
+    path: "travel_chat_contact/index.yml"

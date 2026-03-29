@@ -65,6 +65,26 @@ service:
       create_user:
         template: "{{.session_user_id}}"
 
+  - key: travel_agency_wx_update_simple
+    http: true
+    module: model_update
+    table: travel_agency
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 商家ID不能为空
+    filter:
+      agency_id: "[agency_id]"
+    update_fields:
+      - wx_sync_access_token
+      - wx_sync_company_id
+      - wx_sync_user_id
+      - wx_sync_access_token
+      - wx_sync_department_id
+      - wx_sync_role_id
+      - wx_sync_role_id
+      - wx_sync_expire_time
   - key: travel_agency_update
     http: true
     module: model_update
@@ -278,39 +298,3 @@ service:
     filter:
       employee_id__in: "[employee_id_list]"
 
-  - key: travel_chat_contact_bulk_create
-    http: true
-    module: bulk_create
-    table: travel_chat_contact
-    params:
-      contact_list:
-        check:
-          template: "{{must .contact_list}}"
-          err_msg: 通讯录列表不能为空
-
-  - key: travel_chat_contact_list
-    http: true
-    module: model_list
-    table: travel_chat_contact
-    params:
-      agency_id:
-        check:
-          template: "{{must .agency_id}}"
-          err_msg: 旅行社ID不能为空
-      pagination:
-        default: true
-      page:
-        default: 1
-      size:
-        default: 100
-      search:
-        default: ""
-    filter:
-      agency_id__eq: "[agency_id]"
-    search_like_fields:
-      - contact_nick_name
-      - nick_name
-      - wx_id
-    order:
-      - message_time
-      - desc
