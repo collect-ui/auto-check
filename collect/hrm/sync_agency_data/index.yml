@@ -22,7 +22,7 @@ service:
       # 2. 场景A：Token有效，从数据库返回字段
       - key: params2result
         name: Token有效，从数据库返回字段
-        enable: "{{and .agency_info.wx_sync_access_token (gt .agency_info.wx_sync_expire_time (unix_time 0 `second`))}}"
+        enable: "{{and .agency_info.wx_sync_access_token (gt .agency_info.wx_sync_expire_time (unix_time 5 `hour/milli`))}}"
         fields:
           - from: "[agency_info.wx_sync_access_token]"
             to: "access_token"
@@ -256,69 +256,110 @@ service:
           service: hrm.travel_employee_bulk_delete
           employee_id_list: "[remove_id_list]"
       
-      # 10. 获取微信聊天通讯录
+      # 10. 返回同步结果用于调试
+      - key: param2result
+        field: "[change_list]"
+
+  - key: sync_chat_contact
+    name: 同步员工通讯录
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: 员工ID不能为空
+    handler_params:
+      # 1. 获取员工信息
+      - key: service2field
+        name: 获取员工信息
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          pagination: false
+          to_obj: true
+        save_field: employee
+      # 1. 获取企业微信token
+      - key: service2field
+        service:
+          service: hrm.get_qi_work_token
+          agency_id: "[agency_id]"
+        save_field: token_data
+      
+      # 2. 获取微信聊天通讯录
       - key: service2field
         name: 获取聊天通讯录
         service:
           service: spider_qi_work.query_chat_list
-          authorization: "${session_authorization}"
-          companyId: "${session_company_id}"
-          controlId: "${session_user_id}"
-          loginUserId: "${session_user_id}"
-          wxId: "${currentAgency.wx_id}"
-          nickName: "${currentAgency.agency_name}"
-          userId: "${session_user_id}"
+          authorization: "[token_data.authorization]"
+          companyId: "[token_data.companyId]"
+          controlId: "[token_data.companyId]"
+          loginUserId: "[token_data.userId]"
+          createDepartmentId: "[token_data.departmentId]"
+          wxId: "[employee.wx_id]"
+          nickName: "[employee.nick_name]"
+          userId: "[token_data.userId]"
           search: ""
           start: 1
           limit: 500
         save_field: chat_contact_raw_list
       
-      # 11. 映射通讯录字段并添加agency_id
-      - key: update_array
-        enable: "{{gt (len .chat_contact_raw_list) 0}}"
-        foreach: "[chat_contact_raw_list]"
-        item: item
+      # # 3. 映射通讯录字段并添加agency_id
+      # - key: update_array
+      #   enable: "{{gt (len .chat_contact_raw_list) 0}}"
+      #   foreach: "[chat_contact_raw_list]"
+      #   item: item
+      #   fields:
+      #     - field: contact_id
+      #       template: "{{md5 .item.wxId .item.ownerWxId}}"
+      #     - field: agency_id
+      #       template: "[agency_id]"
+      #     - field: wx_id
+      #       template: "[item.wxId]"
+      #     - field: contact_nick_name
+      #       template: "[item.contactNickName]"
+      #     - field: nick_name
+      #       template: "[item.nickName]"
+      #     - field: head
+      #       template: "[item.head]"
+      #     - field: content
+      #       template: "[item.content]"
+      #     - field: message_time
+      #       template: "[item.messageTime]"
+      #     - field: owner_wx_id
+      #       template: "[item.ownerWxId]"
+      #     - field: person_count
+      #       template: "[item.personCount]"
+      #     - field: type
+      #       template: "[item.type]"
+      #     - field: wx_alias
+      #       template: "[item.wxAlias]"
+      #     - field: is_group
+      #       template: "{{if contains .item.wxId \"@chatroom\"}}1{{else}}0{{end}}"
+      #     - field: create_time
+      #       template: "{{current_date_time}}"
+      #     - field: modify_time
+      #       template: "{{current_date_time}}"
+      #   save_field: chat_contact_list
+      
+      # # 4. 批量保存通讯录（增量新增）
+      # - key: service2field
+      #   enable: "{{gt (len .chat_contact_list) 0}}"
+      #   name: 批量保存通讯录
+      #   service:
+      #     service: hrm.travel_chat_contact_bulk_create
+      #     contact_list: "[chat_contact_list]"
+      
+      # 5. 返回同步结果
+      - key: params2result
         fields:
-          - field: contact_id
-            template: "{{md5 .item.wxId .item.ownerWxId}}"
-          - field: agency_id
-            template: "[agency_id]"
-          - field: wx_id
-            template: "[item.wxId]"
-          - field: contact_nick_name
-            template: "[item.contactNickName]"
-          - field: nick_name
-            template: "[item.nickName]"
-          - field: head
-            template: "[item.head]"
-          - field: content
-            template: "[item.content]"
-          - field: message_time
-            template: "[item.messageTime]"
-          - field: owner_wx_id
-            template: "[item.ownerWxId]"
-          - field: person_count
-            template: "[item.personCount]"
-          - field: type
-            template: "[item.type]"
-          - field: wx_alias
-            template: "[item.wxAlias]"
-          - field: is_group
-            template: "{{if contains .item.wxId \"@chatroom\"}}1{{else}}0{{end}}"
-          - field: create_time
-            template: "{{current_date_time}}"
-          - field: modify_time
-            template: "{{current_date_time}}"
-        save_field: chat_contact_list
-      
-      # 12. 批量保存通讯录（增量新增）
-      - key: service2field
-        enable: "{{gt (len .chat_contact_list) 0}}"
-        name: 批量保存通讯录
-        service:
-          service: hrm.travel_chat_contact_bulk_create
-          contact_list: "[chat_contact_list]"
-      
-      # 13. 返回同步结果用于调试
-      - key: param2result
-        field: "[change_list]"
+          - from: "[chat_contact_list]"
+            to: contact_list
+          - from: "[chat_contact_raw_list]"
+            to: chat_contact_raw_list

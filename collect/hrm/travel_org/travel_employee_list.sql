@@ -13,6 +13,9 @@ where e.agency_id = {{.agency_id}}
     or e.wx_id like {{.search}}
   )
   {{ end }}
+{{ if .employee_id}}  
+and e.employee_id = {{.employee_id}}
+{{ end }}
 order by e.create_time desc
 {{ if .pagination }}
 limit {{.start}} , {{.size}}

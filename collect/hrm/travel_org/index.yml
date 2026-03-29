@@ -126,10 +126,15 @@ service:
         default: true
       count:
         default: true
+      to_obj: 
+        default: false
     data_file: travel_employee_list.sql
     count_file: travel_employee_count.sql
     pagination: pagination
     count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
 
   - key: travel_employee_save
     http: true

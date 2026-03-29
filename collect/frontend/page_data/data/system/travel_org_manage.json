@@ -43,8 +43,10 @@
     "currentAgency": {},
     "employeeList": [],
     "employeeCount": 0,
-    "chatTabActiveKey": "chat",
-    "selectedChatUser": null,
+    "selectedEmployee": null,
+    "employeeDetailTab": "chat",
+    "contactList": [],
+    "contactCount": 0,
     "chatList": [
       {
         "id": 1,
@@ -150,6 +152,23 @@
       "adapt": {
         "agencyList": "${data}",
         "agencyCount": "${count}"
+      }
+    },
+    {
+      "tag": "ajax",
+      "group": "contactList",
+      "api": "post:/template_data/data?service=hrm.travel_chat_contact_list",
+      "enable": "${!!(selectedEmployee&&currentAgency.agency_id)}",
+      "appendFields": {
+        "agency_id": "${currentAgency.agency_id}",
+        "pagination": true,
+        "page": 1,
+        "size": 100,
+        "search": ""
+      },
+      "adapt": {
+        "contactList": "${data}",
+        "contactCount": "${count}"
       }
     }
   ],
@@ -333,6 +352,8 @@
                         "currentAgency": "${row}",
                         "agencySelection": "${[row]}",
                         "employeeSelection": [],
+                        "selectedEmployee": null,
+                        "employeeDetailTab": "chat",
                         "employeeSearchForm": {
                           "page": 1,
                           "size": 20,
@@ -710,640 +731,201 @@
               "tag": "layout-fit",
               "visible": "${!!currentAgency.agency_id}",
               "className": "h100",
-              "title": "员工管理",
-              "topRight": [
+              "title": "",
+              "topRight": [],
+              "searchToolBar": [],
+              "children": [
                 {
-                  "tag": "button",
-                  "type": "primary",
-                  "icon": "SyncOutlined",
-                  "size": "small",
-                  "title": "同步微信用户",
-                  "children": "同步微信",
-                  "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${!currentAgency.agency_id}",
-                  "confirm": {
-                    "title": "确认同步吗？",
-                    "description": "将从微信同步用户数据，新增的会创建，修改的会更新，本地有但微信没有的会删除"
-                  },
-                  "action": [
-                    {
-                      "tag": "ajax",
-                      "api": "post:/template_data/data?service=hrm.sync_wechat_user",
-                      "data": {
-                        "agency_id": "${currentAgency.agency_id}"
-                      }
-                    },
-                    {
-                      "tag": "reload-init-action",
-                      "group": "employeeList"
-                    }
-                  ]
-                },
-                {
-                  "tag": "button",
-                  "type": "primary",
-                  "icon": "PlusOutlined",
-                  "size": "small",
-                  "title": "新增员工",
-                  "children": "新增",
-                  "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${!currentAgency.agency_id}",
-                  "action": [
-                    {
-                      "tag": "update-store",
-                      "value": {
-                        "employeeDialogVisible": true,
-                        "employeeOp": "add"
-                      }
-                    },
-                    {
-                      "tag": "reset-form",
-                      "formName": "employeeForm"
-                    }
-                  ]
-                },
-                {
-                  "tag": "button",
-                  "icon": "EditOutlined",
-                  "size": "small",
-                  "title": "编辑员工",
-                  "children": "编辑",
-                  "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${employeeSelection.length != 1}",
-                  "action": [
-                    {
-                      "tag": "update-store",
-                      "value": {
-                        "employeeDialogVisible": true,
-                        "employeeOp": "edit"
-                      }
-                    },
-                    {
-                      "tag": "reset-form",
-                      "formName": "employeeForm"
-                    },
-                    {
-                      "tag": "update-form",
-                      "formName": "employeeForm",
-                      "value": "${employeeSelection[0]}"
-                    }
-                  ]
-                },
-                {
-                  "tag": "button",
-                  "icon": "DeleteOutlined",
-                  "size": "small",
-                  "title": "删除员工",
-                  "children": "删除",
-                  "danger": true,
-                  "visible": "${!!currentAgency.agency_id}",
-                  "disabled": "${employeeSelection.length <= 0}",
-                  "confirm": {
-                    "title": "确认删除吗？",
-                    "description": "${'确认删除'+employeeSelection.length+'个员工吗？'}"
-                  },
-                  "action": [
-                    {
-                      "tag": "ajax",
-                      "api": "post:/template_data/data?service=hrm.travel_employee_delete",
-                      "data": {
-                        "employee_id_list": "${employeeSelection.map(item=>item.employee_id)}"
-                      }
-                    },
-                    {
-                      "tag": "reload-init-action",
-                      "group": "employeeList"
-                    }
-                  ]
-                }
-              ],
-              "searchToolBar": [
-                {
-                  "tag": "form",
-                  "name": "employee-search-form",
-                  "visible": "${!!currentAgency.agency_id}",
+                  "tag": "panel-group",
+                  "direction": "horizontal",
+                  "className": "h100",
                   "style": {
-                    "width": "100%"
+                    "height": "100%"
                   },
                   "children": [
                     {
-                      "tag": "form-item",
-                      "name": "search",
-                      "label": "员工搜索",
-                      "style": {
-                        "marginBottom": "8px"
-                      },
+                      "tag": "panel",
+                      "defaultSize": 22,
+                      "minSize": 16,
+                      "className": "h100 padding-right10",
                       "children": [
                         {
-                          "tag": "input",
-                          "isSearch": true,
-                          "prefixIcon": "SearchOutlined",
-                          "enterButton": "搜索",
-                          "allowClear": true,
-                          "style": {
-                            "width": "100%"
-                          },
-                          "placeholder": "姓名、手机号、微信别名或微信ID",
-                          "onSearchAction": [
-                            {
-                              "tag": "update-store",
-                              "value": {
-                                "employeeSearchForm.page": 1
-                              }
-                            },
-                            {
-                              "tag": "reload-init-action",
-                              "group": "employeeList"
-                            }
-                          ],
-                          "action": [
-                            {
-                              "tag": "update-store",
-                              "trigger": "onChange",
-                              "value": {
-                                "employeeSearchForm.search": "${value}",
-                                "employeeSearchForm.page": 1
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "children": [
-                {
-                  "tag": "tabs",
-                  "activeKey": "${chatTabActiveKey}",
-                  "tabBarStyle": {
-                    "marginBottom": "0"
-                  },
-                  "action": [
-                    {
-                      "tag": "update-store",
-                      "trigger": "onChange",
-                      "value": {
-                        "chatTabActiveKey": "${value}"
-                      }
-                    }
-                  ],
-                  "items": [
-                    {
-                      "key": "employee",
-                      "label": "员工列表",
-                      "children": [
-                        {
-                          "tag": "table",
-                          "selection": "${employeeSelection}",
-                          "rowSelection": "multiple",
-                          "columnDefs": [
-                            {
-                              "headerName": "#",
-                              "width": 60,
-                              "valueGetter": "node.rowIndex + 1",
-                              "sortable": false,
-                              "pinned": "left"
-                            },
-                            {
-                              "pinned": "left",
-                              "checkboxSelection": true,
-                              "headerCheckboxSelection": true,
-                              "headerName": "姓名",
-                              "field": "nick_name"
-                            },
-                            {
-                              "headerName": "手机号",
-                              "field": "phone"
-                            },
-                            {
-                              "headerName": "微信别名",
-                              "field": "ower_wx_alias"
-                            },
-                            {
-                              "headerName": "微信ID",
-                              "field": "wx_id"
-                            },
-                            {
-                              "headerName": "头像",
-                              "field": "head",
-                              "cellRender": {
-                                "tag": "image",
-                                "visible": "${!!row.head}",
-                                "src": "${row.head}",
-                                "style": {
-                                  "width": "32px",
-                                  "height": "32px",
-                                  "borderRadius": "50%"
-                                }
-                              }
-                            },
-                            {
-                              "headerName": "创建时间",
-                              "field": "create_time"
-                            }
-                          ],
-                          "rowData": "${employeeList}"
-                        }
-                      ]
-                    },
-                    {
-                      "key": "chat",
-                      "label": "聊天记录",
-                      "children": [
-                        {
-                          "tag": "panel-group",
-                          "direction": "horizontal",
+                          "tag": "layout-fit",
                           "className": "h100",
-                          "style": {
-                            "height": "calc(100% - 40px)"
-                          },
-                          "children": [
+                          "title": "",
+                          "topRight": [
                             {
-                              "tag": "panel",
-                              "defaultSize": 40,
-                              "minSize": 30,
-                              "className": "h100 border-right",
+                              "tag": "button",
+                              "type": "primary",
+                              "icon": "SyncOutlined",
+                              "size": "small",
+                              "title": "同步微信用户",
+                              "children": "同步微信",
+                              "confirm": {
+                                "title": "确认同步吗？",
+                                "description": "将从微信同步用户数据，新增的会创建，修改的会更新，本地有但微信没有的会删除"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.sync_wechat_user",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}"
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "employeeList"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "TeamOutlined",
+                              "size": "small",
+                              "title": "同步通讯录",
+                              "children": "同步通讯录",
+                              "disabled": "${employeeSelection.length != 1}",
+                              "confirm": {
+                                "title": "确认同步通讯录吗？",
+                                "description": "将同步选中员工的微信聊天通讯录到本地"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.sync_chat_contact",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${employeeSelection[0].employee_id}"
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "contactList"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "primary",
+                              "icon": "PlusOutlined",
+                              "size": "small",
+                              "title": "新增员工",
+                              "children": "",
+                              "action": [
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "employeeDialogVisible": true,
+                                    "employeeOp": "add"
+                                  }
+                                },
+                                {
+                                  "tag": "reset-form",
+                                  "formName": "employeeForm"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "icon": "EditOutlined",
+                              "size": "small",
+                              "title": "编辑员工",
+                              "children": "",
+                              "disabled": "${employeeSelection.length != 1}",
+                              "action": [
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "employeeDialogVisible": true,
+                                    "employeeOp": "edit"
+                                  }
+                                },
+                                {
+                                  "tag": "reset-form",
+                                  "formName": "employeeForm"
+                                },
+                                {
+                                  "tag": "update-form",
+                                  "formName": "employeeForm",
+                                  "value": "${employeeSelection[0]}"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "icon": "DeleteOutlined",
+                              "size": "small",
+                              "title": "删除员工",
+                              "children": "",
+                              "danger": true,
+                              "disabled": "${employeeSelection.length <= 0}",
+                              "confirm": {
+                                "title": "确认删除吗？",
+                                "description": "${'确认删除'+employeeSelection.length+'个员工吗？'}"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.travel_employee_delete",
+                                  "data": {
+                                    "employee_id_list": "${employeeSelection.map(item=>item.employee_id)}"
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "employeeList"
+                                }
+                              ]
+                            }
+                          ],
+                          "searchToolBar": [
+                            {
+                              "tag": "form",
+                              "name": "employee-search-form",
+                              "style": {
+                                "width": "100%"
+                              },
                               "children": [
                                 {
-                                  "tag": "layout-fit",
-                                  "className": "h100",
-                                  "title": "聊天列表",
-                                  "searchToolBar": [
+                                  "tag": "form-item",
+                                  "name": "search",
+                                  "label": "员工搜索",
+                                  "style": {
+                                    "marginBottom": "8px"
+                                  },
+                                  "children": [
                                     {
                                       "tag": "input",
                                       "isSearch": true,
                                       "prefixIcon": "SearchOutlined",
                                       "enterButton": "搜索",
                                       "allowClear": true,
-                                      "placeholder": "搜索聊天",
                                       "style": {
                                         "width": "100%"
-                                      }
-                                    }
-                                  ],
-                                  "children": [
-                                    {
-                                      "tag": "listview",
-                                      "keyField": "id",
-                                      "itemData": "${chatList}",
-                                      "rowClickAction": [
+                                      },
+                                      "placeholder": "姓名、手机号、微信别名或微信ID",
+                                      "onSearchAction": [
                                         {
                                           "tag": "update-store",
                                           "value": {
-                                            "selectedChatUser": "${row}"
+                                            "employeeSearchForm.page": 1
                                           }
+                                        },
+                                        {
+                                          "tag": "reload-init-action",
+                                          "group": "employeeList"
                                         }
                                       ],
-                                      "itemAttr": {
-                                        "tag": "card",
-                                        "size": "small",
-                                        "className": "cursor-pointer",
-                                        "style": {
-                                          "display": "block",
-                                          "width": "100%",
-                                          "margin": "0 0 6px 0",
-                                          "borderRadius": "12px",
-                                          "border": "${selectedChatUser&&selectedChatUser.id===row.id?'1px solid #1677ff':'1px solid #f0f0f0'}",
-                                          "boxShadow": "${selectedChatUser&&selectedChatUser.id===row.id?'0 8px 20px rgba(22,119,255,0.16)':'0 4px 14px rgba(15,23,42,0.08)'}",
-                                          "background": "${selectedChatUser&&selectedChatUser.id===row.id?'linear-gradient(135deg,#eef6ff 0%,#ffffff 100%)':'#ffffff'}"
-                                        },
-                                        "bodyStyle": {
-                                          "padding": "11px 12px"
-                                        },
-                                        "hoverable": true,
-                                        "children": [
-                                          {
-                                            "tag": "row",
-                                            "style": {
-                                              "alignItems": "center"
-                                            },
-                                            "children": [
-                                              {
-                                                "tag": "col",
-                                                "span": 4,
-                                                "style": {
-                                                  "display": "flex",
-                                                  "justifyContent": "center"
-                                                },
-                                                "children": [
-                                                  {
-                                                    "tag": "image",
-                                                    "visible": "${!!(row.isGroup==1?row.ownerHead:row.head)}",
-                                                    "src": "${row.isGroup==1?row.ownerHead:row.head}",
-                                                    "style": {
-                                                      "width": "36px",
-                                                      "height": "36px",
-                                                      "borderRadius": "50%",
-                                                      "overflow": "hidden",
-                                                      "border": "1px solid #dbeafe"
-                                                    }
-                                                  },
-                                                  {
-                                                    "tag": "div",
-                                                    "visible": "${!(row.isGroup==1?row.ownerHead:row.head)}",
-                                                    "style": {
-                                                      "width": "36px",
-                                                      "height": "36px",
-                                                      "borderRadius": "50%",
-                                                      "display": "flex",
-                                                      "alignItems": "center",
-                                                      "justifyContent": "center",
-                                                      "background": "${selectedChatUser&&selectedChatUser.id===row.id?'#1677ff':'#e6f4ff'}",
-                                                      "color": "${selectedChatUser&&selectedChatUser.id===row.id?'#ffffff':'#1677ff'}",
-                                                      "fontSize": "14px",
-                                                      "fontWeight": 700
-                                                    },
-                                                    "children": "${((row.isGroup==1?row.contactNickName:row.nickName)||'聊').slice(0,1)}"
-                                                  }
-                                                ]
-                                              },
-                                              {
-                                                "tag": "col",
-                                                "span": 20,
-                                                "style": {
-                                                  "minWidth": 0
-                                                },
-                                                "children": [
-                                                  {
-                                                    "tag": "row",
-                                                    "style": {
-                                                      "alignItems": "center",
-                                                      "marginBottom": "4px"
-                                                    },
-                                                    "children": [
-                                                      {
-                                                        "tag": "col",
-                                                        "span": 18,
-                                                        "style": {
-                                                          "minWidth": 0
-                                                        },
-                                                        "children": [
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "fontSize": "14px",
-                                                              "lineHeight": "22px",
-                                                              "fontWeight": 600,
-                                                              "color": "#1f2937",
-                                                              "whiteSpace": "nowrap",
-                                                              "overflow": "hidden",
-                                                              "textOverflow": "ellipsis"
-                                                            },
-                                                            "children": "${row.isGroup==1?row.contactNickName:row.nickName}"
-                                                          }
-                                                        ]
-                                                      },
-                                                      {
-                                                        "tag": "col",
-                                                        "span": 6,
-                                                        "style": {
-                                                          "textAlign": "right"
-                                                        },
-                                                        "children": [
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "fontSize": "12px",
-                                                              "color": "#6b7280"
-                                                            },
-                                                            "children": "${formatDate(row.messageTime,'HH:mm')}"
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "tag": "row",
-                                                    "style": {
-                                                      "alignItems": "center"
-                                                    },
-                                                    "children": [
-                                                      {
-                                                        "tag": "col",
-                                                        "span": 18,
-                                                        "style": {
-                                                          "minWidth": 0
-                                                        },
-                                                        "children": [
-                                                          {
-                                                            "tag": "div",
-                                                            "style": {
-                                                              "fontSize": "13px",
-                                                              "lineHeight": "20px",
-                                                              "color": "#6b7280",
-                                                              "whiteSpace": "nowrap",
-                                                              "overflow": "hidden",
-                                                              "textOverflow": "ellipsis"
-                                                            },
-                                                            "children": "${row.content}"
-                                                          }
-                                                        ]
-                                                      },
-                                                      {
-                                                        "tag": "col",
-                                                        "span": 6,
-                                                        "style": {
-                                                          "textAlign": "right"
-                                                        },
-                                                        "children": [
-                                                          {
-                                                            "tag": "div",
-                                                            "visible": "${row.unreadCount>0}",
-                                                            "style": {
-                                                              "display": "inline-block",
-                                                              "padding": "1px 6px",
-                                                              "background": "#ef4444",
-                                                              "color": "#ffffff",
-                                                              "borderRadius": "10px",
-                                                              "fontSize": "12px",
-                                                              "fontWeight": 600
-                                                            },
-                                                            "children": "${row.unreadCount}"
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  }
-                                                ]
-                                              }
-                                            ]
-                                          }
-                                        ]
-                                      }
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "tag": "panel-resize",
-                              "style": {
-                                "width": "8px",
-                                "backgroundColor": "#f2f3f5",
-                                "cursor": "col-resize"
-                              }
-                            },
-                            {
-                              "tag": "panel",
-                              "defaultSize": 60,
-                              "minSize": 40,
-                              "className": "h100",
-                              "children": [
-                                {
-                                  "tag": "layout-fit",
-                                  "className": "h100",
-                                  "title": "${selectedChatUser?(selectedChatUser.isGroup==1?selectedChatUser.contactNickName:selectedChatUser.nickName):'聊天详情'}",
-                                  "children": [
-                                    {
-                                      "tag": "div",
-                                      "visible": "${!selectedChatUser}",
-                                      "style": {
-                                        "height": "100%",
-                                        "display": "flex",
-                                        "alignItems": "center",
-                                        "justifyContent": "center",
-                                        "color": "#6b7280",
-                                        "fontSize": "14px"
-                                      },
-                                      "children": "请选择左侧聊天开始查看"
-                                    },
-                                    {
-                                      "tag": "div",
-                                      "visible": "${!!selectedChatUser}",
-                                      "className": "h100 overflow-auto padding10",
-                                      "children": [
+                                      "action": [
                                         {
-                                          "tag": "div",
-                                          "style": {
-                                            "display": "flex",
-                                            "flexDirection": "column",
-                                            "gap": "12px"
-                                          },
-                                          "children": [
-                                            {
-                                              "tag": "foreach",
-                                              "foreach": "${chatDetailList}",
-                                              "item": "item",
-                                              "children": [
-                                                {
-                                                  "tag": "div",
-                                                  "style": {
-                                                    "display": "flex",
-                                                    "alignItems": "flex-start",
-                                                    "justifyContent": "${item.isSelf?'flex-end':'flex-start'}",
-                                                    "marginBottom": "8px"
-                                                  },
-                                                  "children": [
-                                                    {
-                                                      "tag": "div",
-                                                      "visible": "${!item.isSelf}",
-                                                      "style": {
-                                                        "marginRight": "8px"
-                                                      },
-                                                      "children": [
-                                                        {
-                                                          "tag": "image",
-                                                          "visible": "${!!item.senderAvatar}",
-                                                          "src": "${item.senderAvatar}",
-                                                          "style": {
-                                                            "width": "32px",
-                                                            "height": "32px",
-                                                            "borderRadius": "50%"
-                                                          }
-                                                        },
-                                                        {
-                                                          "tag": "div",
-                                                          "visible": "${!item.senderAvatar}",
-                                                          "style": {
-                                                            "width": "32px",
-                                                            "height": "32px",
-                                                            "borderRadius": "50%",
-                                                            "background": "#e6f4ff",
-                                                            "display": "flex",
-                                                            "alignItems": "center",
-                                                            "justifyContent": "center",
-                                                            "color": "#1677ff",
-                                                            "fontSize": "12px",
-                                                            "fontWeight": 600
-                                                          },
-                                                          "children": "${(item.senderName||'用').slice(0,1)}"
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "tag": "div",
-                                                      "style": {
-                                                        "maxWidth": "70%"
-                                                      },
-                                                      "children": [
-                                                        {
-                                                          "tag": "div",
-                                                          "visible": "${!item.isSelf}",
-                                                          "style": {
-                                                            "fontSize": "12px",
-                                                            "color": "#6b7280",
-                                                            "marginBottom": "2px"
-                                                          },
-                                                          "children": "${item.senderName}"
-                                                        },
-                                                        {
-                                                          "tag": "div",
-                                                          "style": {
-                                                            "background": "${item.isSelf?'#1677ff':'#f3f4f6'}",
-                                                            "color": "${item.isSelf?'#ffffff':'#1f2937'}",
-                                                            "padding": "8px 12px",
-                                                            "borderRadius": "12px",
-                                                            "borderTopLeftRadius": "${item.isSelf?'12px':'4px'}",
-                                                            "borderTopRightRadius": "${item.isSelf?'4px':'12px'}",
-                                                            "fontSize": "14px",
-                                                            "lineHeight": "1.5",
-                                                            "wordBreak": "break-word"
-                                                          },
-                                                          "children": "${item.content}"
-                                                        },
-                                                        {
-                                                          "tag": "div",
-                                                          "style": {
-                                                            "fontSize": "11px",
-                                                            "color": "#9ca3af",
-                                                            "textAlign": "${item.isSelf?'right':'left'}",
-                                                            "marginTop": "4px"
-                                                          },
-                                                          "children": "${formatDate(item.messageTime,'HH:mm')}"
-                                                        }
-                                                      ]
-                                                    },
-                                                    {
-                                                      "tag": "div",
-                                                      "visible": "${item.isSelf}",
-                                                      "style": {
-                                                        "marginLeft": "8px"
-                                                      },
-                                                      "children": [
-                                                        {
-                                                          "tag": "div",
-                                                          "style": {
-                                                            "width": "32px",
-                                                            "height": "32px",
-                                                            "borderRadius": "50%",
-                                                            "background": "#e6f4ff",
-                                                            "display": "flex",
-                                                            "alignItems": "center",
-                                                            "justifyContent": "center",
-                                                            "color": "#1677ff",
-                                                            "fontSize": "12px",
-                                                            "fontWeight": 600
-                                                          },
-                                                          "children": "我"
-                                                        }
-                                                      ]
-                                                    }
-                                                  ]
-                                                }
-                                              ]
-                                            }
-                                          ]
+                                          "tag": "update-store",
+                                          "trigger": "onChange",
+                                          "value": {
+                                            "employeeSearchForm.search": "${value}",
+                                            "employeeSearchForm.page": 1
+                                          }
                                         }
                                       ]
                                     }
@@ -1351,48 +933,57 @@
                                 }
                               ]
                             }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "key": "call",
-                      "label": "电话记录",
-                      "children": [
-                        {
-                          "tag": "layout-fit",
-                          "className": "h100",
-                          "title": "通话记录",
-                          "searchToolBar": [
+                          ],
+                          "bottomToolBar": [
                             {
-                              "tag": "input",
-                              "isSearch": true,
-                              "prefixIcon": "SearchOutlined",
-                              "enterButton": "搜索",
-                              "allowClear": true,
-                              "placeholder": "搜索联系人",
-                              "style": {
-                                "width": "100%"
-                              }
+                              "tag": "pagination",
+                              "showSizeChanger": true,
+                              "align": "end",
+                              "pageSize": "${employeeSearchForm.size}",
+                              "current": "${employeeSearchForm.page}",
+                              "total": "${employeeCount}",
+                              "action": [
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "employeeList"
+                                }
+                              ],
+                              "showTotal": true
                             }
                           ],
                           "children": [
                             {
                               "tag": "listview",
-                              "keyField": "id",
-                              "itemData": "${callRecordList}",
+                              "keyField": "employee_id",
+                              "itemData": "${employeeList}",
+                              "rowClickAction": [
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "selectedEmployee": "${row}",
+                                    "employeeSelection": "${[row]}"
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "contactList"
+                                }
+                              ],
                               "itemAttr": {
                                 "tag": "card",
                                 "size": "small",
+                                "className": "cursor-pointer",
                                 "style": {
                                   "display": "block",
                                   "width": "100%",
                                   "margin": "0 0 8px 0",
-                                  "borderRadius": "12px",
-                                  "border": "1px solid #f0f0f0"
+                                  "borderRadius": "14px",
+                                  "border": "${selectedEmployee&&selectedEmployee.employee_id===row.employee_id?'1px solid #1677ff':'1px solid #e5e7eb'}",
+                                  "boxShadow": "${selectedEmployee&&selectedEmployee.employee_id===row.employee_id?'0 10px 24px rgba(22,119,255,0.16)':'0 4px 14px rgba(15,23,42,0.06)'}",
+                                  "background": "${selectedEmployee&&selectedEmployee.employee_id===row.employee_id?'linear-gradient(135deg,#eef6ff 0%,#ffffff 100%)':'#ffffff'}"
                                 },
                                 "bodyStyle": {
-                                  "padding": "12px"
+                                  "padding": "12px 14px"
                                 },
                                 "hoverable": true,
                                 "children": [
@@ -1411,92 +1002,517 @@
                                         },
                                         "children": [
                                           {
-                                            "tag": "div",
+                                            "tag": "image",
+                                            "visible": "${!!row.head}",
+                                            "src": "${row.head}",
                                             "style": {
-                                              "width": "36px",
-                                              "height": "36px",
+                                              "width": "40px",
+                                              "height": "40px",
+                                              "borderRadius": "50%",
+                                              "border": "1px solid #dbeafe"
+                                            }
+                                          },
+                                          {
+                                            "tag": "div",
+                                            "visible": "${!row.head}",
+                                            "style": {
+                                              "width": "40px",
+                                              "height": "40px",
                                               "borderRadius": "50%",
                                               "display": "flex",
                                               "alignItems": "center",
                                               "justifyContent": "center",
-                                              "background": "${item.callType=='outgoing'?'#dcfce7':item.callType=='incoming'?'#e0f2fe':'#fee2e2'}",
-                                              "color": "${item.callType=='outgoing'?'#16a34a':item.callType=='incoming'?'#0369a1':'#dc2626'}",
-                                              "fontSize": "16px"
+                                              "background": "${selectedEmployee&&selectedEmployee.employee_id===row.employee_id?'#1677ff':'#e6f4ff'}",
+                                              "color": "${selectedEmployee&&selectedEmployee.employee_id===row.employee_id?'#ffffff':'#1677ff'}",
+                                              "fontSize": "15px",
+                                              "fontWeight": 700
                                             },
-                                            "children": [
-                                              {
-                                                "tag": "icon",
-                                                "icon": "${item.callType=='outgoing'?'PhoneOutgoing':item.callType=='incoming'?'PhoneIncoming':'PhoneMissed'}"
-                                              }
-                                            ]
+                                            "children": "${(row.nick_name||'员').slice(0,1)}"
                                           }
                                         ]
                                       },
                                       {
                                         "tag": "col",
-                                        "span": 16,
+                                        "span": 20,
                                         "style": {
                                           "minWidth": 0
                                         },
                                         "children": [
                                           {
-                                            "tag": "div",
+                                            "tag": "row",
                                             "style": {
-                                              "fontSize": "14px",
-                                              "lineHeight": "22px",
-                                              "fontWeight": 600,
-                                              "color": "#1f2937"
+                                              "alignItems": "center",
+                                              "marginBottom": "4px"
                                             },
-                                            "children": "${item.contactName||item.phoneNumber}"
+                                            "children": [
+                                              {
+                                                "tag": "col",
+                                                "span": 16,
+                                                "style": {
+                                                  "minWidth": 0
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "div",
+                                                    "style": {
+                                                      "fontSize": "14px",
+                                                      "lineHeight": "22px",
+                                                      "fontWeight": 600,
+                                                      "color": "#111827",
+                                                      "whiteSpace": "nowrap",
+                                                      "overflow": "hidden",
+                                                      "textOverflow": "ellipsis"
+                                                    },
+                                                    "children": "${row.nick_name||'-'}"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "tag": "col",
+                                                "span": 8,
+                                                "style": {
+                                                  "textAlign": "right"
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "span",
+                                                    "style": {
+                                                      "display": "inline-block",
+                                                      "padding": "1px 8px",
+                                                      "borderRadius": "999px",
+                                                      "fontSize": "12px",
+                                                      "fontWeight": 600,
+                                                      "background": "#f0f9ff",
+                                                      "color": "#0369a1"
+                                                    },
+                                                    "children": "${row.status||'normal'}"
+                                                  }
+                                                ]
+                                              }
+                                            ]
                                           },
                                           {
                                             "tag": "div",
                                             "style": {
                                               "fontSize": "13px",
-                                              "color": "#6b7280",
-                                              "display": "flex",
-                                              "alignItems": "center",
-                                              "gap": "8px"
+                                              "lineHeight": "20px",
+                                              "color": "#4b5563",
+                                              "whiteSpace": "nowrap",
+                                              "overflow": "hidden",
+                                              "textOverflow": "ellipsis",
+                                              "marginBottom": "2px"
                                             },
-                                            "children": [
-                                              {
-                                                "tag": "span",
-                                                "children": "${item.phoneNumber}"
-                                              },
-                                              {
-                                                "tag": "span",
-                                                "children": "${item.callType=='outgoing'?'拨出':item.callType=='incoming'?'来电':'未接'}"
-                                              },
-                                              {
-                                                "tag": "span",
-                                                "visible": "${item.duration>0}",
-                                                "children": "${Math.floor(item.duration/60)}分${item.duration%60}秒"
-                                              }
-                                            ]
+                                            "children": "${(row.phone||'未填手机号')+' · '+(row.ower_wx_alias||'未填微信别名')}"
                                           }
-                                        ]
-                                      },
-                                      {
-                                        "tag": "col",
-                                        "span": 4,
-                                        "style": {
-                                          "textAlign": "right"
-                                        },
-                                        "children": [
-                                          {
-                                            "tag": "div",
-                                            "style": {
-                                              "fontSize": "12px",
-                                              "color": "#6b7280"
-                                            },
-                                            "children": "${formatDate(item.callTime,'MM-DD HH:mm')}"
-                                          }
+                                          
                                         ]
                                       }
                                     ]
                                   }
                                 ]
                               }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "panel-resize",
+                      "style": {
+                        "width": "8px",
+                        "backgroundColor": "#f2f3f5",
+                        "cursor": "col-resize"
+                      }
+                    },
+                    {
+                      "tag": "panel",
+                      "defaultSize": 78,
+                      "minSize": 30,
+                      "className": "h100 padding-left10",
+                      "children": [
+                        {
+                          "tag": "div",
+                          "visible": "${!selectedEmployee}",
+                          "style": {
+                            "height": "100%",
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "center",
+                            "padding": "18px 8px"
+                          },
+                          "children": [
+                            {
+                              "tag": "div",
+                              "style": {
+                                "width": "min(720px, 96%)",
+                                "background": "linear-gradient(180deg,#f8fbff 0%,#ffffff 52%)",
+                                "border": "1px solid #dbeafe",
+                                "borderRadius": "16px",
+                                "boxShadow": "0 18px 38px rgba(30,64,175,0.10)",
+                                "padding": "22px"
+                              },
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "fontSize": "22px",
+                                    "fontWeight": 700,
+                                    "color": "#1e3a8a",
+                                    "lineHeight": "32px",
+                                    "marginBottom": "6px"
+                                  },
+                                  "children": "请选择左侧员工查看沟通记录"
+                                },
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "fontSize": "14px",
+                                    "color": "#475569",
+                                    "lineHeight": "22px"
+                                  },
+                                  "children": "选中员工后，可在右侧切换查看聊天记录与电话记录。"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "layout-fit",
+                          "visible": "${!!selectedEmployee}",
+                          "className": "h100",
+                          "title": "${selectedEmployee.nick_name+' · '+(selectedEmployee.phone||selectedEmployee.wx_id||'-')}",
+                          "children": [
+                            {
+                              "tag": "tabs",
+                              "activeKey": "${employeeDetailTab}",
+                              "tabBarStyle": {
+                                "marginBottom": "12px"
+                              },
+                              "action": [
+                               
+                              ],
+                              "items": [
+                                {
+                                  "key": "chat",
+                                  "label": "聊天记录",
+                                  "children": [
+                                    {
+                                      "tag": "div",
+                                      "className": "h100 overflow-auto padding-right10",
+                                      "children": [
+                                        {
+                                          "tag": "card",
+                                          "size": "small",
+                                          "style": {
+                                            "borderRadius": "14px",
+                                            "border": "1px solid #dbeafe",
+                                            "background": "linear-gradient(180deg,#eff6ff 0%,#ffffff 100%)",
+                                            "marginBottom": "12px"
+                                          },
+                                          "bodyStyle": {
+                                            "padding": "14px 16px"
+                                          },
+                                          "children": [
+                                            {
+                                              "tag": "div",
+                                              "style": {
+                                                "fontSize": "15px",
+                                                "fontWeight": 600,
+                                                "color": "#1e3a8a",
+                                                "marginBottom": "4px"
+                                              },
+                                              "children": "${selectedEmployee.nick_name}"
+                                            },
+                                            {
+                                              "tag": "div",
+                                              "style": {
+                                                "fontSize": "13px",
+                                                "color": "#64748b"
+                                              },
+                                              "children": "演示数据效果，后续可直接替换成真实聊天接口返回。"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "tag": "foreach",
+                                          "foreach": "${chatDetailList}",
+                                          "item": "item",
+                                          "children": [
+                                            {
+                                              "tag": "div",
+                                              "style": {
+                                                "display": "flex",
+                                                "justifyContent": "${item.isSelf?'flex-end':'flex-start'}",
+                                                "marginBottom": "12px"
+                                              },
+                                              "children": [
+                                                {
+                                                  "tag": "div",
+                                                  "visible": "${!item.isSelf}",
+                                                  "style": {
+                                                    "marginRight": "8px"
+                                                  },
+                                                  "children": [
+                                                    {
+                                                      "tag": "image",
+                                                      "visible": "${!!item.senderAvatar}",
+                                                      "src": "${item.senderAvatar}",
+                                                      "style": {
+                                                        "width": "34px",
+                                                        "height": "34px",
+                                                        "borderRadius": "50%"
+                                                      }
+                                                    },
+                                                    {
+                                                      "tag": "div",
+                                                      "visible": "${!item.senderAvatar}",
+                                                      "style": {
+                                                        "width": "34px",
+                                                        "height": "34px",
+                                                        "borderRadius": "50%",
+                                                        "background": "#e6f4ff",
+                                                        "display": "flex",
+                                                        "alignItems": "center",
+                                                        "justifyContent": "center",
+                                                        "color": "#1677ff",
+                                                        "fontSize": "12px",
+                                                        "fontWeight": 600
+                                                      },
+                                                      "children": "${(item.senderName||'用').slice(0,1)}"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "tag": "div",
+                                                  "style": {
+                                                    "maxWidth": "72%"
+                                                  },
+                                                  "children": [
+                                                    {
+                                                      "tag": "div",
+                                                      "visible": "${!item.isSelf}",
+                                                      "style": {
+                                                        "fontSize": "12px",
+                                                        "color": "#6b7280",
+                                                        "marginBottom": "4px"
+                                                      },
+                                                      "children": "${item.senderName}"
+                                                    },
+                                                    {
+                                                      "tag": "div",
+                                                      "style": {
+                                                        "background": "${item.isSelf?'#1677ff':'#f3f4f6'}",
+                                                        "color": "${item.isSelf?'#ffffff':'#1f2937'}",
+                                                        "padding": "9px 12px",
+                                                        "borderRadius": "12px",
+                                                        "borderTopLeftRadius": "${item.isSelf?'12px':'4px'}",
+                                                        "borderTopRightRadius": "${item.isSelf?'4px':'12px'}",
+                                                        "fontSize": "14px",
+                                                        "lineHeight": "1.5"
+                                                      },
+                                                      "children": "${item.content}"
+                                                    },
+                                                    {
+                                                      "tag": "div",
+                                                      "style": {
+                                                        "fontSize": "11px",
+                                                        "color": "#9ca3af",
+                                                        "marginTop": "4px",
+                                                        "textAlign": "${item.isSelf?'right':'left'}"
+                                                      },
+                                                      "children": "${formatDate(item.messageTime,'MM-DD HH:mm')}"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "tag": "div",
+                                                  "visible": "${item.isSelf}",
+                                                  "style": {
+                                                    "marginLeft": "8px"
+                                                  },
+                                                  "children": [
+                                                    {
+                                                      "tag": "div",
+                                                      "style": {
+                                                        "width": "34px",
+                                                        "height": "34px",
+                                                        "borderRadius": "50%",
+                                                        "background": "#dbeafe",
+                                                        "display": "flex",
+                                                        "alignItems": "center",
+                                                        "justifyContent": "center",
+                                                        "color": "#1d4ed8",
+                                                        "fontWeight": 700
+                                                      },
+                                                      "children": "我"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "key": "call",
+                                  "label": "电话记录",
+                                  "children": [
+                                    {
+                                      "tag": "div",
+                                      "className": "h100 overflow-auto padding-right10",
+                                      "children": [
+                                        {
+                                          "tag": "card",
+                                          "size": "small",
+                                          "style": {
+                                            "borderRadius": "14px",
+                                            "border": "1px solid #e2e8f0",
+                                            "marginBottom": "12px"
+                                          },
+                                          "bodyStyle": {
+                                            "padding": "14px 16px"
+                                          },
+                                          "children": [
+                                            {
+                                              "tag": "div",
+                                              "style": {
+                                                "fontSize": "15px",
+                                                "fontWeight": 600,
+                                                "color": "#0f172a",
+                                                "marginBottom": "4px"
+                                              },
+                                              "children": "${selectedEmployee.nick_name}"
+                                            },
+                                            {
+                                              "tag": "div",
+                                              "style": {
+                                                "fontSize": "13px",
+                                                "color": "#64748b"
+                                              },
+                                              "children": "当前为前端演示数据，后续接口接入后可直接替换。"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "tag": "listview",
+                                          "keyField": "id",
+                                          "itemData": "${callRecordList}",
+                                          "itemAttr": {
+                                            "tag": "card",
+                                            "size": "small",
+                                            "style": {
+                                              "display": "block",
+                                              "width": "100%",
+                                              "margin": "0 0 10px 0",
+                                              "borderRadius": "12px",
+                                              "border": "1px solid #f0f0f0"
+                                            },
+                                            "bodyStyle": {
+                                              "padding": "12px 14px"
+                                            },
+                                            "hoverable": true,
+                                            "children": [
+                                              {
+                                                "tag": "row",
+                                                "style": {
+                                                  "alignItems": "center"
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "col",
+                                                    "span": 4,
+                                                    "style": {
+                                                      "display": "flex",
+                                                      "justifyContent": "center"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "div",
+                                                        "style": {
+                                                          "width": "38px",
+                                                          "height": "38px",
+                                                          "borderRadius": "50%",
+                                                          "display": "flex",
+                                                          "alignItems": "center",
+                                                          "justifyContent": "center",
+                                                          "background": "${item.callType=='outgoing'?'#dcfce7':item.callType=='incoming'?'#e0f2fe':'#fee2e2'}",
+                                                          "color": "${item.callType=='outgoing'?'#16a34a':item.callType=='incoming'?'#0369a1':'#dc2626'}",
+                                                          "fontSize": "16px",
+                                                          "fontWeight": 700
+                                                        },
+                                                        "children": "${item.callType=='outgoing'?'出':item.callType=='incoming'?'入':'未'}"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "col",
+                                                    "span": 15,
+                                                    "style": {
+                                                      "minWidth": 0
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "div",
+                                                        "style": {
+                                                          "fontSize": "14px",
+                                                          "lineHeight": "22px",
+                                                          "fontWeight": 600,
+                                                          "color": "#1f2937"
+                                                        },
+                                                        "children": "${item.contactName||item.phoneNumber}"
+                                                      },
+                                                      {
+                                                        "tag": "div",
+                                                        "style": {
+                                                          "fontSize": "13px",
+                                                          "lineHeight": "20px",
+                                                          "color": "#6b7280"
+                                                        },
+                                                        "children": "${item.phoneNumber+' · '+(item.callType=='outgoing'?'拨出':item.callType=='incoming'?'来电':'未接')}"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "col",
+                                                    "span": 5,
+                                                    "style": {
+                                                      "textAlign": "right"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "div",
+                                                        "style": {
+                                                          "fontSize": "12px",
+                                                          "color": "#6b7280",
+                                                          "marginBottom": "4px"
+                                                        },
+                                                        "children": "${formatDate(item.callTime,'MM-DD HH:mm')}"
+                                                      },
+                                                      {
+                                                        "tag": "div",
+                                                        "visible": "${item.duration>0}",
+                                                        "style": {
+                                                          "fontSize": "12px",
+                                                          "color": "#0f172a",
+                                                          "fontWeight": 600
+                                                        },
+                                                        "children": "${Math.floor(item.duration/60)}分${item.duration%60}秒"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
                         }
