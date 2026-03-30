@@ -13,4 +13,10 @@ service:
   - key: travel_chat_contact_list
     http: true
     module: sql
+    params:
+      to_obj:
+        default: false
     data_file: travel_chat_contact_list.sql
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"

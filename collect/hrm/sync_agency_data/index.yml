@@ -390,3 +390,271 @@ service:
             to: chat_contact_raw_list
           - from: "[add_list]"
             to: add_list
+
+  - key: sync_chat_record
+    name: 同步聊天记录
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: 员工ID不能为空
+      contact_id:
+        check:
+          template: "{{must .contact_id}}"
+          err_msg: 联系人ID不能为空
+      message_time_from:
+        default: 0
+        check:
+          template: "{{must .message_time_from}}"
+          err_msg: 起始时间不能为空
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -30 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+      message_time_to:
+        default: 0
+        check:
+          template: "{{must .message_time_to}}"
+          err_msg: 结束时间不能为空
+        template: "{{if .message_time_to}}{{.message_time_to}}{{else}}{{unix_time 0 `second`}}*1000{{end}}"
+        exec: true
+        type: int64
+      add_list:
+        default: []
+      start:
+        default: 1
+      limit:
+        default: 100
+    handler_params:
+      # 1. 获取员工信息
+      - key: service2field
+        name: 获取员工信息
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          pagination: false
+          to_obj: true
+        save_field: employee
+      - key: service2field
+        name: 获取联系人信息
+        service:
+          service: hrm.travel_chat_contact_list
+          contact_id: "[contact_id]"
+          to_obj: true
+        save_field: contact
+      
+      # 2. 获取企业微信token
+      - key: service2field
+        name: 获取企业微信token
+        service:
+          service: hrm.get_qi_work_token
+          agency_id: "[agency_id]"
+        save_field: token_data
+
+      # 3. 获取聊天记录
+      - key: service2field
+        name: 获取聊天记录
+        service:
+          service: spider_qi_work.query_record
+          agency_id: "[agency_id]"
+          authorization: "[token_data.authorization]"
+          companyId: "[token_data.companyId]"
+          controlId: "[token_data.controlId]"
+          loginUserId: "[token_data.userId]"
+          createDepartmentId: "[token_data.departmentId]"
+          wxId: "[contact.wx_id]"
+          ownerWxId: "[contact.owner_wx_id]"
+          userId: "[employee.user_id]"
+          messageTimeFrom: "[message_time_from]"
+          messageTimeTo: "[message_time_to]"
+          start: "[start]"
+          limit: "[limit]"
+        save_field: chat_record_raw_list
+
+      # 4. 映射聊天记录字段
+      - key: update_array
+        name: 映射聊天记录字段
+        enable: "{{gt (len .chat_record_raw_list) 0}}"
+        foreach: "[chat_record_raw_list]"
+        item: item
+        fields:
+          # 主键和关联字段
+          - field: uid
+            template: "[item.uid]"
+          - field: agency_id
+            template: "[agency_id]"
+          - field: employee_id
+            template: "[employee_id]"
+          - field: contact_id
+            template: "[contact_id]"
+
+          # 微信基础字段
+          - field: wx_id
+            template: "[item.wxId]"
+          - field: owner_wx_id
+            template: "[item.ownerWxId]"
+          - field: contact_nick_name
+            template: "[item.contactNickName]"
+          - field: owner_head
+            template: "[item.ownerHead]"
+          - field: owner_nick_name
+            template: "[item.ownerNickName]"
+          - field: nick_name
+            template: "[item.nickName]"
+          - field: head
+            template: "[item.head]"
+          - field: wx_alias
+            template: "[item.wxAlias]"
+
+          # 群聊字段
+#          - field: is_group
+#            template: "{{ if str_contains .item.wxId `@chatroom`}}1{{else}}0{{end}}"
+          - field: group_user_wx_id
+            template: "[item.groupUserWxId]"
+          - field: group_user_wx_nick_name
+            template: "[item.groupUserWxNickName]"
+          - field: group_user_wx_head
+            template: "[item.groupUserWxHead]"
+          - field: group_user_wx_room_name
+            template: "[item.groupUserWxRoomName]"
+
+          # 消息内容字段
+          - field: message_type
+            template: "[item.messageType]"
+          - field: content
+            template: "[item.content]"
+          - field: message_time
+            template: "[item.messageTime]"
+          - field: message_status
+            template: "[item.messageStatus]"
+          - field: wx_msg_id
+            template: "[item.wxMsgId]"
+
+          # 文件字段
+          - field: file_name
+            template: "[item.fileName]"
+          - field: file_size
+            template: "[item.fileSize]"
+          - field: file_status
+            template: "[item.fileStatus]"
+          - field: file_url
+            template: "[item.fileUrl]"
+
+          # 链接字段
+          - field: link_url
+            template: "[item.linkUrl]"
+
+          # 转账字段
+          - field: transfer_money
+            template: "[item.transferMoney]"
+          - field: transfer_status
+            template: "[item.transferStatus]"
+          - field: receive_transfer_time
+            template: "[item.receiveTransferTime]"
+          - field: transcation_id
+            template: "[item.transcationId]"
+
+          # 红包字段
+          - field: red_packet
+            template: "[item.redPacket]"
+          - field: red_packet_type
+            template: "[item.redPacketType]"
+          - field: red_packet_status
+            template: "[item.redPacketStatus]"
+          - field: red_packet_count
+            template: "[item.redPacketCount]"
+          - field: red_packet_end_time
+            template: "[item.redPacketEndTime]"
+          - field: red_packet_from_wx_id
+            template: "[item.redPacketFromWxId]"
+          - field: red_packet_from_wx_nick_name
+            template: "[item.redPacketFromWxNickName]"
+
+          # 通话字段
+          - field: call_time
+            template: "[item.callTime]"
+          - field: start_call_time
+            template: "[item.startCallTime]"
+          - field: end_call_time
+            template: "[item.endCallTime]"
+
+          # 其他字段
+          - field: message_check_time
+            template: "[item.messageCheckTime]"
+          - field: withdraw_time
+            template: "[item.withdrawTime]"
+          - field: user_nick_name
+            template: "[item.userNickName]"
+          - field: company_id
+            template: "[item.companyId]"
+          - field: dep_id
+            template: "[item.depId]"
+          - field: user_id
+            template: "[item.userId]"
+
+          # 系统字段
+          - field: create_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+          - field: exists
+            template: "0"
+
+      # 5. 获取本地聊天记录（用于去重）
+      - key: service2field
+        name: 获取本地聊天记录
+        service:
+          service: hrm.travel_chat_record_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          contact_id: "[contact_id]"
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
+        save_field: local_chat_record_list
+
+      # 6. 标记已存在的记录
+      - key: update_array_from_array
+        name: 标记已存在记录
+        foreach: "[chat_record_raw_list]"
+        item: item
+        field: "[uid]"
+        right: "[local_chat_record_list]"
+        right_field: "[uid]"
+        fields:
+          - field: exists
+            template: "1"
+
+      # 7. 过滤新增记录
+      - key: filter_arr
+        name: 过滤新增记录
+        foreach: "[chat_record_raw_list]"
+        item: item
+        if_template: "{{eq .item.exists `0`}}"
+        save_field: add_list
+
+      # 8. 批量保存聊天记录
+      - key: service2field
+        enable: "{{gt (len .add_list) 0}}"
+        name: 批量保存聊天记录
+        service:
+          service: hrm.travel_chat_record_bulk_create
+          record_list: "[add_list]"
+
+      # 9. 返回同步结果
+      - key: params2result
+        fields:
+          - from: "[chat_record_raw_list]"
+            to: chat_record_list
+          - from: "[add_list]"
+            to: add_list
+          - from: "[local_chat_record_list]"
+            to: local_count
+            template: "{{len .local_chat_record_list}}"
+            exec: true

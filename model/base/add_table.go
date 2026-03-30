@@ -130,5 +130,9 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	modelMap[customerLeadAssignLog.TableName()] = customerLeadAssignLog
 	primaryKeyMap[customerLeadAssignLog.TableName()] = customerLeadAssignLog.PrimaryKey()
 
+	travelChatRecord := TravelChatRecord{}
+	modelMap[travelChatRecord.TableName()] = travelChatRecord
+	primaryKeyMap[travelChatRecord.TableName()] = travelChatRecord.PrimaryKey()
+
 	return modelMap, primaryKeyMap
 }

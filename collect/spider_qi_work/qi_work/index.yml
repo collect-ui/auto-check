@@ -100,14 +100,6 @@ service:
         check:
           template: "{{must .createDepartmentId}}"
           err_msg: createDepartmentId 不能为空
-      wxId:
-        check:
-          template: "{{must .wxId}}"
-          err_msg: wxId 不能为空
-      ownerWxId:
-        check:
-          template: "{{must .ownerWxId}}"
-          err_msg: ownerWxId 不能为空
       userId:
         check:
           template: "{{must .userId}}"
@@ -131,26 +123,7 @@ service:
       start:
         default: 1
       limit:
-        default: 20
-    handler_params:
-      - key: service2field
-        service:
-          service: hrm.get_qi_work_token
-          agency_id: "[agency_id]"
-        save_field: token_data
-      
-      - key: result2params
-        fields:
-          - from: "[token_data.authorization]"
-            to: "[authorization]"
-          - from: "[token_data.companyId]"
-            to: "[companyId]"
-          - from: "[token_data.userId]"
-            to: "[loginUserId]"
-          - from: "[token_data.departmentId]"
-            to: "[createDepartmentId]"
-          - from: "[token_data.controlId]"
-            to: "[controlId]"
+        default: 1000
     http_json: query_record.json
     result_handler:
       - key: result2params

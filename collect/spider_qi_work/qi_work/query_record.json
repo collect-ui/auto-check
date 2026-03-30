@@ -8,15 +8,16 @@
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
   },
   "result_json": true,
+  "append_param": true,
   "data": {
     "companyId": "[companyId]",
     "controlId": "[controlId]",
     "loginUserId": "[loginUserId]",
     "createDepartmentId": "[createDepartmentId]",
-    "wxId": "[wxId]",
     "messageTimeFrom": "[messageTimeFrom]",
     "messageTimeTo": "[messageTimeTo]",
-    "ownerWxId": "[ownerWxId]",
+
+
     "userId": "[userId]",
     "start": "[start]",
     "limit": "[limit]"

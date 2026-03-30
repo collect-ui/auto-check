@@ -34,3 +34,6 @@ service:
 
   - name: "通讯录"
     path: "travel_chat_contact/index.yml"
+  
+  - name: "聊天记录"
+    path: "travel_chat_record/index.yml"

@@ -1,0 +1,16 @@
+service:
+  - key: travel_chat_record_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_chat_record
+    model_field: record_list
+    params:
+      record_list:
+        check:
+          template: "{{must .record_list}}"
+          err_msg: 聊天记录列表不能为空
+
+  - key: travel_chat_record_list
+    http: true
+    module: sql
+    data_file: travel_chat_record_list.sql

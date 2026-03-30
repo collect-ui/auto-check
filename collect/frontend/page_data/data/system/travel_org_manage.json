@@ -44,173 +44,14 @@
     "employeeList": [],
     "employeeCount": 0,
     "selectedEmployee": null,
+    "selectedContact": null,
     "employeeDetailTab": "chat",
     "contactList": [],
     "contactCount": 0,
     "chatList": [
 
     ],
-    "chatDetailList": [
-      {
-        "alias": null,
-        "callTime": null,
-        "companyId": 2067,
-        "contactNickName": "景百达许可证保函保险报税到期26.3",
-        "contactWxId": "48190107046@chatroom",
-        "content": "好的",
-        "createTime": null,
-        "depId": null,
-        "endCallTime": null,
-        "fileName": null,
-        "fileSize": null,
-        "fileStatus": null,
-        "fileUrl": null,
-        "groupUserWxHead": "https://wx.qlogo.cn/mmhead/ver_1/LEgwfl3JWTdtQHPSDRXocpeU7QfTpxgblXyyGG8SQPHXZlahBtA2gXatZfiaOOuD5uZzzmmbTzzOR5Pw51LqcN1hVGVoYc2VzoQ5PInG9WmQ/132",
-        "groupUserWxId": "wxid_xbszb9sqxa0x22",
-        "groupUserWxNickName": "计调芳菲13307441213",
-        "groupUserWxRoomName": null,
-        "head": "https://wx.qlogo.cn/mmcrhead/X9FfPJWKeKdLyh0UOpVI1dr9YHC9dwNiboEBHOoJz8GnxFRR6lyZzxrjP84dvwXMibkYhib7db8v88/0",
-        "id": -655528212,
-        "isGroup": 1,
-        "linkUrl": null,
-        "messageCheckTime": null,
-        "messageStatus": 3,
-        "messageTime": 1774590819000,
-        "messageType": 0,
-        "ownerAlias": null,
-        "ownerHead": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
-        "ownerNickName": "金佑担保&全国旅游保函专员-小唐",
-        "ownerWxId": "wxid_0mx9njjatw3422",
-        "receiveTransferTime": null,
-        "redPacket": null,
-        "redPacketCount": null,
-        "redPacketEndTime": null,
-        "redPacketFromWxId": null,
-        "redPacketFromWxNickName": null,
-        "redPacketStatus": null,
-        "redPacketType": null,
-        "startCallTime": null,
-        "transcationId": null,
-        "transferMoney": null,
-        "transferStatus": null,
-        "type": 1,
-        "uid": "48190107046@chatroom177459081900013003wxid_0mx9njjatw3422",
-        "userId": 35463,
-        "userNickName": null,
-        "withdrawTime": null,
-        "wxMsgId": 13003,
-        "isSelf": false,
-        "sender": "wxid_0mx9njjatw3422",
-        "senderName": "金佑担保&全国旅游保函专员-小唐",
-        "senderAvatar": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96"
-      },
-      {
-        "alias": null,
-        "callTime": null,
-        "companyId": 2067,
-        "contactNickName": "景百达许可证保函保险报税到期26.3",
-        "contactWxId": "48190107046@chatroom",
-        "content": "谢谢，麻烦发一下电子版",
-        "createTime": null,
-        "depId": null,
-        "endCallTime": null,
-        "fileName": null,
-        "fileSize": null,
-        "fileStatus": null,
-        "fileUrl": null,
-        "groupUserWxHead": "https://wx.qlogo.cn/mmhead/ver_1/LEgwfl3JWTdtQHPSDRXocpeU7QfTpxgblXyyGG8SQPHXZlahBtA2gXatZfiaOOuD5uZzzmmbTzzOR5Pw51LqcN1hVGVoYc2VzoQ5PInG9WmQ/132",
-        "groupUserWxId": "wxid_xbszb9sqxa0x22",
-        "groupUserWxNickName": "计调芳菲13307441213",
-        "groupUserWxRoomName": null,
-        "head": "https://wx.qlogo.cn/mmcrhead/X9FfPJWKeKdLyh0UOpVI1dr9YHC9dwNiboEBHOoJz8GnxFRR6lyZzxrjP84dvwXMibkYhib7db8v88/0",
-        "id": -655528213,
-        "isGroup": 1,
-        "linkUrl": null,
-        "messageCheckTime": null,
-        "messageStatus": 3,
-        "messageTime": 1774590825000,
-        "messageType": 0,
-        "ownerAlias": null,
-        "ownerHead": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
-        "ownerNickName": "金佑担保&全国旅游保函专员-小唐",
-        "ownerWxId": "wxid_0mx9njjatw3422",
-        "receiveTransferTime": null,
-        "redPacket": null,
-        "redPacketCount": null,
-        "redPacketEndTime": null,
-        "redPacketFromWxId": null,
-        "redPacketFromWxNickName": null,
-        "redPacketStatus": null,
-        "redPacketType": null,
-        "startCallTime": null,
-        "transcationId": null,
-        "transferMoney": null,
-        "transferStatus": null,
-        "type": 1,
-        "uid": "48190107046@chatroom177459082500013004current_user",
-        "userId": 35464,
-        "userNickName": null,
-        "withdrawTime": null,
-        "wxMsgId": 13004,
-        "isSelf": true,
-        "sender": "current_user",
-        "senderName": "我",
-        "senderAvatar": ""
-      },
-      {
-        "alias": null,
-        "callTime": null,
-        "companyId": 2067,
-        "contactNickName": "景百达许可证保函保险报税到期26.3",
-        "contactWxId": "48190107046@chatroom",
-        "content": "已发送到您的邮箱",
-        "createTime": null,
-        "depId": null,
-        "endCallTime": null,
-        "fileName": null,
-        "fileSize": null,
-        "fileStatus": null,
-        "fileUrl": null,
-        "groupUserWxHead": "https://wx.qlogo.cn/mmhead/ver_1/LEgwfl3JWTdtQHPSDRXocpeU7QfTpxgblXyyGG8SQPHXZlahBtA2gXatZfiaOOuD5uZzzmmbTzzOR5Pw51LqcN1hVGVoYc2VzoQ5PInG9WmQ/132",
-        "groupUserWxId": "wxid_xbszb9sqxa0x22",
-        "groupUserWxNickName": "计调芳菲13307441213",
-        "groupUserWxRoomName": null,
-        "head": "https://wx.qlogo.cn/mmcrhead/X9FfPJWKeKdLyh0UOpVI1dr9YHC9dwNiboEBHOoJz8GnxFRR6lyZzxrjP84dvwXMibkYhib7db8v88/0",
-        "id": -655528214,
-        "isGroup": 1,
-        "linkUrl": null,
-        "messageCheckTime": null,
-        "messageStatus": 3,
-        "messageTime": 1774590830000,
-        "messageType": 0,
-        "ownerAlias": null,
-        "ownerHead": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96",
-        "ownerNickName": "金佑担保&全国旅游保函专员-小唐",
-        "ownerWxId": "wxid_0mx9njjatw3422",
-        "receiveTransferTime": null,
-        "redPacket": null,
-        "redPacketCount": null,
-        "redPacketEndTime": null,
-        "redPacketFromWxId": null,
-        "redPacketFromWxNickName": null,
-        "redPacketStatus": null,
-        "redPacketType": null,
-        "startCallTime": null,
-        "transcationId": null,
-        "transferMoney": null,
-        "transferStatus": null,
-        "type": 1,
-        "uid": "48190107046@chatroom177459083000013005wxid_0mx9njjatw3422",
-        "userId": 35465,
-        "userNickName": null,
-        "withdrawTime": null,
-        "wxMsgId": 13005,
-        "isSelf": false,
-        "sender": "wxid_0mx9njjatw3422",
-        "senderName": "金佑担保&全国旅游保函专员-小唐",
-        "senderAvatar": "https://wx.qlogo.cn/mmhead/ver_1/8YQ4Wc13iauc70IiamjWsO6IkbDnLauqNMv7mfmaJyhTOFMCfqFjyJCNCia9cZH3OkLBv8iavhbYLLbn9mcuYKha0CR8JW071XOJBaJueDRGibV2qKnZo2LTKAibZLDr0mWCOs/96"
-      }
-    ],
+    "chatDetailList": [],
     "callRecordList": [
       {
         "id": 1,
@@ -1324,20 +1165,42 @@
                                                    "tag": "listview",
                                                    "keyField": "contact_id",
                                                    "itemData": "${contactList}",
-                                                   "itemAttr": {
-                                                     "tag": "card",
-                                                     "size": "small",
-                                                     "style": {
-                                                       "display": "block",
-                                                       "width": "100%",
-                                                       "margin": "0 0 8px 0",
-                                                       "borderRadius": "14px",
-                                                       "border": "1px solid #e5e7eb"
+                                                   "rowClickAction": [
+                                                     {
+                                                       "tag": "update-store",
+                                                       "value": {
+                                                         "selectedContact": "${row}"
+                                                       }
                                                      },
-                                                    "bodyStyle": {
-                                                      "padding": "4px 4px"
-                                                    },
-                                                    "hoverable": true,
+                                                     {
+                                                       "tag": "ajax",
+                                                       "api": "post:/template_data/data?service=hrm.travel_chat_record_list",
+                                                       "data": {
+                                                         "agency_id": "${selectedEmployee.agency_id}",
+                                                         "employee_id": "${selectedEmployee.employee_id}",
+                                                         "contact_id": "${row.contact_id}"
+                                                       },
+                                                       "adapt": {
+                                                         "chatDetailList": "${data}"
+                                                       }
+                                                     }
+                                                   ],
+                                                    "itemAttr": {
+                                                      "tag": "card",
+                                                      "size": "small",
+                                                      "style": {
+                                                        "display": "block",
+                                                        "width": "100%",
+                                                        "margin": "0 0 8px 0",
+                                                        "borderRadius": "14px",
+                                                        "border": "${selectedContact&&selectedContact.contact_id===row.contact_id?'2px solid #1677ff':'1px solid #e5e7eb'}",
+                                                        "boxShadow": "${selectedContact&&selectedContact.contact_id===row.contact_id?'0 4px 12px rgba(22,119,255,0.2)':'none'}"
+                                                      },
+                                                     "bodyStyle": {
+                                                       "padding": "4px 4px"
+                                                     },
+                                                     "hoverable": true,
+
                                                     "children": [
                                                       {
                                                         "tag": "row",
@@ -1379,7 +1242,7 @@
                                                                   "fontSize": "16px",
                                                                   "fontWeight": 700
                                                                 },
-                                                                  "children": "${(row.contact_nick_name||row.nick_name||'联').slice(0,1)}"
+                                                                  "children": "${(row.nick_name||row.contact_nick_name||'联').slice(0,1)}"
                                                               }
                                                             ]
                                                           },
@@ -1415,7 +1278,7 @@
                                                                           "overflow": "hidden",
                                                                           "textOverflow": "ellipsis"
                                                                         },
-                                                                          "children": "${row.contact_nick_name||row.nick_name||'未知联系人'}"
+                                                                          "children": "${row.nick_name||row.contact_nick_name||'未知联系人'}"
                                                                       }
                                                                     ]
                                                                   },
@@ -1456,26 +1319,26 @@
                                                                 },
                                                                 "children": "${row.content||'暂无消息'}"
                                                               },
-                                                              {
-                                                                "tag": "div",
-                                                                "style": {
-                                                                  "fontSize": "12px",
-                                                                  "color": "#6b7280",
-                                                                  "display": "flex",
-                                                                  "justifyContent": "space-between",
-                                                                  "alignItems": "center"
-                                                                },
-                                                                "children": [
-                                                                  {
-                                                                    "tag": "span",
-                                                                      "children": "${row.wx_alias||row.wx_id||'未知微信'}"
-                                                                  },
-                                                                  {
-                                                                    "tag": "span",
-                                                                    "children": "${row.message_time_formatted}"
-                                                                  }
-                                                                ]
-                                                              }
+                                                               {
+                                                                 "tag": "div",
+                                                                 "style": {
+                                                                   "fontSize": "12px",
+                                                                   "color": "#6b7280",
+                                                                   "display": "flex",
+                                                                   "justifyContent": "space-between",
+                                                                   "alignItems": "center"
+                                                                 },
+                                                                 "children": [
+                                                                   {
+                                                                     "tag": "span",
+                                                                       "children": "${row.wx_alias||row.wx_id||'未知微信'}"
+                                                                   },
+                                                                   {
+                                                                     "tag": "span",
+                                                                     "children": "${row.message_time_formatted}"
+                                                                   }
+                                                                 ]
+                                                                }
                                                             ]
                                                           }
                                                         ]
@@ -1510,10 +1373,61 @@
                                                  {
                                                    "tag": "button",
                                                    "type": "default",
-                                                   "icon": "ReloadOutlined",
                                                    "size": "small",
+                                                   "icon": "ReloadOutlined",
                                                    "title": "刷新聊天记录",
-                                                   "children": "刷新"
+                                                   "children": "刷新",
+                                                   "disabled": "${!selectedContact}",
+                                                   "action": [
+                                                     {
+                                                       "tag": "ajax",
+                                                       "api": "post:/template_data/data?service=hrm.travel_chat_record_list",
+                                                       "data": {
+                                                         "agency_id": "${selectedEmployee.agency_id}",
+                                                         "employee_id": "${selectedEmployee.employee_id}",
+                                                         "contact_id": "${selectedContact.contact_id}"
+                                                       },
+                                                       "adapt": {
+                                                         "chatDetailList": "${data}"
+                                                       }
+                                                     }
+                                                   ]
+                                                 },
+                                                 {
+                                                   "tag": "button",
+                                                   "type": "primary",
+                                                   "size": "small",
+                                                   "icon": "CloudSyncOutlined",
+                                                   "title": "同步聊天记录",
+                                                   "children": "同步",
+                                                   "disabled": "${!selectedContact}",
+                                                   "confirm": {
+                                                     "title": "确认同步聊天记录吗？",
+                                                     "description": "将同步选中联系人的聊天记录到本地"
+                                                   },
+                                                   "action": [
+                                                     {
+                                                       "tag": "ajax",
+                                                       "api": "post:/template_data/data?service=hrm.sync_chat_record",
+                                                       "data": {
+                                                         "agency_id": "${currentAgency.agency_id}",
+                                                         "employee_id": "${selectedEmployee.employee_id}",
+                                                         "contact_id": "${selectedContact.contact_id}"
+                                                       }
+                                                     },
+                                                     {
+                                                       "tag": "ajax",
+                                                       "api": "post:/template_data/data?service=hrm.travel_chat_record_list",
+                                                       "data": {
+                                                         "agency_id": "${selectedEmployee.agency_id}",
+                                                         "employee_id": "${selectedEmployee.employee_id}",
+                                                         "contact_id": "${selectedContact.contact_id}"
+                                                       },
+                                                       "adapt": {
+                                                         "chatDetailList": "${data}"
+                                                       }
+                                                     }
+                                                   ]
                                                  }
                                                ],
                                                "children": [
@@ -1521,54 +1435,37 @@
                                                    "tag": "div",
                                                    "className": "h100 overflow-auto padding-right10",
                                                    "children": [
-                                                     {
-                                                       "tag": "card",
-                                                       "size": "small",
-                                                       "style": {
-                                                         "borderRadius": "14px",
-                                                         "border": "1px solid #e2e8f0",
-                                                         "marginBottom": "16px"
-                                                       },
-                                                       "bodyStyle": {
-                                                         "padding": "16px 18px"
-                                                       },
-                                                       "children": [
-                                                         {
-                                                           "tag": "div",
-                                                           "style": {
-                                                             "fontSize": "16px",
-                                                             "fontWeight": 600,
-                                                             "color": "#111827",
-                                                             "marginBottom": "8px"
-                                                           },
-                                                           "children": "示例聊天记录"
+
+                                                       {
+                                                         "tag": "div",
+                                                         "visible": "${!selectedContact}",
+                                                         "style": {
+                                                           "textAlign": "center",
+                                                           "padding": "40px 20px",
+                                                           "color": "#6b7280",
+                                                           "fontSize": "14px"
                                                          },
-                                                         {
-                                                           "tag": "div",
-                                                           "style": {
-                                                             "fontSize": "14px",
-                                                             "color": "#6b7280",
-                                                             "lineHeight": "22px"
-                                                           },
-                                                           "children": "当前显示为示例聊天数据，实际数据将从后端接口获取。"
-                                                         }
-                                                       ]
-                                                     },
-                                                      {
-                                                        "tag": "div",
-                                                        "style": {
-                                                          "fontSize": "16px",
-                                                          "fontWeight": 600,
-                                                          "color": "#111827",
-                                                          "marginBottom": "12px",
-                                                          "paddingLeft": "8px"
-                                                        },
-                                                        "children": "聊天记录"
-                                                      },
-                                                      {
-                                                        "tag": "listview",
-                                                        "keyField": "id",
-                                                        "itemData": "${chatDetailList}",
+                                                         "children": "请点击左侧联系人查看聊天记录"
+                                                       },
+                                                       {
+                                                         "tag": "div",
+                                                         "visible": "${selectedContact&&chatDetailList.length===0}",
+                                                         "style": {
+                                                           "textAlign": "center",
+                                                           "padding": "40px 20px",
+                                                           "color": "#6b7280",
+                                                           "fontSize": "14px"
+                                                         },
+                                                         "children": [
+                                                           "暂无聊天记录，点击【同步】获取数据"
+
+                                                         ]
+                                                       },
+                                                       {
+                                                         "tag": "listview",
+                                                         "visible": "${selectedContact&&chatDetailList.length>0}",
+                                                         "keyField": "id",
+                                                         "itemData": "${chatDetailList}",
                                                         "itemAttr": {
                                                           "tag": "div",
                                                           "style": {
@@ -1581,11 +1478,12 @@
                                                               "tag": "div",
                                                               "style": {
                                                                 "display": "flex",
-                                                                "flexDirection": "${row.isSelf?'row-reverse':'row'}",
+                                                                "flexDirection": "${row.is_self?'row-reverse':'row'}",
                                                                 "alignItems": "flex-start",
                                                                 "gap": "10px"
                                                               },
                                                               "children": [
+
                                                                 {
                                                                   "tag": "div",
                                                                   "style": {
@@ -1594,31 +1492,14 @@
                                                                   "children": [
                                                                     {
                                                                       "tag": "image",
-                                                                      "visible": "${!!row.ownerHead}",
-                                                                      "src": "${row.ownerHead}",
+                                                                      "visible": "${!!(row.group_user_wx_head||row.head|| row.group_user_wx_head )}",
+                                                                      "src": "${row.group_user_wx_head?row.group_user_wx_head:row.message_type==0?row.head:row.owner_head}",
                                                                       "style": {
                                                                         "width": "36px",
                                                                         "height": "36px",
                                                                         "borderRadius": "50%",
                                                                         "border": "1px solid #e5e7eb"
                                                                       }
-                                                                    },
-                                                                    {
-                                                                      "tag": "div",
-                                                                      "visible": "${!row.ownerHead}",
-                                                                      "style": {
-                                                                        "width": "36px",
-                                                                        "height": "36px",
-                                                                        "borderRadius": "50%",
-                                                                        "display": "flex",
-                                                                        "alignItems": "center",
-                                                                        "justifyContent": "center",
-                                                                        "background": "#e5e7eb",
-                                                                        "color": "#6b7280",
-                                                                        "fontSize": "14px",
-                                                                        "fontWeight": 600
-                                                                      },
-                                                                      "children": "${(row.ownerNickName||'未').slice(0,1)}"
                                                                     }
                                                                   ]
                                                                 },
@@ -1634,34 +1515,35 @@
                                                                         "fontSize": "13px",
                                                                         "color": "#6b7280",
                                                                         "marginBottom": "4px",
-                                                                        "textAlign": "${row.isSelf?'right':'left'}"
+                                                                        "textAlign": "${row.is_self?'right':'left'}"
                                                                       },
-                                                                      "children": "${row.ownerNickName||row.senderName||'未知'}"
+                                                                      "children": "${row.group_user_wx_nick_name?row.group_user_wx_nick_name:row.message_type==0?row.contact_nick_name:row.owner_nick_name}"
                                                                     },
-                                                                    {
-                                                                      "tag": "div",
-                                                                      "style": {
-                                                                        "background": "${row.isSelf?'#1677ff':'#f3f4f6'}",
-                                                                        "color": "${row.isSelf?'#ffffff':'#111827'}",
-                                                                        "padding": "10px 14px",
-                                                                        "borderRadius": "14px",
-                                                                        "borderTopLeftRadius": "${row.isSelf?'14px':'4px'}",
-                                                                        "borderTopRightRadius": "${row.isSelf?'4px':'14px'}",
-                                                                        "fontSize": "14px",
-                                                                        "lineHeight": "22px",
-                                                                        "wordBreak": "break-word"
-                                                                      },
-                                                                      "children": "${row.content}"
-                                                                    },
+                                                                     {
+                                                                       "tag": "div",
+                                                                       "style": {
+                                                                         "background": "${row.message_type==1?'#1677ff':'#f3f4f6'}",
+                                                                         "color": "${row.message_type==1?'#ffffff':'#111827'}",
+                                                                         "padding": "10px 14px",
+                                                                         "borderRadius": "14px",
+                                                                         "borderTopLeftRadius": "${row.message_type==1?'14px':'4px'}",
+                                                                         "borderTopRightRadius": "${row.message_type==1?'4px':'14px'}",
+                                                                         "fontSize": "14px",
+                                                                         "lineHeight": "22px",
+                                                                         "wordBreak": "break-word"
+                                                                       },
+                                                                       "title": "${row.file_url?'https://df.qi.work/'+row.file_url:''}",
+                                                                        "children": "${row.message_status==3||row.message_status==6?'语音未接通':row.file_name?row.file_name:row.file_url&&row.file_url.includes('group1/M00')&&row.file_url.toLowerCase().endsWith('.mp3')?'录音':row.content||'[语音/图片/文件]'}"
+                                                                     },
                                                                     {
                                                                       "tag": "div",
                                                                       "style": {
                                                                         "fontSize": "12px",
                                                                         "color": "#9ca3af",
                                                                         "marginTop": "4px",
-                                                                        "textAlign": "${row.isSelf?'right':'left'}"
+                                                                        "textAlign": "${row.is_self?'right':'left'}"
                                                                       },
-                                                                      "children": "${formatDate(row.messageTime,'MM-DD HH:mm:ss')}"
+                                                                      "children": "${row.message_time_formatted}"
                                                                     }
                                                                   ]
                                                                 }
