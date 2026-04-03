@@ -12,6 +12,7 @@ type TravelChatRecord struct {
 	ContactID  string `gorm:"column:contact_id" json:"contact_id"`
 
 	// 微信相关字段
+	ContactWxID     string `gorm:"column:contact_wx_id" json:"contact_wx_id"`
 	WxID            string `gorm:"column:wx_id" json:"wx_id"`
 	OwnerWxID       string `gorm:"column:owner_wx_id" json:"owner_wx_id"`
 	OwnerHead       string `gorm:"column:owner_head" json:"owner_head"`
@@ -40,6 +41,7 @@ type TravelChatRecord struct {
 	FileSize   *int64  `gorm:"column:file_size" json:"file_size"`
 	FileStatus *int    `gorm:"column:file_status" json:"file_status"`
 	FileURL    *string `gorm:"column:file_url" json:"file_url"`
+	FileText   *string `gorm:"column:file_text" json:"file_text"`
 
 	// 链接相关字段
 	LinkURL *string `gorm:"column:link_url" json:"link_url"`

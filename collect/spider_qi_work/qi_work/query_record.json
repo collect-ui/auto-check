@@ -16,9 +16,6 @@
     "createDepartmentId": "[createDepartmentId]",
     "messageTimeFrom": "[messageTimeFrom]",
     "messageTimeTo": "[messageTimeTo]",
-
-
-    "userId": "[userId]",
     "start": "[start]",
     "limit": "[limit]"
   }

@@ -1,6 +1,6 @@
 select
 
-datetime(a.message_time / 1000, 'unixepoch', 'localtime') AS message_time_formatted,
+datetime(a.message_time / 1000, 'unixepoch', '+8 hours') AS message_time_formatted,
 a.*
 from travel_chat_contact a
 where 1=1
@@ -14,4 +14,4 @@ and a.employee_id = {{ .employee_id }}
 and a.contact_id = {{ .contact_id }}
 {{ end }}
 order by a.message_time desc
-limit 500
+limit {{.limit}}

@@ -35,8 +35,9 @@
       "wx_sync_error_count": 0
     },
     "employeeForm": {
-
-      "status": "normal"
+      "escape_is_escape": 0,
+      "escape_last_analyze_time": "",
+      "escape_ai_content": ""
     },
     "agencyList": [],
     "agencyCount": 0,
@@ -720,7 +721,6 @@
                                 }
                               ]
                             },
-
                             {
                               "tag": "button",
                               "type": "primary",
@@ -991,16 +991,17 @@
                                                 "children": [
                                                   {
                                                     "tag": "span",
+                                                    "title": "${'分析时间：'+(row.escape_last_analyze_time||'未分析')+'\\n分析结论：'+(row.escape_ai_content||'暂无')}",
                                                     "style": {
                                                       "display": "inline-block",
                                                       "padding": "1px 8px",
                                                       "borderRadius": "999px",
                                                       "fontSize": "12px",
                                                       "fontWeight": 600,
-                                                      "background": "#f0f9ff",
-                                                      "color": "#0369a1"
+                                                      "background": "${!row.escape_last_analyze_time?'#f3f4f6':(row.escape_is_escape==1?'#fee2e2':'#dcfce7')}",
+                                                      "color": "${!row.escape_last_analyze_time?'#6b7280':(row.escape_is_escape==1?'#dc2626':'#16a34a')}"
                                                     },
-                                                    "children": "${row.status||'normal'}"
+                                                    "children": "${!row.escape_last_analyze_time?'未分析':(row.escape_is_escape==1?'有逃单':'无逃单')}"
                                                   }
                                                 ]
                                               }
@@ -1097,6 +1098,28 @@
                           "className": "h100",
                           "title": "${selectedEmployee?.nick_name+' · '+(selectedEmployee?.phone||selectedEmployee?.wx_id||'-')}",
                           "topRight": [
+                             {
+                              "tag": "button",
+                              "type": "primary",
+                              "icon": "SyncOutlined",
+                              "size": "small",
+                              "title": "同步语音",
+                              "disabled": "${employeeSelection.length != 1}",
+                              "children": "同步语音",
+                              "confirm": {
+                                "title": "确认同步吗？",
+                                "description": "分析语音数据"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.gen_file_text",
+                                  "data": {
+                                    "employee_id": "${employeeSelection[0].employee_id}"
+                                  }
+                                }
+                              ]
+                            },
                             {
                               "tag": "button",
                               "type": "default",
@@ -1520,21 +1543,62 @@
                                                                       "children": "${row.group_user_wx_nick_name?row.group_user_wx_nick_name:row.message_type==0?row.contact_nick_name:row.owner_nick_name}"
                                                                     },
                                                                      {
-                                                                       "tag": "div",
-                                                                       "style": {
-                                                                         "background": "${row.message_type==1?'#1677ff':'#f3f4f6'}",
-                                                                         "color": "${row.message_type==1?'#ffffff':'#111827'}",
-                                                                         "padding": "10px 14px",
-                                                                         "borderRadius": "14px",
-                                                                         "borderTopLeftRadius": "${row.message_type==1?'14px':'4px'}",
-                                                                         "borderTopRightRadius": "${row.message_type==1?'4px':'14px'}",
-                                                                         "fontSize": "14px",
-                                                                         "lineHeight": "22px",
-                                                                         "wordBreak": "break-word"
-                                                                       },
-                                                                       "title": "${row.file_url?'https://df.qi.work/'+row.file_url:''}",
-                                                                        "children": "${row.message_status==3||row.message_status==6?'语音未接通':row.file_name?row.file_name:row.file_url&&row.file_url.includes('group1/M00')&&row.file_url.toLowerCase().endsWith('.mp3')?'录音':row.content||'[语音/图片/文件]'}"
-                                                                     },
+                                                                        "tag": "div",
+                                                                        "style": {
+                                                                          "background": "${row.message_type==1?'#1677ff':'#f3f4f6'}",
+                                                                          "color": "${row.message_type==1?'#ffffff':'#111827'}",
+                                                                          "padding": "10px 14px",
+                                                                          "borderRadius": "14px",
+                                                                          "borderTopLeftRadius": "${row.message_type==1?'14px':'4px'}",
+                                                                          "borderTopRightRadius": "${row.message_type==1?'4px':'14px'}",
+                                                                          "fontSize": "14px",
+                                                                          "lineHeight": "22px",
+                                                                          "wordBreak": "break-word"
+                                                                        },
+                                                                        "children": [
+                                                                          {
+                                                                            "tag": "div",
+                                                                            "visible": "${row.end_call_time>0 && (row.message_status==3||row.message_status==6)}",
+                                                                            "children": "语音未接通"
+                                                                          },
+                                                                          {
+                                                                            "tag": "div",
+                                                                            "visible": "${!row.end_call_time || (row.message_status!=3 && row.message_status!=6)}",
+                                                                            "children": [
+                                                                              {
+                                                                                "tag": "div",
+                                                                                "visible": "${row.file_url && (row.file_url.toLowerCase().endsWith('.jpg') || row.file_url.toLowerCase().endsWith('.jpeg') || row.file_url.toLowerCase().endsWith('.png') || row.file_url.toLowerCase().endsWith('.gif') || row.file_url.toLowerCase().endsWith('.webp'))}",
+                                                                                "children": [
+                                                                                  {
+                                                                                    "tag": "image",
+                                                                                    "src": "${'https://df.qi.work/'+row.file_url}",
+                                                                                    "style": {
+                                                                                      "maxWidth": "200px",
+                                                                                      "maxHeight": "200px",
+                                                                                      "borderRadius": "8px"
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              },
+                                                                              {
+                                                                                "tag": "div",
+                                                                                "visible": "${row.file_url && row.file_url.toLowerCase().endsWith('.mp3')}",
+                                                                                "children": "${'录音'+row.file_size+'KB：'+row.content}"
+                                                                              },
+                                                                              {
+                                                                                "tag": "div",
+                                                                                "visible": "${row.file_url && !row.file_url.toLowerCase().endsWith('.mp3') && !row.file_url.toLowerCase().endsWith('.jpg') && !row.file_url.toLowerCase().endsWith('.jpeg') && !row.file_url.toLowerCase().endsWith('.png') && !row.file_url.toLowerCase().endsWith('.gif') && !row.file_url.toLowerCase().endsWith('.webp')}",
+                                                                                "children": "${row.content||'[文件]'}"
+                                                                              },
+                                                                              {
+                                                                                "tag": "div",
+                                                                                "visible": "${!row.file_url}",
+                                                                                "children": "${row.content}"
+                                                                              }
+                                                                            ]
+                                                                          }
+                                                                        ]
+                                                                      },
                                                                     {
                                                                       "tag": "div",
                                                                       "style": {
@@ -2314,6 +2378,82 @@
                   "isTextarea": true,
                   "rows": 3,
                   "placeholder": "可填写备注信息"
+                }
+              ]
+            },
+            {
+              "tag": "divider",
+              "orientation": "left",
+              "children": "逃单分析"
+            },
+            {
+              "tag": "form-item",
+              "name": "escape_is_escape",
+              "label": "逃单状态",
+              "children": [
+                {
+                  "tag": "select",
+                  "placeholder": "请选择逃单状态",
+                  "options": [
+                    {
+                      "label": "无逃单",
+                      "value": 0
+                    },
+                    {
+                      "label": "有逃单",
+                      "value": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "escape_last_analyze_time",
+              "label": "最后分析时间",
+              "children": [
+                {
+                  "tag": "input",
+                  "placeholder": "例如 2026-04-01 12:30:00，可清空触发下次定时重跑"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "escape_ai_content",
+              "label": "分析结论",
+              "children": [
+                {
+                  "tag": "input",
+                  "isTextarea": true,
+                  "rows": 4,
+                  "placeholder": "可手工修改分析结论，或清空后等待定时任务重跑"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "label": "操作",
+              "children": [
+                {
+                  "tag": "button",
+                  "danger": true,
+                  "children": "清空分析结果",
+                  "confirm": {
+                    "title": "确认清空分析结果吗？",
+                    "description": "清空后将等待下次10分钟定时任务自动分析。"
+                  },
+                  "action": [
+                    {
+                      "tag": "update-form",
+                      "formName": "employeeForm",
+                      "value": {
+                        "escape_is_escape": 0,
+                        "escape_last_analyze_time": "",
+                        "escape_ai_content": ""
+                      }
+                    }
+                  ]
                 }
               ]
             }

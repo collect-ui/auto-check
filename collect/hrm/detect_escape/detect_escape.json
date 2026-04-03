@@ -1,0 +1,23 @@
+{
+  "url": "https://api.deepseek.com/v1/chat/completions",
+  "method": "POST",
+  "header": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer {{get_key `deepseek_api_key`}}"
+  },
+  "result_json": true,
+  "data": {
+    "model": "deepseek-chat",
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一个专业的销售行为分析助手，负责分析微信聊天记录，判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。"
+      },
+      {
+        "role": "user",
+        "content": "[prompt_content]"
+      }
+    ],
+    "temperature": 0.3
+  }
+}

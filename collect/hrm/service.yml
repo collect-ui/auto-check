@@ -37,3 +37,6 @@ service:
   
   - name: "聊天记录"
     path: "travel_chat_record/index.yml"
+
+  - name: "逃单检测"
+    path: "detect_escape/index.yml"

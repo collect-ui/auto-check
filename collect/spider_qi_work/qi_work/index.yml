@@ -101,9 +101,7 @@ service:
           template: "{{must .createDepartmentId}}"
           err_msg: createDepartmentId 不能为空
       userId:
-        check:
-          template: "{{must .userId}}"
-          err_msg: userId 不能为空
+        default: ""
       messageTimeFrom:
         default: 0
         check:
@@ -158,10 +156,14 @@ service:
         check:
           template: "{{must .createDepartmentId}}"
           err_msg: createDepartmentId 不能为空
-      nickName:
-        default: ""
-      search:
-        default: ""
+      wxId:
+        check:
+          template: "{{must .wxId}}"
+          err_msg: 微信ID 不能为空
+      # nickName:
+      #   default: ""
+      # search:
+      #   default: ""
       start:
         default: 1
       limit:

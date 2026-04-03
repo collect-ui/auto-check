@@ -5,6 +5,10 @@ service:
     params:
       agency_id:
         default: ""
+      checkin_status:
+        default: ""
+      wx_sync_enabled:
+        default: ""
       search:
         template: "{{ if .search }}%{{.search}}%{{ end }}"
       page:
@@ -192,6 +196,13 @@ service:
         default: 1
       status:
         default: normal
+      escape_last_analyze_time:
+        default: ""
+      escape_is_escape:
+        type: int
+        default: 0
+      escape_ai_content:
+        default: ""
       description:
         default: ""
       create_time:
@@ -233,6 +244,13 @@ service:
         default: 1
       status:
         default: normal
+      escape_last_analyze_time:
+        default: ""
+      escape_is_escape:
+        type: int
+        default: 0
+      escape_ai_content:
+        default: ""
       description:
         default: ""
       modify_time:
@@ -298,3 +316,14 @@ service:
     filter:
       employee_id__in: "[employee_id_list]"
 
+  - key: travel_employee_delete_by_agency
+    http: true
+    module: model_delete
+    table: travel_employee
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    filter:
+      agency_id: "[agency_id]"
