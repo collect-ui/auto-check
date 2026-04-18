@@ -115,6 +115,4 @@ func (si *ShellTerm) HandlerData(template *config.Template, handlerParam *config
 			return common.Ok(result, "执行超时")
 		}
 	}
-
-	return common.Ok(result, "处理参数成功")
 }
