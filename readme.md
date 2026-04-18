@@ -109,5 +109,36 @@ scripts/package_windows.sh --target win7 --go120 /opt/go1.20.14/bin/go --out dis
 说明：
 1. Win7 SP1 不能运行 Go 1.23 构建的 exe，Win7 目标必须使用 Go 1.20.x 构建。
 2. `start.bat` 会先切到 exe 所在目录再启动，依赖相对路径配置（`./conf`、`./database` 等）可直接生效。
+3. 上述普通打包不包含 Python 运行时和语音模型。
 
+## Windows 全离线打包（Go + Python + 模型）
+如果目标机器是全新环境（无 Python、无模型、不可联网），使用：
+
+```bash
+scripts/package_windows_full_offline.sh \
+  --target win7 \
+  --go120 /opt/go1.20.14/bin/go \
+  --python-runtime /abs/path/windows-python-runtime \
+  --site-packages /abs/path/site-packages \
+  --to-text-dir /data/project/to_text \
+  --model-dir /abs/path/model-dir \
+  --out dist \
+  --with-tar
+```
+
+输出目录：
+```text
+dist/windows-win7-x64-full/
+  main.exe
+  start_all.bat          # 先拉起本地转写服务，再启动 Go
+  stop_all.bat
+  ai/python/             # 内置 python.exe
+  ai/app/                # transcribe_http_to_text.py + models
+  conf/ collect/ frontend/ database/ static/ file_data/
+```
+
+注意：
+1. `--python-runtime` 必须是 Windows 可运行的 Python 目录（含 `python.exe`）。
+2. `--site-packages` 建议提供已安装好 `faster_whisper/ctranslate2/av/numpy` 的目录。
+3. `--model-dir` 必须是模型真实目录（通常几百 MB 到几 GB）。
 
