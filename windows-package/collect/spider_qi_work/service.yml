@@ -1,0 +1,4 @@
+# 爬虫模块路由
+service:
+  - name: "qi_work"
+    path: "qi_work/index.yml"

@@ -18,10 +18,10 @@ type TravelAgency struct {
 	WxSyncPassword     string `gorm:"column:wx_sync_password" json:"wx_sync_password"`
 	WxSyncAccessToken  string `gorm:"column:wx_sync_access_token" json:"wx_sync_access_token"`
 	WxSyncExpireTime   int64  `gorm:"column:wx_sync_expire_time" json:"wx_sync_expire_time"`
-	WxSyncUserId       string `gorm:"column:wx_sync_user_id" json:"wx_sync_user_id"`
-	WxSyncDepartmentId string `gorm:"column:wx_sync_department_id" json:"wx_sync_department_id"`
-	WxSyncRoleId       string `gorm:"column:wx_sync_role_id" json:"wx_sync_role_id"`
-	WxSyncCompanyId    string `gorm:"column:wx_sync_company_id" json:"wx_sync_company_id"`
+	WxSyncUserID       string `gorm:"column:wx_sync_user_id" json:"wx_sync_user_id"`
+	WxSyncDepartmentID string `gorm:"column:wx_sync_department_id" json:"wx_sync_department_id"`
+	WxSyncRoleID       string `gorm:"column:wx_sync_role_id" json:"wx_sync_role_id"`
+	WxSyncCompanyID    string `gorm:"column:wx_sync_company_id" json:"wx_sync_company_id"`
 	WxLastSyncTime     string `gorm:"column:wx_last_sync_time" json:"wx_last_sync_time"`
 	WxSyncErrorCount   int    `gorm:"column:wx_sync_error_count" json:"wx_sync_error_count"`
 }

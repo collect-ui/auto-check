@@ -10,7 +10,7 @@
     "employeeSelection": [],
     "agencySearchForm": {
       "page": 1,
-      "size": 50,
+      "size": 1,
       "search": ""
     },
     "employeeSearchForm": {
@@ -46,42 +46,17 @@
     "employeeCount": 0,
     "selectedEmployee": null,
     "selectedContact": null,
-    "employeeDetailTab": "chat",
+    "syncAllLoading": false,
+    "syncCallLoading": false,
+    "escapeAnalyzeLoading": false,
+    "singleEscapeAnalyzeLoading": false,
     "contactList": [],
     "contactCount": 0,
     "chatList": [
 
     ],
     "chatDetailList": [],
-    "callRecordList": [
-      {
-        "id": 1,
-        "phoneNumber": "13800138000",
-        "contactName": "张三",
-        "callType": "outgoing",
-        "duration": 120,
-        "callTime": 1774590800000,
-        "status": "answered"
-      },
-      {
-        "id": 2,
-        "phoneNumber": "13900139000",
-        "contactName": "李四",
-        "callType": "incoming",
-        "duration": 45,
-        "callTime": 1774580000000,
-        "status": "answered"
-      },
-      {
-        "id": 3,
-        "phoneNumber": "13700137000",
-        "contactName": "王五",
-        "callType": "missed",
-        "duration": 0,
-        "callTime": 1774570000000,
-        "status": "missed"
-      }
-    ]
+    "callRecordList": []
   },
   "initAction": [
     {
@@ -89,11 +64,17 @@
       "group": "agencyList",
       "api": "post:/template_data/data?service=hrm.travel_agency_list",
       "appendFields": "${agencySearchForm}",
-      "appendFormFields": "agency-search-form",
       "adapt": {
         "agencyList": "${data}",
-        "agencyCount": "${count}"
+        "agencyCount": "${count}",
+        "currentAgency": "${(data&&data.length>0)?data[0]:{}}",
+        "agencySelection": "${(data&&data.length>0)?[data[0]]:[]}"
       }
+    },
+    {
+      "tag": "reload-init-action",
+      "enable": "${!!currentAgency.agency_id}",
+      "group": "employeeList"
     },
     {
       "tag": "ajax",
@@ -126,9 +107,12 @@
         {
           "tag": "panel",
           "id": "left_agency_panel",
-          "defaultSize": 20,
-          "minSize": 16,
+          "defaultSize": 0,
+          "minSize": 0,
           "className": "h100 padding-right10",
+          "style": {
+            "display": "none"
+          },
           "children": [
             {
               "tag": "layout-fit",
@@ -199,7 +183,7 @@
                       "tag": "ajax",
                       "api": "post:/template_data/data?service=hrm.travel_agency_delete",
                       "data": {
-                        "agency_id_list": "${agencySelection.map(item=>item.agency_id)}"
+                        "agency_id": "${agencySelection[0].agency_id}"
                       }
                     },
                     {
@@ -295,7 +279,7 @@
                         "agencySelection": "${[row]}",
                         "employeeSelection": [],
                         "selectedEmployee": null,
-                        "employeeDetailTab": "chat",
+                        "callRecordList": [],
                         "employeeSearchForm": {
                           "page": 1,
                           "size": 20,
@@ -444,6 +428,7 @@
         {
           "tag": "panel-resize",
           "style": {
+            "display": "none",
             "width": "8px",
             "backgroundColor": "#f2f3f5",
             "cursor": "col-resize"
@@ -452,9 +437,9 @@
         {
           "tag": "panel",
           "id": "right_relation_panel",
-          "defaultSize": 80,
-          "minSize": 35,
-          "className": "h100 padding-left10",
+          "defaultSize": 100,
+          "minSize": 100,
+          "className": "h100",
           "children": [
             {
               "tag": "div",
@@ -487,7 +472,7 @@
                         "lineHeight": "32px",
                         "marginBottom": "6px"
                       },
-                      "children": "请选择左侧旅行社开始组织管理"
+                      "children": "请先维护旅行社基础信息"
                     },
                     {
                       "tag": "div",
@@ -497,7 +482,7 @@
                         "lineHeight": "22px",
                         "marginBottom": "16px"
                       },
-                      "children": "选中旅行社后，可管理成员、新增销售/主管并维护直属关系。未创建旅行社时可先快捷新增。"
+                      "children": "当前仅支持维护一个旅行社，请先创建后再进行成员与沟通记录管理。"
                     },
                     {
                       "tag": "row",
@@ -635,7 +620,7 @@
                           "tag": "button",
                           "type": "primary",
                           "icon": "PlusOutlined",
-                          "children": "快捷新增旅行社",
+                          "children": "新增旅行社信息",
                           "action": [
                             {
                               "tag": "update-store",
@@ -663,7 +648,7 @@
                         "lineHeight": "22px",
                         "color": "#334155"
                       },
-                      "children": "使用建议：先新增旅行社并在左侧选中，再新增组织成员；若成员角色为销售，需在表单中选择直属主管。"
+                      "children": "说明：旅行社数据为单条维护，保存后会自动加载并用于成员管理。"
                     }
                   ]
                 }
@@ -673,16 +658,164 @@
               "tag": "layout-fit",
               "visible": "${!!currentAgency.agency_id}",
               "className": "h100",
-              "title": "",
-              "topRight": [],
+              "title": "${currentAgency.agency_name||'旅行社信息'}",
+              "topRight": [
+                {
+                  "tag": "button",
+                  "type": "primary",
+                  "size": "small",
+                  "icon": "EditOutlined",
+                  "title": "维护旅行社信息",
+                  "children": "编辑旅行社信息",
+                  "action": [
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "agencyDialogVisible": true,
+                        "agencyOp": "edit",
+                        "agencySelection": "${[currentAgency]}"
+                      }
+                    },
+                    {
+                      "tag": "reset-form",
+                      "formName": "agencyForm"
+                    },
+                    {
+                      "tag": "update-form",
+                      "formName": "agencyForm",
+                      "value": "${currentAgency}"
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "type": "primary",
+                  "size": "small",
+                  "icon": "SyncOutlined",
+                  "title": "全量同步",
+                  "children": "全量同步",
+                  "loading": "${syncAllLoading}",
+                  "disabled": "${syncAllLoading}",
+                  "confirm": {
+                    "title": "确认执行全量同步吗？",
+                    "description": "将按配置执行全部旅行社微信数据同步，可能耗时较长。"
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "api": "post:/template_data/data?service=hrm.sync_agency_all_bulk",
+                      "data": {
+                        "message_time_from": "${Date.now()-30*24*60*60*1000}",
+                        "message_time_to": "${Date.now()}"
+                      },
+                      "start": {
+                        "syncAllLoading": true
+                      },
+                      "end": {
+                        "syncAllLoading": false
+                      }
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "group": "agencyList"
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "enable": "${!!currentAgency.agency_id}",
+                      "group": "employeeList"
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "size": "small",
+                  "loading": "${escapeAnalyzeLoading}",
+                  "disabled": "${escapeAnalyzeLoading}",
+                  "title": "分析逃单",
+                  "children": "分析逃单",
+                  "confirm": {
+                    "title": "确认执行逃单分析吗？",
+                    "description": "将按当前规则批量分析员工聊天记录，可能耗时较长。"
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "api": "post:/template_data/data?service=hrm.detect_escape_order_schedule",
+                      "start": {
+                        "escapeAnalyzeLoading": true
+                      },
+                      "end": {
+                        "escapeAnalyzeLoading": false
+                      }
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "enable": "${!!currentAgency.agency_id}",
+                      "group": "employeeList"
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "danger": true,
+                  "size": "small",
+                  "icon": "DeleteOutlined",
+                  "title": "删除旅行社",
+                  "children": "删除旅行社",
+                  "confirm": {
+                    "title": "确认删除吗？",
+                    "description": "删除后不可恢复，是否继续删除当前旅行社？"
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "api": "post:/template_data/data?service=hrm.travel_agency_delete",
+                      "data": {
+                        "agency_id": "${currentAgency.agency_id}"
+                      }
+                    },
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "selectedEmployee": null,
+                        "selectedContact": null,
+                        "employeeSelection": [],
+                        "contactList": [],
+                        "contactCount": 0,
+                        "chatList": [],
+                        "chatDetailList": [],
+                        "callRecordList": []
+                      }
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "group": "agencyList"
+                    }
+                  ]
+                }
+              ],
               "searchToolBar": [],
               "children": [
+                {
+                  "tag": "div",
+                  "style": {
+                    "marginBottom": "10px",
+                    "padding": "10px 12px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #dbeafe",
+                    "background": "#f8fbff",
+                    "fontSize": "13px",
+                    "lineHeight": "22px",
+                    "color": "#334155"
+                  },
+                  "children": "使用说明：可先点击右上角“编辑旅行社信息”维护基础资料，再在下方维护组织成员、通讯录和沟通记录。"
+                },
                 {
                   "tag": "panel-group",
                   "direction": "horizontal",
                   "className": "h100",
                   "style": {
-                    "height": "100%"
+                    "height": "calc(100% - 56px)"
                   },
                   "children": [
                     {
@@ -705,7 +838,7 @@
                               "children": "同步微信",
                               "confirm": {
                                 "title": "确认同步吗？",
-                                "description": "将从微信同步用户数据，新增的会创建，修改的会更新，本地有但微信没有的会删除"
+                                "description": "将从微信同步用户数据，并更新当前页面显示。"
                               },
                               "action": [
                                 {
@@ -726,6 +859,7 @@
                               "type": "primary",
                               "icon": "PlusOutlined",
                               "size": "small",
+                              "visible": false,
                               "title": "新增员工",
                               "children": "",
                               "action": [
@@ -772,6 +906,7 @@
                               "tag": "button",
                               "icon": "DeleteOutlined",
                               "size": "small",
+                              "visible": false,
                               "title": "删除员工",
                               "children": "",
                               "danger": true,
@@ -876,7 +1011,26 @@
                                   "tag": "update-store",
                                   "value": {
                                     "selectedEmployee": "${row}",
-                                    "employeeSelection": "${[row]}"
+                                    "employeeSelection": "${[row]}",
+                                    "selectedContact": null,
+                                    "contactList": [],
+                                    "chatDetailList": [],
+                                    "callRecordList": []
+                                  }
+                                },
+                                {
+                                  "tag": "ajax",
+                                  "enable": "${currentAgency.agency_id}",
+                                  "api": "post:/template_data/data?service=hrm.travel_call_record_list",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${row.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}",
+                                    "limit": 10000
+                                  },
+                                  "adapt": {
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
                                   }
                                 },
                                 {
@@ -956,19 +1110,28 @@
                                           {
                                             "tag": "row",
                                             "style": {
+                                              "display": "flex",
+                                              "flexWrap": "nowrap",
                                               "alignItems": "center",
-                                              "marginBottom": "4px"
+                                              "marginBottom": "4px",
+                                              "columnGap": "2px",
+                                              "overflow": "hidden"
                                             },
                                             "children": [
                                               {
                                                 "tag": "col",
                                                 "span": 16,
                                                 "style": {
-                                                  "minWidth": 0
+                                                  "minWidth": 0,
+                                                  "flex": "1 1 0",
+                                                  "maxWidth": "calc(100% - 92px)",
+                                                  "width": "0",
+                                                  "overflow": "hidden"
                                                 },
                                                 "children": [
                                                   {
                                                     "tag": "div",
+                                                    "title": "${row.nick_name||'-'}",
                                                     "style": {
                                                       "fontSize": "14px",
                                                       "lineHeight": "22px",
@@ -986,22 +1149,101 @@
                                                 "tag": "col",
                                                 "span": 8,
                                                 "style": {
-                                                  "textAlign": "right"
+                                                  "flex": "0 0 auto",
+                                                  "width": "auto",
+                                                  "minWidth": "90px",
+                                                  "display": "inline-flex",
+                                                  "alignItems": "center",
+                                                  "justifyContent": "flex-end",
+                                                  "textAlign": "right",
+                                                  "whiteSpace": "nowrap"
                                                 },
                                                 "children": [
                                                   {
                                                     "tag": "span",
                                                     "title": "${'分析时间：'+(row.escape_last_analyze_time||'未分析')+'\\n分析结论：'+(row.escape_ai_content||'暂无')}",
                                                     "style": {
-                                                      "display": "inline-block",
-                                                      "padding": "1px 8px",
+                                                      "display": "inline-flex",
+                                                      "alignItems": "center",
+                                                      "justifyContent": "center",
+                                                      "width": "14px",
+                                                      "height": "14px",
                                                       "borderRadius": "999px",
-                                                      "fontSize": "12px",
-                                                      "fontWeight": 600,
                                                       "background": "${!row.escape_last_analyze_time?'#f3f4f6':(row.escape_is_escape==1?'#fee2e2':'#dcfce7')}",
                                                       "color": "${!row.escape_last_analyze_time?'#6b7280':(row.escape_is_escape==1?'#dc2626':'#16a34a')}"
                                                     },
-                                                    "children": "${!row.escape_last_analyze_time?'未分析':(row.escape_is_escape==1?'有逃单':'无逃单')}"
+                                                    "children": [
+                                                      {
+                                                        "tag": "icon",
+                                                        "icon": "${!row.escape_last_analyze_time?'ClockCircleOutlined':(row.escape_is_escape==1?'CloseCircleOutlined':'CheckCircleOutlined')}",
+                                                        "style": {
+                                                          "fontSize": "9px"
+                                                        }
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "span",
+                                                    "style": {
+                                                      "display": "inline-flex",
+                                                      "alignItems": "center",
+                                                      "gap": "1px",
+                                                      "marginLeft": "2px",
+                                                      "padding": "0 1px",
+                                                      "height": "16px",
+                                                      "borderRadius": "999px",
+                                                      "fontSize": "9px",
+                                                      "fontWeight": 600,
+                                                      "background": "transparent",
+                                                      "color": "${(row.call_count||0)>0?'#2563eb':'#6b7280'}"
+                                                    },
+                                                    "title": "${'电话记录：'+(row.call_count||0)+'次'}",
+                                                    "children": [
+                                                      {
+                                                        "tag": "icon",
+                                                        "icon": "PhoneOutlined",
+                                                        "style": {
+                                                          "fontSize": "9px"
+                                                        }
+                                                      },
+                                                      {
+                                                        "tag": "span",
+                                                        "children": "${row.call_count||0}"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "span",
+                                                    "title": "${'聊天联系人：个人'+(row.chat_person_count||0)+'，群聊'+(row.chat_group_count||0)+'；电话记录：'+(row.call_count||0)+'次'}",
+                                                    "style": {
+                                                      "display": "inline-flex",
+                                                      "alignItems": "center",
+                                                      "gap": "2px",
+                                                      "marginLeft": "2px",
+                                                      "padding": "0 1px",
+                                                      "height": "16px",
+                                                      "borderRadius": "999px",
+                                                      "fontSize": "9px",
+                                                      "fontWeight": 600,
+                                                      "background": "${((row.chat_person_count||0)+(row.chat_group_count||0))>0?'#ecfeff':'#f3f4f6'}",
+                                                      "color": "${((row.chat_person_count||0)+(row.chat_group_count||0))>0?'#0e7490':'#6b7280'}"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "icon",
+                                                        "icon": "MessageOutlined",
+                                                        "style": {
+                                                          "fontSize": "9px"
+                                                        }
+                                                      },
+                                                      {
+                                                        "tag": "span",
+                                                        "style": {
+                                                          "letterSpacing": "-0.2px"
+                                                        },
+                                                        "children": "${(row.chat_person_count||0)+'/'+(row.chat_group_count||0)}"
+                                                      }
+                                                    ]
                                                   }
                                                 ]
                                               }
@@ -1103,12 +1345,12 @@
                               "type": "primary",
                               "icon": "SyncOutlined",
                               "size": "small",
-                              "title": "同步语音",
+                              "title": "语音转文字",
                               "disabled": "${employeeSelection.length != 1}",
-                              "children": "同步语音",
+                              "children": "语音转文字",
                               "confirm": {
-                                "title": "确认同步吗？",
-                                "description": "分析语音数据"
+                                "title": "确认执行语音转文字吗？",
+                                "description": "将对当前员工的语音消息进行转写"
                               },
                               "action": [
                                 {
@@ -1117,6 +1359,85 @@
                                   "data": {
                                     "employee_id": "${employeeSelection[0].employee_id}"
                                   }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "SyncOutlined",
+                              "size": "small",
+                              "title": "同步电话记录",
+                              "children": "同步电话记录",
+                              "disabled": "${employeeSelection.length != 1||syncCallLoading}",
+                              "loading": "${syncCallLoading}",
+                              "confirm": {
+                                "title": "确认同步电话记录吗？",
+                                "description": "仅同步当前选中员工近30天电话记录"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.sync_call_record",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${selectedEmployee.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}"
+                                  },
+                                  "start": {
+                                    "syncCallLoading": true
+                                  },
+                                  "end": {
+                                    "syncCallLoading": false
+                                  }
+                                },
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.travel_call_record_list",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${selectedEmployee.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}",
+                                    "limit": 10000
+                                  },
+                                  "adapt": {
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "RadarChartOutlined",
+                              "size": "small",
+                              "title": "个人逃单分析",
+                              "children": "个人分析",
+                              "loading": "${singleEscapeAnalyzeLoading}",
+                              "disabled": "${singleEscapeAnalyzeLoading || employeeSelection.length != 1}",
+                              "confirm": {
+                                "title": "确认执行个人逃单分析吗？",
+                                "description": "将仅分析当前选中员工的聊天记录，并回写分析结果。"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.detect_escape_order_and_save",
+                                  "data": {
+                                    "employee_id": "${employeeSelection[0].employee_id}"
+                                  },
+                                  "start": {
+                                    "singleEscapeAnalyzeLoading": true
+                                  },
+                                  "end": {
+                                    "singleEscapeAnalyzeLoading": false
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "employeeList"
                                 }
                               ]
                             },
@@ -1148,20 +1469,113 @@
                               ]
                             }
                           ],
+                          "bottomToolBar": [
+                            {
+                              "tag": "div",
+                              "style": {
+                                "display": "flex",
+                                "flexDirection": "column",
+                                "gap": "6px",
+                                "padding": "8px",
+                                "border": "1px solid #e5e7eb",
+                                "borderRadius": "10px",
+                                "background": "#fafafa"
+                              },
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "gap": "8px",
+                                    "flexWrap": "wrap"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "span",
+                                      "style": {
+                                        "display": "inline-flex",
+                                        "alignItems": "center",
+                                        "padding": "1px 8px",
+                                        "borderRadius": "999px",
+                                        "fontSize": "12px",
+                                        "fontWeight": 600,
+                                        "background": "${!selectedEmployee.escape_last_analyze_time?'#f3f4f6':(selectedEmployee.escape_is_escape==1?'#fee2e2':'#dcfce7')}",
+                                        "color": "${!selectedEmployee.escape_last_analyze_time?'#6b7280':(selectedEmployee.escape_is_escape==1?'#dc2626':'#16a34a')}"
+                                      },
+                                      "children": "${!selectedEmployee.escape_last_analyze_time?'未分析':(selectedEmployee.escape_is_escape==1?'有逃单':'无逃单')}"
+                                    },
+                                    {
+                                      "tag": "span",
+                                      "style": {
+                                        "fontSize": "12px",
+                                        "color": "#6b7280"
+                                      },
+                                      "children": "${'分析时间：'+(selectedEmployee.escape_last_analyze_time||'-')}"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "fontSize": "12px",
+                                    "color": "#6b7280",
+                                    "lineHeight": "18px"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "div",
+                                      "title": "${selectedEmployee.escape_ai_content||'暂无分析结论'}",
+                                      "style": {
+                                        "padding": "6px 8px",
+                                        "borderRadius": "8px",
+                                        "border": "1px solid #e5e7eb",
+                                        "background": "#ffffff",
+                                        "color": "#374151",
+                                        "whiteSpace": "pre-wrap",
+                                        "wordBreak": "break-word",
+                                        "lineHeight": "18px",
+                                        "maxHeight": "180px",
+                                        "overflowY": "auto",
+                                        "overflowX": "hidden"
+                                      },
+                                      "children": "${selectedEmployee.escape_ai_content||'暂无分析结论'}"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ],
                           "children": [
+
                             {
                               "tag": "tabs",
-                              "activeKey": "${employeeDetailTab}",
                               "tabBarStyle": {
                                 "marginBottom": "12px"
                               },
                               "action": [
-                               
+                            
+                                {
+                                  "tag": "ajax",
+                                  "enable": "${(activeKey||key)=='call'&&selectedEmployee&&currentAgency.agency_id}",
+                                  "api": "post:/template_data/data?service=hrm.travel_call_record_list",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${selectedEmployee.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}",
+                                    "limit": 10000
+                                  },
+                                  "adapt": {
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                  }
+                                }
                               ],
                               "items": [
                                 {
                                   "key": "chat",
                                   "label": "聊天记录",
+                                  
                                   "children": [
 
 
@@ -1348,14 +1762,10 @@
                                                                    "fontSize": "12px",
                                                                    "color": "#6b7280",
                                                                    "display": "flex",
-                                                                   "justifyContent": "space-between",
+                                                                   "justifyContent": "flex-end",
                                                                    "alignItems": "center"
                                                                  },
                                                                  "children": [
-                                                                   {
-                                                                     "tag": "span",
-                                                                       "children": "${row.wx_alias||row.wx_id||'未知微信'}"
-                                                                   },
                                                                    {
                                                                      "tag": "span",
                                                                      "children": "${row.message_time_formatted}"
@@ -1488,6 +1898,7 @@
                                                          "tag": "listview",
                                                          "visible": "${selectedContact&&chatDetailList.length>0}",
                                                          "keyField": "id",
+                                                         "autoScrollToBottom": true,
                                                          "itemData": "${chatDetailList}",
                                                         "itemAttr": {
                                                           "tag": "div",
@@ -1662,26 +2073,31 @@
                                                 "fontSize": "13px",
                                                 "color": "#64748b"
                                               },
-                                              "children": "当前为前端演示数据，后续接口接入后可直接替换。"
+                                              "children": "${'近30天电话记录，共'+(callRecordList.length||0)+'条'}"
                                             }
                                           ]
                                         },
                                         {
                                           "tag": "listview",
-                                          "keyField": "id",
+                                          "keyField": "phone_id",
                                           "itemData": "${callRecordList}",
                                           "itemAttr": {
                                             "tag": "card",
                                             "size": "small",
                                             "style": {
-                                              "display": "block",
-                                              "width": "100%",
-                                              "margin": "0 0 10px 0",
-                                              "borderRadius": "12px",
-                                              "border": "1px solid #f0f0f0"
+                                              "display": "inline-block",
+                                              "verticalAlign": "top",
+                                              "width": "calc(25% - 8px)",
+                                              "minWidth": "220px",
+                                              "maxWidth": "100%",
+                                              "margin": "0 8px 8px 0",
+                                              "borderRadius": "10px",
+                                              "border": "1px solid #e2e8f0",
+                                              "boxShadow": "0 3px 10px rgba(15,23,42,0.06)",
+                                              "background": "${((row.call_time_length||row.callTimeLength)||0)>=120?'linear-gradient(135deg,#fff7ed 0%,#fffbeb 60%)':(selectedEmployee&&selectedEmployee.phone&&((row.phone_out_number||row.phoneOutNumber)==selectedEmployee.phone)?'linear-gradient(135deg,#f8fffb 0%,#ffffff 60%)':'linear-gradient(135deg,#f8fbff 0%,#ffffff 60%)')}"
                                             },
                                             "bodyStyle": {
-                                              "padding": "12px 14px"
+                                              "padding": "8px 10px"
                                             },
                                             "hoverable": true,
                                             "children": [
@@ -1693,7 +2109,7 @@
                                                 "children": [
                                                   {
                                                     "tag": "col",
-                                                    "span": 4,
+                                                    "span": 3,
                                                     "style": {
                                                       "display": "flex",
                                                       "justifyContent": "center"
@@ -1702,18 +2118,18 @@
                                                       {
                                                         "tag": "div",
                                                         "style": {
-                                                          "width": "38px",
-                                                          "height": "38px",
+                                                          "width": "30px",
+                                                          "height": "30px",
                                                           "borderRadius": "50%",
                                                           "display": "flex",
                                                           "alignItems": "center",
                                                           "justifyContent": "center",
-                                                          "background": "${item.callType=='outgoing'?'#dcfce7':item.callType=='incoming'?'#e0f2fe':'#fee2e2'}",
-                                                          "color": "${item.callType=='outgoing'?'#16a34a':item.callType=='incoming'?'#0369a1':'#dc2626'}",
-                                                          "fontSize": "16px",
+                                                          "background": "${((row.phone_call_type||row.phoneCallType)||0)==3?'#dcfce7':(((row.phone_call_type||row.phoneCallType)||0)==4?'#e0f2fe':'#f3f4f6')}",
+                                                          "color": "${((row.phone_call_type||row.phoneCallType)||0)==3?'#16a34a':(((row.phone_call_type||row.phoneCallType)||0)==4?'#0369a1':'#6b7280')}",
+                                                          "fontSize": "13px",
                                                           "fontWeight": 700
                                                         },
-                                                        "children": "${item.callType=='outgoing'?'出':item.callType=='incoming'?'入':'未'}"
+                                                        "children": "${((row.phone_call_type||row.phoneCallType)||0)==3?'出':(((row.phone_call_type||row.phoneCallType)||0)==4?'入':'-')}"
                                                       }
                                                     ]
                                                   },
@@ -1727,27 +2143,46 @@
                                                       {
                                                         "tag": "div",
                                                         "style": {
-                                                          "fontSize": "14px",
-                                                          "lineHeight": "22px",
+                                                          "fontSize": "13px",
+                                                          "lineHeight": "18px",
                                                           "fontWeight": 600,
-                                                          "color": "#1f2937"
+                                                          "color": "#0f172a",
+                                                          "whiteSpace": "nowrap",
+                                                          "overflow": "hidden",
+                                                          "textOverflow": "ellipsis"
                                                         },
-                                                        "children": "${item.contactName||item.phoneNumber}"
+                                                        "children": "${row.name||(selectedEmployee&&selectedEmployee.phone&&((row.phone_out_number||row.phoneOutNumber)==selectedEmployee.phone)?((row.phone_in_number||row.phoneInNumber)||'-'):((row.phone_out_number||row.phoneOutNumber)||'-'))}"
                                                       },
                                                       {
                                                         "tag": "div",
                                                         "style": {
-                                                          "fontSize": "13px",
-                                                          "lineHeight": "20px",
-                                                          "color": "#6b7280"
+                                                          "fontSize": "12px",
+                                                          "lineHeight": "17px",
+                                                          "color": "#64748b",
+                                                          "whiteSpace": "nowrap",
+                                                          "overflow": "hidden",
+                                                          "textOverflow": "ellipsis"
                                                         },
-                                                        "children": "${item.phoneNumber+' · '+(item.callType=='outgoing'?'拨出':item.callType=='incoming'?'来电':'未接')}"
+                                                        "children": "${(selectedEmployee&&selectedEmployee.phone&&((row.phone_out_number||row.phoneOutNumber)==selectedEmployee.phone)?((row.phone_in_number||row.phoneInNumber)||'-'):((row.phone_out_number||row.phoneOutNumber)||'-'))+' · '+(((row.phone_call_type||row.phoneCallType)||0)==3?'呼出':(((row.phone_call_type||row.phoneCallType)||0)==4?'呼入':'未知'))}"
+                                                      },
+                                                      {
+                                                        "tag": "div",
+                                                        "visible": "${!!row.relegation}",
+                                                        "style": {
+                                                          "fontSize": "11px",
+                                                          "lineHeight": "16px",
+                                                          "color": "#94a3b8",
+                                                          "whiteSpace": "nowrap",
+                                                          "overflow": "hidden",
+                                                          "textOverflow": "ellipsis"
+                                                        },
+                                                        "children": "${'归属地 '+row.relegation}"
                                                       }
                                                     ]
                                                   },
                                                   {
                                                     "tag": "col",
-                                                    "span": 5,
+                                                    "span": 6,
                                                     "style": {
                                                       "textAlign": "right"
                                                     },
@@ -1755,25 +2190,39 @@
                                                       {
                                                         "tag": "div",
                                                         "style": {
-                                                          "fontSize": "12px",
-                                                          "color": "#6b7280",
-                                                          "marginBottom": "4px"
+                                                          "fontSize": "11px",
+                                                          "color": "#64748b",
+                                                          "lineHeight": "16px"
                                                         },
-                                                        "children": "${formatDate(item.callTime,'MM-DD HH:mm')}"
+                                                        "children": "${'开始 '+(row.phone_start_time_formatted||row.phoneStartTimeFormatted||formatDate((row.phone_start_time||row.phoneStartTime||row.phone_ring_time||row.phoneRingTime),'MM-DD HH:mm'))}"
                                                       },
                                                       {
                                                         "tag": "div",
-                                                        "visible": "${item.duration>0}",
                                                         "style": {
-                                                          "fontSize": "12px",
-                                                          "color": "#0f172a",
-                                                          "fontWeight": 600
+                                                          "fontSize": "11px",
+                                                          "color": "${((row.phone_status||row.phoneStatus)||0)==1?'#0f172a':'#dc2626'}",
+                                                          "fontWeight": 600,
+                                                          "lineHeight": "16px"
                                                         },
-                                                        "children": "${Math.floor(item.duration/60)}分${item.duration%60}秒"
+                                                        "children": "${((row.phone_status||row.phoneStatus)||0)==1?(Math.floor(((row.call_time_length||row.callTimeLength)||0)/60)+'分'+(((row.call_time_length||row.callTimeLength)||0)%60)+'秒'):'未接通'}"
                                                       }
                                                     ]
                                                   }
                                                 ]
+                                              },
+                                              {
+                                                "tag": "div",
+                                                "style": {
+                                                  "minHeight": "16px",
+                                                  "marginTop": "4px",
+                                                  "fontSize": "12px",
+                                                  "lineHeight": "16px",
+                                                  "color": "#94a3b8",
+                                                  "whiteSpace": "nowrap",
+                                                  "overflow": "hidden",
+                                                  "textOverflow": "ellipsis"
+                                                },
+                                                "children": "${row.phone_record_text||row.phoneRecordText||''}"
                                               }
                                             ]
                                           }
@@ -1818,7 +2267,7 @@
           "api": "post:/template_data/data?service=hrm.travel_agency_update",
           "appendFormFields": "agencyForm",
           "data": {
-            "agency_id": "${agencySelection[0].agency_id}"
+            "agency_id": "${currentAgency.agency_id}"
           }
         },
         {

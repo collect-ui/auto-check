@@ -1,0 +1,30 @@
+{
+  "url": "https://api.qi.work/uaa/login",
+  "method": "POST",
+     "header": {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Connection": "keep-alive",
+    "Origin": "https://api.qi.work",
+    "Referer": "https://api.qi.work/",
+    "Sec-CH-UA": "\"Google Chrome\";v=\"124\", \"Chromium\";v=\"124\", \"Not-A.Brand\";v=\"99\"",
+    "Sec-CH-UA-Mobile": "?0",
+    "Sec-CH-UA-Platform": "\"Windows\"",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-site",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+  },
+  "result_json": true,
+  "data": {
+    "grant_type": "password",
+    "username": "[username]",
+    "password": "[password]",
+    "client_id": "pc",
+    "client_secret": "pc",
+    "scope": "server"
+  }
+}

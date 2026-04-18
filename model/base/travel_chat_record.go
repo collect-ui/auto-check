@@ -13,7 +13,7 @@ type TravelChatRecord struct {
 
 	// 微信相关字段
 	ContactWxID     string `gorm:"column:contact_wx_id" json:"contact_wx_id"`
-	WxID            string `gorm:"column:wx_id" json:"wx_id"`
+	WxID            string `gorm:"column:wx_id;primaryKey" json:"wx_id"`
 	OwnerWxID       string `gorm:"column:owner_wx_id" json:"owner_wx_id"`
 	OwnerHead       string `gorm:"column:owner_head" json:"owner_head"`
 	OwnerNickName   string `gorm:"column:owner_nick_name" json:"owner_nick_name"`
@@ -84,5 +84,5 @@ func (*TravelChatRecord) TableName() string {
 }
 
 func (*TravelChatRecord) PrimaryKey() []string {
-	return []string{"uid"}
+	return []string{"uid", "wx_id"}
 }

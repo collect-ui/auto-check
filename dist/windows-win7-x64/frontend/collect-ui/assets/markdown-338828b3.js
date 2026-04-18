@@ -1,0 +1,1 @@
+import{j as t}from"./excalidraw-dbbfee33.js";import{c as r}from"./index-8c4ea9c9.js";import{M as i}from"./markdown-27cb396d.js";import"./echarts-22071690.js";import"./docx-81be5908.js";const u=o=>{const{className:a,visible:e,...s}=r.transferProp(o,"logs");return r.getVisible(o)?t.jsx(i,{...s}):null};export{u as default};

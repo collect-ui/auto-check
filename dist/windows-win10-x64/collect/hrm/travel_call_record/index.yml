@@ -1,0 +1,158 @@
+service:
+  - key: travel_call_record_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_call_record
+    model_field: record_list
+    params:
+      record_list:
+        check:
+          template: "{{must .record_list}}"
+          err_msg: 电话记录列表不能为空
+
+  - key: travel_call_record_bulk_update
+    http: true
+    module: bulk_upsert
+    table: travel_call_record
+    model_field: record_list
+    update_fields:
+      - uid
+      - agency_id
+      - employee_id
+      - phone_id
+      - name
+      - phone_out_number
+      - phone_in_number
+      - relegation
+      - phone_operator
+      - phone_call_type
+      - phone_client_type
+      - ring_time_length
+      - phone_ring_time
+      - phone_end_time
+      - phone_status
+      - call_time_length
+      - phone_record_address
+      - phone_start_time
+      - group_id
+      - user_id
+      - phone_type
+      - parsed_text
+      - phone_record_text
+      - create_time
+      - modify_time
+    params:
+      record_list:
+        check:
+          template: "{{must .record_list}}"
+          err_msg: 电话记录列表不能为空
+
+  - key: travel_call_record_list
+    http: true
+    module: sql
+    params:
+      no_record_text:
+        default: false
+      limit:
+        default: 500
+      to_obj:
+        default: false
+    data_file: travel_call_record_list.sql
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_call_record_bulk_update_record_text
+    http: true
+    module: bulk_upsert
+    table: travel_call_record
+    model_field: update_list
+    update_fields:
+      - uid
+      - phone_record_text
+      - modify_time
+    params:
+      update_list:
+        check:
+          template: "{{must .update_list}}"
+          err_msg: 更新列表不能为空
+
+  - key: gen_call_record_text
+    http: true
+    module: empty
+    params:
+      agency_id:
+        default: ""
+      start_time:
+        default: 0
+        type: int64
+      end_time:
+        default: 0
+        type: int64
+      limit:
+        default: 200
+      data_list:
+        default: []
+      transcribe_results:
+        default: []
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_call_record_list
+          agency_id: "[agency_id]"
+          no_record_text: true
+          limit: "[limit]"
+        save_field: data_list
+
+      - key: update_array
+        enable: "{{gt (len .data_list) 0}}"
+        foreach: "[data_list]"
+        item: item
+        fields:
+          - field: file_url
+            template: "[item.phone_record_address]"
+
+      - key: service2field
+        enable: "{{gt (len .data_list) 0}}"
+        name: 批量调用transcribe
+        service:
+          service: hrm.transcribe_bulk
+          data_list: "[data_list]"
+        save_field: transcribe_results
+
+      - key: update_array
+        enable: "{{gt (len .transcribe_results) 0}}"
+        foreach: "[transcribe_results]"
+        item: item
+        fields:
+          - field: phone_record_text
+            template: "[item.transcribe_result.data]"
+          - field: modify_time
+            template: "{{current_date_time}}"
+
+      - key: service2field
+        enable: "{{gt (len .transcribe_results) 0}}"
+        name: 批量更新电话录音转写文本
+        service:
+          service: hrm.travel_call_record_bulk_update_record_text
+          update_list: "[transcribe_results]"
+
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[data_list]"
+            to: data_list
+          - from: "[transcribe_results]"
+            to: transcribe_results
+
+  - key: travel_call_record_delete_by_agency
+    http: true
+    module: model_delete
+    table: travel_call_record
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    filter:
+      agency_id: "[agency_id]"

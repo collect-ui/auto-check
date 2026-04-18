@@ -114,17 +114,48 @@ service:
     filter:
       agency_id: "[agency_id]"
 
-  - key: travel_agency_delete
+  - key: travel_agency_delete_raw
     http: true
     module: model_delete
     table: travel_agency
     params:
-      agency_id_list:
+      agency_id:
         check:
-          template: "{{must .agency_id_list}}"
+          template: "{{must .agency_id}}"
           err_msg: 请选择要删除的商家
     filter:
-      agency_id__in: "[agency_id_list]"
+      agency_id: "[agency_id]"
+
+  - key: travel_agency_delete
+    http: true
+    module: empty
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 请选择要删除的商家
+    handler_params:
+      - key: service2field
+        name: 清理旅行社关联数据
+        service:
+          service: hrm.clear_agency_all_data
+          agency_id: "[agency_id]"
+        save_field: clear_result
+      - key: service2field
+        name: 删除旅行社主表数据
+        service:
+          service: hrm.travel_agency_delete_raw
+          agency_id: "[agency_id]"
+        save_field: delete_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[clear_result]"
+            to: clear_result
+          - from: "[delete_result]"
+            to: delete_result
 
   - key: travel_employee_list
     http: true

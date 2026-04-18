@@ -1,0 +1,49 @@
+{
+  "desc": "微信用户同步配置，使用 wx_id 作为唯一标识",
+  "left_save_field": "after",
+  "right_save_field": "before",
+  "fields": [
+    {
+      
+      "rule": "array_obj_value",
+      "name": "微信用户新增与删除",
+       "left_field":"[wx_id]",
+       "right_field":"[wx_id]",
+      "field": "user_list",
+      "left":"[wechat_list]",
+      "right":"[local_list]",
+       "with_add_remove":true,
+       "left_value_field":"[wx_id]",
+       "right_value_field":"[wx_id]",
+ 
+      "append_right_fields": ["[*]"],
+      "operation":"modify",
+      "fields": [
+        {
+          "name": "姓名",
+          "field": "nick_name",
+          "append_original_item": true,
+          "append_right_fields": ["employee_id", "agency_id"]
+        },
+        {
+          "name": "微信别名",
+          "field": "ower_wx_alias",
+          "append_original_item": true,
+          "append_right_fields": ["employee_id", "agency_id"]
+        },
+        {
+          "name": "手机号",
+          "field": "phone",
+          "append_original_item": true,
+          "append_right_fields": ["employee_id", "agency_id"]
+        },
+        {
+          "name": "头像",
+          "field": "head",
+          "append_original_item": true,
+          "append_right_fields": ["employee_id", "agency_id"]
+        }
+      ]
+    }
+  ]
+}

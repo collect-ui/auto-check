@@ -1,0 +1,249 @@
+service:
+  - key: detect_escape_order
+    name: 检测逃单行为
+    http: true
+    module: empty
+    log: true
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 300
+    handler_params:
+      - key: service2field
+        name: 获取员工信息
+        service:
+          service: hrm.get_employee_info
+          employee_id: "[employee_id]"
+          to_obj: true
+        save_field: employee_info
+      - key: service2field
+        name: 获取聊天记录
+        service:
+          service: hrm.get_chat_content
+          employee_id: "[employee_id]"
+          limit: "[limit]"
+        save_field: chat_list
+      - key: update_field
+        name: 拼接聊天内容
+        fields:
+          - field: chat_content
+            template: "{{range $i, $v := .chat_list}}【{{$v.contact_nick_name}}】{{$v.message_time_formatted}}: {{$v.content}}\n{{end}}"
+      - key: update_field
+        name: 拼接提示词
+        fields:
+          - field: prompt_content
+            template: "请分析以下微信聊天记录，判断员工【{{.employee_info.employee_name}}】（旅行社：{{.employee_info.agency_name}}）是否存在\"逃单\"行为。\n\n聊天记录：\n{{.chat_content}}\n\n判断标准：\n1. 是否引导客户更换联系方式（如\"加我另一个微信\"、\"换个号码\"）\n2. 是否暗示私下交易\n3. 是否规避公司监管\n\n重要：请在回复的第一行必须输出以下两个标记之一：\n- 如果有逃单行为，第一行输出：【有逃单行为】\n- 如果无逃单行为，第一行输出：【无逃单行为】\n\n然后在第二行开始输出分析内容：\n【判断理由】：具体理由\n【关键证据】：相关聊天内容摘录"
+      - key: service2field
+        name: 调用DeepSeek分析
+        service:
+          service: hrm.call_deepseek_detect
+          prompt_content: "[prompt_content]"
+        save_field: ai_result
+      - key: update_field
+        name: 解析AI返回结果
+        fields:
+          - field: is_escape
+            template: "{{ if str_contains .ai_result `【有逃单行为】`}}1{{else}}0{{end}}"
+          - field: ai_content
+            template: "{{.ai_result}}"
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[is_escape]"
+            to: is_escape
+          - from: "[ai_content]"
+            to: result
+          - from: "[employee_info]"
+            to: employee_info
+          - from: "[chat_content]"
+            to: chat_content
+
+  - key: detect_escape_order_and_save
+    name: 检测逃单并回写员工结果
+    http: true
+    module: empty
+    log: true
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 300
+    handler_params:
+      - key: service2field
+        name: 调用逃单分析
+        service:
+          service: hrm.detect_escape_order
+          employee_id: "[employee_id]"
+          limit: "[limit]"
+        save_field: detect_result
+      - key: update_field
+        name: 准备回写字段
+        fields:
+          - field: escape_is_escape
+            template: "[detect_result.is_escape]"
+          - field: escape_ai_content
+            template: "[detect_result.result]"
+          - field: escape_last_analyze_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+      - key: service2field
+        name: 回写员工分析结果
+        service:
+          service: hrm.travel_employee_update_escape_result
+          employee_id: "[employee_id]"
+          escape_is_escape: "[escape_is_escape]"
+          escape_ai_content: "[escape_ai_content]"
+          escape_last_analyze_time: "[escape_last_analyze_time]"
+          modify_time: "[modify_time]"
+        save_field: save_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[employee_id]"
+            to: employee_id
+          - from: "[detect_result]"
+            to: detect_result
+          - from: "[save_result]"
+            to: save_result
+
+  - key: detect_escape_order_and_save_bulk
+    name: 批量检测逃单并回写
+    module: bulk_service
+    http: true
+    log: true
+    params:
+      employee_list:
+        default: []
+      limit:
+        default: 300
+    batch:
+      foreach: "[employee_list]"
+      item: item
+      loop_max: 3
+      service:
+        service: hrm.detect_escape_order_and_save
+        employee_id: "[employee_id]"
+        limit: "[params.limit]"
+      save_field: detect_result
+      append_item_param: true
+
+  - key: detect_escape_order_schedule
+    name: 逃单检测定时任务
+    module: empty
+    http: true
+    log: true
+    schedule:
+      name: "每10分钟检测一次逃单行为"
+      enable: "{{eq (get_key \"wechat_schedule_enable\") \"true\"}}"
+      schedule_spec: "@every 600s"
+    params:
+      limit:
+        default: 300
+      employee_limit:
+        default: 500
+    handler_params:
+      - key: service2field
+        name: 查询需要分析的员工
+        service:
+          service: hrm.get_need_detect_escape_employee_list
+          limit: "[employee_limit]"
+        save_field: need_detect_employee_list
+      - key: service2field
+        enable: "{{gt (len .need_detect_employee_list) 0}}"
+        name: 批量分析并回写
+        service:
+          service: hrm.detect_escape_order_and_save_bulk
+          employee_list: "[need_detect_employee_list]"
+          limit: "[limit]"
+        save_field: bulk_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[need_detect_employee_list]"
+            to: need_detect_employee_list
+          - from: "[bulk_result]"
+            to: bulk_result
+
+  - key: get_need_detect_escape_employee_list
+    module: sql
+    params:
+      limit:
+        default: 500
+    data_file: get_need_detect_escape_employee_list.sql
+
+  - key: travel_employee_update_escape_result
+    module: model_update
+    table: travel_employee
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      escape_is_escape:
+        default: 0
+      escape_ai_content:
+        default: ""
+      escape_last_analyze_time:
+        check:
+          template: "{{must .escape_last_analyze_time}}"
+          err_msg: escape_last_analyze_time不能为空
+      modify_time:
+        template: "{{current_date_time}}"
+    filter:
+      employee_id: "[employee_id]"
+
+  - key: get_employee_info
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      to_obj:
+        default: false
+    data_file: get_employee_info.sql
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: get_chat_content
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 300
+    data_file: get_chat_content.sql
+
+  - key: call_deepseek_detect
+    module: http
+    log: true
+    http: true
+    params:
+      prompt_content:
+        check:
+          template: "{{must .prompt_content}}"
+          err_msg: prompt_content不能为空
+    http_json: detect_escape.json
+    result_handler:
+      - key: result2params
+        fields:
+          - from: "[choices]"
+            to: "[choices]"
+      - key: param2result
+        field: "[choices]"
+      - key: arr2obj
+      - key: result2params
+        fields:
+          - from: "[message.content]"
+            to: "[content]"
+      - key: param2result
+        field: "[content]"

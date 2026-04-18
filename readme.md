@@ -82,5 +82,32 @@ go run main.go
 ![image](https://github.com/SelfDown/moon/assets/22128775/e63d9746-4ee9-46e9-8357-39ed73b39136)
 ![image](https://s31.aconvert.com/convert/p3r68-cdx67/lbvey-ssguo.gif)
 
+## Windows 打包（Linux 上执行）
+统一打包脚本：
+```bash
+scripts/package_windows.sh --target win10 --out dist
+```
+
+生成目录（可直接拷贝到 Windows 运行）：
+```text
+dist/windows-win10-x64/
+  main.exe
+  start.bat
+  conf/ collect/ frontend/ database/ static/ file_data/
+```
+
+同时打 Win10 + Win7：
+```bash
+scripts/package_windows.sh --target all --go120 /opt/go1.20.14/bin/go --out dist
+```
+
+仅打 Win7（必须指定 Go 1.20）：
+```bash
+scripts/package_windows.sh --target win7 --go120 /opt/go1.20.14/bin/go --out dist
+```
+
+说明：
+1. Win7 SP1 不能运行 Go 1.23 构建的 exe，Win7 目标必须使用 Go 1.20.x 构建。
+2. `start.bat` 会先切到 exe 所在目录再启动，依赖相对路径配置（`./conf`、`./database` 等）可直接生效。
 
 

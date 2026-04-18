@@ -179,6 +179,12 @@ For config-only changes in `collect/` or `conf/`, at minimum run:
 - Unexported identifiers use camelCase.
 - Multi-word filenames use snake_case where that pattern already exists, especially in `plugins/handler_params_*.go`.
 - Keep domain terminology consistent with existing names like `GetTable`, `Result`, `GetRegisterList`, and `TemplateService`.
+- Model naming hard rule for DB id fields:
+  - If database column is `*_id`, Go model field must use `ID` (all caps), never `Id`.
+  - Correct examples: `AgencyID`, `UserID`, `DepartmentID`, `RoleID`, `CompanyID`, `WxSyncUserID`.
+  - Incorrect examples: `AgencyId`, `UserId`, `DepartmentId`, `RoleId`, `CompanyId`, `WxSyncUserId`.
+  - Keep tags unchanged: `gorm:"column:xxx_id"` and `json:"xxx_id"`.
+  - Apply this rule when generating models and when manually editing models.
 
 ### Types and Structs
 
@@ -226,6 +232,7 @@ For config-only changes in `collect/` or `conf/`, at minimum run:
 - Preserve compatibility with the local `../collect` replace target when changing interfaces.
 - When adding a plugin, update both implementation and `plugins/a_register.go`.
 - When adding a model, update the relevant domain package and `model/register.go`.
+- Before editing files under `model/`, follow `docs/lowcode/go_model_id_naming.md`.
 - When behavior is configured, prefer extending config files over hard-coding new branches in Go.
 
 ## Practical Notes

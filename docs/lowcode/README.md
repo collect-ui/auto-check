@@ -16,3 +16,9 @@
   - [array_and_object.md](/data/project/auto-check/docs/lowcode/filters/array_and_object.md)
   - [math_and_cast.md](/data/project/auto-check/docs/lowcode/filters/math_and_cast.md)
   - [runtime_and_guard.md](/data/project/auto-check/docs/lowcode/filters/runtime_and_guard.md)
+
+## 页面配置约束（新增）
+- `tabs` 默认使用组件内部状态，不要在页面 store 中再维护 `activeKey` 并反向绑定到 `tabs.activeKey`。
+- 禁止同时使用“组件内部 activeKey + 外部 update-store 控制 activeKey”的双控模式，容易导致 tab 内容看起来一致或切换错乱。
+- `tabs.action` 里只放业务动作（例如切到 `call` 时发 HTTP 加载数据），不要再写 `employeeDetailTab = activeKey` 这类同步逻辑。
+- `listview.itemAttr` 渲染统一使用 `row`，避免 `item/row` 混用导致字段取值错位。

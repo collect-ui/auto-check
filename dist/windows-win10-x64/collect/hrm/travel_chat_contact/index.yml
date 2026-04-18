@@ -1,0 +1,64 @@
+service:
+  - key: travel_chat_contact_bulk_create
+    http: true
+    module: bulk_create
+    table: travel_chat_contact
+    model_field: contact_list
+    params:
+      contact_list:
+        check:
+          template: "{{must .contact_list}}"
+          err_msg: 通讯录列表不能为空
+
+  - key: travel_chat_contact_bulk_update
+    http: true
+    module: bulk_upsert
+    table: travel_chat_contact
+    model_field: contact_list
+    update_fields:
+      - contact_id
+      - agency_id
+      - employee_id
+      - wx_id
+      - contact_nick_name
+      - nick_name
+      - head
+      - content
+      - message_time
+      - owner_wx_id
+      - person_count
+      - type
+      - wx_alias
+      - is_group
+      - create_time
+      - modify_time
+    params:
+      contact_list:
+        check:
+          template: "{{must .contact_list}}"
+          err_msg: 通讯录列表不能为空
+
+  - key: travel_chat_contact_list
+    http: true
+    module: sql
+    params:
+      to_obj:
+        default: false
+      limit:
+        default: 500
+    data_file: travel_chat_contact_list.sql
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_chat_contact_delete_by_agency
+    http: true
+    module: model_delete
+    table: travel_chat_contact
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    filter:
+      agency_id: "[agency_id]"

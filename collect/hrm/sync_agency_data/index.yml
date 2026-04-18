@@ -26,10 +26,10 @@ service:
           to_obj: true
         save_field: agency_info
       
-      # 2. 场景A：Token有效，从数据库返回字段
+      # 2. 场景A：Token有效且关键字段完整，从数据库返回字段
       - key: params2result
-        name: Token有效，从数据库返回字段
-        enable: "{{and .agency_info.wx_sync_access_token (gt .agency_info.wx_sync_expire_time .now)}}"
+        name: Token有效且关键字段完整，从数据库返回字段
+        enable: "{{and .agency_info.wx_sync_access_token (gt .agency_info.wx_sync_expire_time .now) (must .agency_info.wx_sync_company_id) (must .agency_info.wx_sync_user_id) (must .agency_info.wx_sync_department_id)}}"
         fields:
           - from: "[agency_info.wx_sync_access_token]"
             to: "access_token"
@@ -58,17 +58,25 @@ service:
             to: "authorization"
             template: "Bearer {{.agency_info.wx_sync_access_token}}"
       
-      # 3. 场景B：Token无效，重新登录
+      # 3. 场景B：Token无效或关键字段缺失，标准化登录密码（明文转md5，已md5保持不变）
+      - key: update_field
+        name: 场景B：兼容明文与MD5密码
+        enable: "{{or (not .agency_info.wx_sync_access_token) (le .agency_info.wx_sync_expire_time .now) (not (must .agency_info.wx_sync_company_id)) (not (must .agency_info.wx_sync_user_id)) (not (must .agency_info.wx_sync_department_id))}}"
+        fields:
+          - field: login_password
+            template: "{{ if .agency_info.wx_sync_password }}{{if eq (len .agency_info.wx_sync_password) 32}}{{.agency_info.wx_sync_password}}{{else}}{{md5 .agency_info.wx_sync_password}}{{end}}{{ end }}"
+
+      # 4. 场景B：Token无效，重新登录
       - key: service2field
         name: 场景B：Token无效，重新登录
-        enable: "{{or (not .agency_info.wx_sync_access_token) (le .agency_info.wx_sync_expire_time .now)}}"
+        enable: "{{or (not .agency_info.wx_sync_access_token) (le .agency_info.wx_sync_expire_time .now) (not (must .agency_info.wx_sync_company_id)) (not (must .agency_info.wx_sync_user_id)) (not (must .agency_info.wx_sync_department_id))}}"
         service:
           service: spider_qi_work.login
           username: "[agency_info.wx_sync_account]"
-          password: "[agency_info.wx_sync_password]"
+          password: "[login_password]"
         save_field: login_result
       
-      # 4. 从登录结果提取字段
+      # 5. 从登录结果提取字段
       - key: params2result
         enable: "{{must .login_result}}"
         fields:
@@ -88,7 +96,7 @@ service:
           - from: "[login_result.userId]"
             to: "controlId"
       
-      # 5. 更新数据库中的token
+      # 6. 更新数据库中的token
       - key: service2field
         name: "更新缓存信息"
         enable: "{{must .login_result}}"
@@ -880,6 +888,30 @@ service:
           - field: contact_id
             template: "[contact_id]"
 
+      # 10.2 根据 contact_id 关联 wx_id（用于 uid+wx_id 复合主键）
+      - key: update_array_from_array
+        name: 根据 contact_id 回填 wx_id
+        enable: "{{and (must .chat_record_raw_list) (must .local_chat_contact_list)}}"
+        foreach: "[chat_record_raw_list]"
+        item: item
+        field: "[contact_id]"
+        right: "[local_chat_contact_list]"
+        right_field: "[contact_id]"
+        fields:
+          - field: wx_id
+            template: "[right.wx_id]"
+
+      # 10.3 wx_id 兜底：联系人不存在时回退 contact_wx_id
+      - key: update_array
+        name: wx_id 兜底回填
+        enable: "{{must .chat_record_raw_list}}"
+        foreach: "[chat_record_raw_list]"
+        item: item
+        if_template: "{{not (must .item.wx_id)}}"
+        fields:
+          - field: wx_id
+            template: "[item.contact_wx_id]"
+
       # 11. 过滤可关联记录（未匹配联系人直接跳过；传contact_id时仅保留该联系人）
       - key: filter_arr
         name: 过滤可关联记录
@@ -958,9 +990,9 @@ service:
         enable: "{{and (must .mapped_chat_record_list) (must .local_chat_record_list)}}"
         foreach: "[mapped_chat_record_list]"
         item: item
-        field: "[uid]"
+        field: "[uid&wx_id]"
         right: "[local_chat_record_list]"
-        right_field: "[uid]"
+        right_field: "[uid&wx_id]"
         fields:
           - field: exists
             template: "1"
@@ -993,6 +1025,313 @@ service:
           - from: "[add_list]"
             to: add_list
 
+  - key: sync_call_record
+    name: 同步电话记录
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      mode:
+        default: "agency"
+      employee_id:
+        default: 0
+      start_time:
+        default: 0
+        check:
+          template: "{{must .start_time}}"
+          err_msg: 起始时间不能为空
+        template: "{{if .start_time}}{{.start_time}}{{else}}{{unix_time -30 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+      end_time:
+        default: 0
+        check:
+          template: "{{must .end_time}}"
+          err_msg: 结束时间不能为空
+        template: "{{if .end_time}}{{.end_time}}{{else}}{{unix_time 0 `second`}}*1000{{end}}"
+        exec: true
+        type: int64
+      pageNum:
+        default: 1
+      pageSize:
+        default: 10000
+      viewDataRangeType:
+        default: 3
+      transcribe_after_sync:
+        default: true
+      call_record_raw_list:
+        default: []
+      mapped_call_record_list:
+        default: []
+      local_call_record_list:
+        default: []
+      add_list:
+        default: []
+      modify_list:
+        default: []
+      fetched_count:
+        default: 0
+      add_count:
+        default: 0
+      modify_count:
+        default: 0
+    handler_params:
+      - key: service2field
+        name: 获取企业微信token
+        service:
+          service: hrm.get_qi_work_token
+          agency_id: "[agency_id]"
+        save_field: token_data
+
+      - key: service2field
+        name: 获取电话记录
+        service:
+          service: spider_qi_work.query_general
+          authorization: "[token_data.access_token]"
+          companyId: "[token_data.companyId]"
+          controlId: "[token_data.controlId]"
+          loginUserId: "[token_data.userId]"
+          createDepartmentId: "[token_data.departmentId]"
+          startTime: "[start_time]"
+          endTime: "[end_time]"
+          pageNum: "[pageNum]"
+          pageSize: "[pageSize]"
+          viewDataRangeType: "[viewDataRangeType]"
+        save_field: call_record_raw_list
+
+
+      - key: service2field
+        name: 获取员工列表（用于手机号关联）
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          pagination: false
+        save_field: agency_employee_list
+
+      - key: service2field
+        name: 个人模式获取当前员工
+        enable: "{{must .employee_id}}"
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          pagination: false
+          to_obj: true
+        save_field: target_employee
+
+      - key: update_array
+        name: 映射电话记录字段
+        enable: "{{gt (len .call_record_raw_list) 0}}"
+        foreach: "[call_record_raw_list]"
+        item: item
+        fields:
+          - field: uid
+            template: "[item.uid]"
+          - field: agency_id
+            template: "[agency_id]"
+
+          - field: phone_id
+            template: "[item.phoneId]"
+          - field: name
+            template: "[item.name]"
+          - field: phone_out_number
+            template: "[item.phoneOutNumber]"
+          - field: phone_in_number
+            template: "[item.phoneInNumber]"
+          - field: relegation
+            template: "[item.relegation]"
+          - field: phone_operator
+            template: "[item.phoneOperator]"
+          - field: phone_call_type
+            template: "[item.phoneCallType]"
+          - field: phone_client_type
+            template: "[item.phoneClientType]"
+          - field: ring_time_length
+            template: "[item.ringTimeLength]"
+          - field: phone_ring_time
+            template: "[item.phoneRingTime]"
+          - field: phone_end_time
+            template: "[item.phoneEndTime]"
+          - field: phone_status
+            template: "[item.phoneStatus]"
+          - field: call_time_length
+            template: "[item.callTimeLength]"
+          - field: phone_record_address
+            template: "[item.phoneRecordAddress]"
+          - field: phone_start_time
+            template: "[item.phoneStartTime]"
+          - field: group_id
+            template: "[item.groupId]"
+          - field: user_id
+            template: "[item.userId]"
+          - field: phone_type
+            template: "[item.phoneType]"
+ 
+          - field: create_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+          - field: exists
+            template: "0"
+
+      - key: update_array_from_array
+        name: 优先按拨出号码关联员工
+        enable: "{{and (must .call_record_raw_list) (must .agency_employee_list)}}"
+        foreach: "[call_record_raw_list]"
+        item: item
+        field: "[phone_out_number]"
+        right: "[agency_employee_list]"
+        right_field: "[phone]"
+        fields:
+          - field: employee_id
+            template: "[right.employee_id]"
+
+
+      - key: update_array_from_array
+        name: 拨出号码未命中时按拨入号码关联员工
+        enable: "{{and (must .call_record_raw_list) (must .agency_employee_list)}}"
+        foreach: "[call_record_raw_list]"
+        item: item
+        field: "[phone_in_number]"
+        right: "[agency_employee_list]"
+        right_field: "[phone]"
+        fields:
+          - field: employee_id
+            template: "[right.employee_id]"
+
+      - key: filter_arr
+        name: 保留有效uid的记录
+        foreach: "[call_record_raw_list]"
+        item: item
+        if_template: "{{must .item.uid}}"
+        save_field: mapped_call_record_list
+
+      - key: update_array
+        name: 个人模式按手机号强制归属当前员工
+        enable: "{{and (must .employee_id) (must .target_employee.phone)}}"
+        foreach: "[mapped_call_record_list]"
+        item: item
+        fields:
+          - field: employee_id
+            template: "{{if or (eq .item.phone_out_number .target_employee.phone) (eq .item.phone_in_number .target_employee.phone)}}{{.employee_id}}{{else}}{{.item.employee_id}}{{end}}"
+
+      - key: filter_arr
+        name: 个人模式过滤电话记录
+        foreach: "[mapped_call_record_list]"
+        item: item
+        if_template: "{{if .employee_id}}{{eq .item.employee_id .employee_id}}{{else}}true{{end}}"
+        save_field: scoped_call_record_list
+
+      - key: service2field
+        name: 获取本地电话记录
+        service:
+          service: hrm.travel_call_record_list
+          start_time: "[start_time]"
+          end_time: "[end_time]"
+          limit: 100000
+        save_field: local_call_record_list
+
+      - key: update_array_from_array
+        name: 标记已存在记录
+        enable: "{{and (must .scoped_call_record_list) (must .local_call_record_list)}}"
+        foreach: "[scoped_call_record_list]"
+        item: item
+        field: "[uid]"
+        right: "[local_call_record_list]"
+        right_field: "[uid]"
+        fields:
+          - field: exists
+            template: "1"
+          - field: create_time
+            template: "[right.create_time]"
+
+      - key: filter_arr
+        name: 过滤新增记录
+        foreach: "[scoped_call_record_list]"
+        item: item
+        if_template: "{{eq .item.exists `0`}}"
+        save_field: add_list
+
+      # - key: filter_arr
+      #   name: 过滤更新记录
+      #   foreach: "[mapped_call_record_list]"
+      #   item: item
+      #   if_template: "{{eq .item.exists `1`}}"
+      #   save_field: modify_list
+
+      # - key: update_array
+      #   name: 更新记录补充modify_time
+      #   enable: "{{must .modify_list}}"
+      #   foreach: "[modify_list]"
+      #   item: item
+      #   fields:
+      #     - field: modify_time
+      #       template: "{{current_date_time}}"
+
+      - key: service2field
+        enable: "{{must .add_list}}"
+        name: 批量新增电话记录
+        service:
+          service: hrm.travel_call_record_bulk_create
+          record_list: "[add_list]"
+
+      # - key: service2field
+      #   enable: "{{must .modify_list}}"
+      #   name: 批量更新电话记录
+      #   service:
+      #     service: hrm.travel_call_record_bulk_update
+      #     record_list: "[modify_list]"
+
+      # - key: service2field
+      #   name: 转写电话录音
+      #   enable: "{{and .transcribe_after_sync (gt (len .mapped_call_record_list) 0)}}"
+      #   service:
+      #     service: hrm.gen_call_record_text
+      #     agency_id: "[agency_id]"
+      #     start_time: "[start_time]"
+      #     end_time: "[end_time]"
+      #     limit: 200
+      #   save_field: gen_call_record_text_result
+
+      # - key: update_field
+      #   fields:
+      #     - field: fetched_count
+      #       template: "{{len .mapped_call_record_list}}"
+      #     - field: add_count
+      #       template: "{{len .add_list}}"
+      #     - field: modify_count
+      #       template: "{{len .modify_list}}"
+
+      - key: params2result
+        fields:
+          - from: "[mode]"
+            to: mode
+          - from: "[start_time]"
+            to: start_time
+          - from: "[end_time]"
+            to: end_time
+          - from: "[fetched_count]"
+            to: fetched_count
+          - from: "[add_list]"
+            to: add_list
+          - from: "[modify_count]"
+            to: modify_count
+          - from: "[mapped_call_record_list]"
+            to: mapped_call_record_list
+          - from: "[scoped_call_record_list]"
+            to: scoped_call_record_list
+          - from: "[gen_call_record_text_result]"
+            to: gen_call_record_text_result
+          - from: "[call_record_raw_list]"
+            to: call_record_raw_list
+          
+          - from: "[agency_employee_list]"
+            to: agency_employee_list
+
   - key: sync_agency_all
     name: 旅行社微信全量同步
     module: empty
@@ -1019,7 +1358,7 @@ service:
           - wechat_user
           - chat_contact
           - chat_record
-          - gen_file_text
+          - call_record
     handler_params:
       - key: service2field
         name: 拉取手机号列表
@@ -1060,6 +1399,17 @@ service:
         save_field: chat_record_sync_result
 
       - key: service2field
+        name: 同步电话记录
+        enable: "{{contains .sync_modules `call_record`}}"
+        service:
+          service: hrm.sync_call_record
+          agency_id: "[agency_id]"
+          start_time: "[message_time_from]"
+          end_time: "[message_time_to]"
+          pageSize: "[record_limit]"
+        save_field: call_record_sync_result
+
+      - key: service2field
         name: 分析语音
         enable: "{{contains .sync_modules `gen_file_text`}}"
         service:
@@ -1078,6 +1428,8 @@ service:
             to: chat_contact_sync_result
           - from: "[chat_record_sync_result]"
             to: chat_record_sync_result
+          - from: "[call_record_sync_result]"
+            to: call_record_sync_result
           - from: "[gen_file_text_result]"
             to: gen_file_text_result
           - from: "[sync_modules]"
@@ -1102,7 +1454,7 @@ service:
           - wechat_user
           - chat_contact
           - chat_record
-          - gen_file_text
+          - call_record
     batch:
       foreach: "[agency_list]"
       item: item
@@ -1144,7 +1496,7 @@ service:
           - wechat_user
           - chat_contact
           - chat_record
-          - gen_file_text
+          - call_record
     handler_params:
       - key: service2field
         name: 查询微信同步启用旅行社
@@ -1155,17 +1507,11 @@ service:
           wx_sync_enabled: "yes"
         save_field: wx_enabled_agency_list
 
-      - key: filter_arr
-        foreach: "[wx_enabled_agency_list]"
-        item: item
-        if_template: "{{or (eq .item.checkin_status `checked_in`) (eq .item.checkin_status `active`)}}"
-        save_field: checked_in_agency_list
-
       - key: service2field
         name: 执行批量同步
         service:
           service: hrm.sync_agency_all_bulk_batch
-          agency_list: "[checked_in_agency_list]"
+          agency_list: "[wx_enabled_agency_list]"
           message_time_from: "[message_time_from]"
           message_time_to: "[message_time_to]"
           record_limit: "[record_limit]"
@@ -1174,7 +1520,7 @@ service:
 
       - key: params2result
         fields:
-          - from: "[checked_in_agency_list]"
+          - from: "[wx_enabled_agency_list]"
             to: checked_in_agency_list
           - from: "[bulk_sync_result]"
             to: bulk_sync_result
@@ -1194,6 +1540,7 @@ service:
       clear_modules:
         default:
           - chat_record
+          - call_record
           - chat_contact
           - wechat_user
     handler_params:
@@ -1214,6 +1561,14 @@ service:
         save_field: clear_contact_result
 
       - key: service2field
+        name: 删除电话记录
+        enable: "{{contains .clear_modules `call_record`}}"
+        service:
+          service: hrm.travel_call_record_delete_by_agency
+          agency_id: "[agency_id]"
+        save_field: clear_call_record_result
+
+      - key: service2field
         name: 删除微信用户
         enable: "{{contains .clear_modules `wechat_user`}}"
         service:
@@ -1229,6 +1584,8 @@ service:
             to: clear_record_result
           - from: "[clear_contact_result]"
             to: clear_contact_result
+          - from: "[clear_call_record_result]"
+            to: clear_call_record_result
           - from: "[clear_employee_result]"
             to: clear_employee_result
           - from: "[clear_modules]"
