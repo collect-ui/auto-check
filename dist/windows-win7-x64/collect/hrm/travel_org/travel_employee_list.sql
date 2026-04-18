@@ -4,10 +4,30 @@ select
     select count(1)
     from travel_call_record r
     where r.agency_id = e.agency_id
-      and ifnull(e.phone, '') != ''
-      and (r.phone_out_number = e.phone or r.phone_in_number = e.phone)
+      and (
+        r.employee_id = e.employee_id
+        or (
+          ifnull(r.employee_id, '') = ''
+          and ifnull(e.phone, '') != ''
+          and (r.phone_out_number = e.phone or r.phone_in_number = e.phone)
+        )
+      )
       and r.phone_start_time >= (strftime('%s', 'now', '-30 day') * 1000)
   ) as call_count,
+  (
+    select count(1)
+    from travel_chat_contact c
+    where c.agency_id = e.agency_id
+      and c.employee_id = e.employee_id
+      and ifnull(c.is_group, 0) = 0
+  ) as chat_person_count,
+  (
+    select count(1)
+    from travel_chat_contact c
+    where c.agency_id = e.agency_id
+      and c.employee_id = e.employee_id
+      and ifnull(c.is_group, 0) = 1
+  ) as chat_group_count,
   a.agency_name
 from travel_employee e
 left join travel_agency a on a.agency_id = e.agency_id

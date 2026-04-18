@@ -16,13 +16,19 @@ where 1=1
 and a.agency_id = {{ .agency_id }}
 {{ end }}
 {{ if .employee_id }}
-and exists (
-  select 1
-  from travel_employee e
-  where e.employee_id = {{ .employee_id }}
-    and e.agency_id = a.agency_id
-    and ifnull(e.phone, '') != ''
-    and (a.phone_out_number = e.phone or a.phone_in_number = e.phone)
+and (
+  a.employee_id = {{ .employee_id }}
+  or (
+    ifnull(a.employee_id, '') = ''
+    and exists (
+      select 1
+      from travel_employee e
+      where e.employee_id = {{ .employee_id }}
+        and e.agency_id = a.agency_id
+        and ifnull(e.phone, '') != ''
+        and (a.phone_out_number = e.phone or a.phone_in_number = e.phone)
+    )
+  )
 )
 {{ end }}
 {{ if .start_time }}
