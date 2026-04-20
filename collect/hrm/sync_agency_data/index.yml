@@ -1359,6 +1359,8 @@ service:
           - chat_contact
           - chat_record
           - call_record
+          - gen_file_text
+          - gen_call_record_text
     handler_params:
       - key: service2field
         name: 拉取手机号列表
@@ -1414,7 +1416,22 @@ service:
         enable: "{{contains .sync_modules `gen_file_text`}}"
         service:
           service: hrm.gen_file_text
+          agency_id: "[agency_id]"
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
+          limit: "[record_limit]"
         save_field: gen_file_text_result
+
+      - key: service2field
+        name: 分析电话录音
+        enable: "{{contains .sync_modules `gen_call_record_text`}}"
+        service:
+          service: hrm.gen_call_record_text
+          agency_id: "[agency_id]"
+          start_time: "[message_time_from]"
+          end_time: "[message_time_to]"
+          limit: "[record_limit]"
+        save_field: gen_call_record_text_result
 
       - key: params2result
         fields:
@@ -1432,6 +1449,8 @@ service:
             to: call_record_sync_result
           - from: "[gen_file_text_result]"
             to: gen_file_text_result
+          - from: "[gen_call_record_text_result]"
+            to: gen_call_record_text_result
           - from: "[sync_modules]"
             to: sync_modules
 
@@ -1455,6 +1474,8 @@ service:
           - chat_contact
           - chat_record
           - call_record
+          - gen_file_text
+          - gen_call_record_text
     batch:
       foreach: "[agency_list]"
       item: item
@@ -1481,7 +1502,7 @@ service:
     params:
       message_time_from:
         default: 0
-        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -15 `day`}}*1000{{end}}"
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -1 `hour`}}*1000{{end}}"
         exec: true
         type: int64
       message_time_to:
@@ -1497,6 +1518,8 @@ service:
           - chat_contact
           - chat_record
           - call_record
+          - gen_file_text
+          - gen_call_record_text
     handler_params:
       - key: service2field
         name: 查询微信同步启用旅行社
@@ -1526,6 +1549,83 @@ service:
             to: bulk_sync_result
           - from: "[sync_modules]"
             to: sync_modules
+
+  - key: sync_agency_all_and_detect_escape_schedule
+    name: 旅行社全量同步并全量分析定时任务
+    module: empty
+    http: true
+    log: true
+    schedule:
+      name: "每5分钟执行一次旅行社全量同步并全量分析"
+      enable: "{{eq (get_key \"travel_full_sync_analyze_schedule_enable\") \"true\"}}"
+      schedule_spec: "@every 300s"
+    params:
+      message_time_from:
+        default: 0
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -1 `hour`}}*1000{{end}}"
+        exec: true
+        type: int64
+      message_time_to:
+        default: 0
+        template: "{{if .message_time_to}}{{.message_time_to}}{{else}}{{unix_time 0 `second`}}*1000{{end}}"
+        exec: true
+        type: int64
+      record_limit:
+        default: 10000
+      sync_modules:
+        default:
+          - wechat_user
+          - chat_contact
+          - chat_record
+          - call_record
+          - gen_file_text
+          - gen_call_record_text
+      analyze_strategy:
+        default: incremental
+      analyze_source:
+        default: schedule_full
+      analyze_limit:
+        default: 200
+      analyze_days:
+        default: 2
+      employee_limit:
+        default: 500
+      max_prompt_length:
+        default: 20000
+    handler_params:
+      - key: service2field
+        name: 执行全量同步
+        service:
+          service: hrm.sync_agency_all_bulk
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
+          record_limit: "[record_limit]"
+          sync_modules: "[sync_modules]"
+        save_field: bulk_sync_result
+
+      - key: service2field
+        name: 执行全量分析
+        service:
+          service: hrm.detect_escape_order_schedule
+          analyze_source: "[analyze_source]"
+          analyze_strategy: "[analyze_strategy]"
+          limit: "[analyze_limit]"
+          days: "[analyze_days]"
+          employee_limit: "[employee_limit]"
+          max_prompt_length: "[max_prompt_length]"
+        save_field: detect_result
+
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[bulk_sync_result]"
+            to: bulk_sync_result
+          - from: "[detect_result]"
+            to: detect_result
+          - from: "[analyze_strategy]"
+            to: analyze_strategy
+          - from: "[analyze_source]"
+            to: analyze_source
 
   - key: clear_agency_all_data
     name: 清理旅行社微信相关数据
