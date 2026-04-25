@@ -293,6 +293,8 @@ service:
         default: ""
       escape_user_prompt:
         default: ""
+      escape_repeat_ad_keywords:
+        default: ""
       create_time:
         template: "{{current_date_time}}"
       create_user:
@@ -395,6 +397,7 @@ service:
           description: "[description]"
           escape_system_prompt: "[escape_system_prompt]"
           escape_user_prompt: "[escape_user_prompt]"
+          escape_repeat_ad_keywords: "[escape_repeat_ad_keywords]"
         save_field: save_agency_result
       - key: service2field
         service:
@@ -475,6 +478,8 @@ service:
         default: ""
       escape_user_prompt:
         default: ""
+      escape_repeat_ad_keywords:
+        default: ""
     filter:
       agency_id: "[agency_id]"
 
@@ -501,6 +506,8 @@ service:
       escape_system_prompt:
         default: ""
       escape_user_prompt:
+        default: ""
+      escape_repeat_ad_keywords:
         default: ""
     handler_params:
       - key: filter_arr
@@ -567,28 +574,8 @@ service:
           description: "[description]"
           escape_system_prompt: "[escape_system_prompt]"
           escape_user_prompt: "[escape_user_prompt]"
+          escape_repeat_ad_keywords: "[escape_repeat_ad_keywords]"
         save_field: update_agency_result
-      - key: service2field
-        service:
-          service: hrm.travel_agency_prompt_rel_delete_by_agency
-          agency_id: "[agency_id]"
-        save_field: prompt_rel_delete_result
-        if_template: "{{ne .escape_user_keyword_list nil}}"
-      - key: service2field
-        service:
-          service: hrm.travel_agency_prompt_rel_save_by_agency
-          agency_id: "[agency_id]"
-          prompt_type: system
-          keyword_list: "[escape_system_keyword_dedup_list]"
-        save_field: system_keyword_save_result
-      - key: service2field
-        service:
-          service: hrm.travel_agency_prompt_rel_save_by_agency
-          agency_id: "[agency_id]"
-          prompt_type: user
-          keyword_list: "[escape_user_keyword_dedup_list]"
-        save_field: user_keyword_save_result
-        if_template: "{{ne .escape_user_keyword_list nil}}"
     result_handler:
       - key: params2result
         fields:
@@ -596,10 +583,6 @@ service:
             to: agency_id
           - from: "[update_agency_result]"
             to: update_agency_result
-          - from: "[system_keyword_save_result]"
-            to: system_keyword_save_result
-          - from: "[user_keyword_save_result]"
-            to: user_keyword_save_result
 
   - key: travel_agency_delete_raw
     http: true

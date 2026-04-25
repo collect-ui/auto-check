@@ -1,0 +1,143 @@
+service:
+  - key: tencent_key_current_agency
+    http: true
+    module: sql
+    data_file: current_agency.sql
+
+  - key: tencent_key_remote_validate
+    http: true
+    module: http
+    log: true
+    params:
+      secret_id:
+        check:
+          template: "{{must .secret_id}}"
+          err_msg: SecretId不能为空
+      secret_key:
+        check:
+          template: "{{must .secret_key}}"
+          err_msg: SecretKey不能为空
+      region:
+        default: ap-beijing
+    http_json: remote_validate.json
+
+  - key: tencent_key_remote_create
+    http: true
+    module: http
+    log: true
+    params:
+      applicant_name:
+        check:
+          template: "{{must .applicant_name}}"
+          err_msg: 申请人不能为空
+      account_name:
+        check:
+          template: "{{must .account_name}}"
+          err_msg: 账号名称不能为空
+      secret_id:
+        check:
+          template: "{{must .secret_id}}"
+          err_msg: SecretId不能为空
+      secret_key:
+        check:
+          template: "{{must .secret_key}}"
+          err_msg: SecretKey不能为空
+      region:
+        default: ap-beijing
+      monthly_quota_seconds:
+        type: int
+        default: 36000
+      remark:
+        default: ""
+    http_json: remote_create.json
+    result_handler:
+      - key: result2params
+        fields:
+          - from: "[request]"
+            to: "[request]"
+      - key: param2result
+        field: "[request]"
+
+  - key: tencent_key_remote_request_list
+    http: true
+    module: http
+    log: true
+    params:
+      account_name_query:
+        check:
+          template: "{{must .account_name_query}}"
+          err_msg: 查询关键字不能为空
+    http_json: remote_request_list.json
+
+  - key: tencent_key_request_list
+    http: true
+    module: empty
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_current_agency
+          to_obj: true
+        save_field: current_agency
+      - key: service2field
+        enable: "{{must .current_agency.agency_code}}"
+        service:
+          service: hrm.tencent_key_remote_request_list
+          account_name_query: "[current_agency.agency_code]"
+        save_field: request_list
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[current_agency]"
+            to: current_agency
+          - from: "[request_list]"
+            to: request_list
+
+  - key: tencent_key_submit
+    http: true
+    module: empty
+    params:
+      applicant_name:
+        check:
+          template: "{{must .applicant_name}}"
+          err_msg: 申请人不能为空
+      account_name:
+        check:
+          template: "{{must .account_name}}"
+          err_msg: 账号名称不能为空
+      secret_id:
+        check:
+          template: "{{must .secret_id}}"
+          err_msg: SecretId不能为空
+      secret_key:
+        check:
+          template: "{{must .secret_key}}"
+          err_msg: SecretKey不能为空
+      region:
+        default: ap-beijing
+      monthly_quota_seconds:
+        type: int
+        default: 36000
+      remark:
+        default: ""
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_current_agency
+          to_obj: true
+        save_field: current_agency
+      - key: service2field
+        service:
+          service: hrm.tencent_key_remote_create
+          applicant_name: "[applicant_name]"
+          account_name: "[account_name]"
+          secret_id: "[secret_id]"
+          secret_key: "[secret_key]"
+          region: "[region]"
+          monthly_quota_seconds: "[monthly_quota_seconds]"
+          remark: "[remark]"
+        save_field: request
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[request]"
+            to: request

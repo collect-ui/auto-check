@@ -457,9 +457,9 @@ service:
           - field: contact_id
             template: "{{uuid}}"
           - field: agency_id
-            template: "[agency_id]"
+            template: "{{ if .item.agency_id }}{{.item.agency_id}}{{else}}{{.agency_id}}{{end}}"
           - field: employee_id
-            template: "[employee_id]"
+            template: "{{ if .item.employee_id}}{{.item.employee_id}}{{else}}{{.employee_id}}{{ end}}"
           - field: wx_id
             template: "[item.wxId]"
           - field: contact_nick_name
@@ -485,19 +485,19 @@ service:
           - field: exists
             template: "0"
 
-      # 12. 旅行社模式：按 owner_wx_id 映射 employee_id
-      - key: update_array_from_array
-        enable: "{{and (eq .mode `agency`) (must .valid_employee_list) (must .chat_contact_raw_list)}}"
-        foreach: "[chat_contact_raw_list]"
-        item: item
-        field: "[owner_wx_id]"
-        right: "[valid_employee_list]"
-        right_field: "[wx_id]"
-        fields:
-          - field: employee_id
-            template: "[right.employee_id]"
-          - field: agency_id
-            template: "[right.agency_id]"
+    #   # 12. 旅行社模式：按 owner_wx_id 映射 employee_id
+    #   - key: update_array_from_array
+    #     enable: "{{and (eq .mode `agency`) (must .valid_employee_list) (must .chat_contact_raw_list)}}"
+    #     foreach: "[chat_contact_raw_list]"
+    #     item: item
+    #     field: "[owner_wx_id]"
+    #     right: "[valid_employee_list]"
+    #     right_field: "[wx_id]"
+    #     fields:
+    #       - field: employee_id
+    #         template: "[right.employee_id]"
+    #       - field: agency_id
+    #         template: "[right.agency_id]"
 
 
 
@@ -833,6 +833,8 @@ service:
             template: "[item.userId]"
 
           # 系统字段
+          - field: analyze_time
+            template: "{{current_date_time}}"
           - field: create_time
             template: "{{current_date_time}}"
           - field: modify_time
@@ -996,6 +998,24 @@ service:
         fields:
           - field: exists
             template: "1"
+          - field: local_employee_id
+            template: "[right.employee_id]"
+          - field: local_contact_id
+            template: "[right.contact_id]"
+          - field: local_owner_head
+            template: "[right.owner_head]"
+          - field: local_content
+            template: "[right.content]"
+          - field: local_file_name
+            template: "[right.file_name]"
+          - field: local_file_size
+            template: "[right.file_size]"
+          - field: local_file_status
+            template: "[right.file_status]"
+          - field: local_file_url
+            template: "[right.file_url]"
+          - field: local_link_url
+            template: "[right.link_url]"
 
       # 18. 过滤新增记录
       - key: filter_arr
@@ -1005,7 +1025,63 @@ service:
         if_template: "{{eq .item.exists `0`}}"
         save_field: add_list
 
-      # 19. 批量保存聊天记录
+      # 19. 过滤需要修正归属的已存在记录
+      - key: filter_arr
+        name: 过滤需要修正归属的记录
+        foreach: "[mapped_chat_record_list]"
+        item: item
+        if_template: "{{and (eq .item.exists `1`) (or (ne .item.employee_id .item.local_employee_id) (ne .item.contact_id .item.local_contact_id) (ne .item.owner_head .item.local_owner_head))}}"
+        save_field: fix_list
+
+      # 20. 过滤需要回写附件/链接字段的已存在记录
+      - key: filter_arr
+        name: 过滤需要回写附件字段的记录
+        foreach: "[mapped_chat_record_list]"
+        item: item
+        if_template: "{{and (eq .item.exists `1`) (or (and (ne (printf `%v` .item.file_url) `<nil>`) (ne (printf `%v` .item.file_url) ``) (ne (printf `%v` .item.file_url) (printf `%v` .item.local_file_url))) (and (ne (printf `%v` .item.file_name) `<nil>`) (ne (printf `%v` .item.file_name) ``) (ne (printf `%v` .item.file_name) (printf `%v` .item.local_file_name))) (and (ne (printf `%v` .item.file_size) `<nil>`) (ne (printf `%v` .item.file_size) (printf `%v` .item.local_file_size))) (and (ne (printf `%v` .item.file_status) `<nil>`) (ne (printf `%v` .item.file_status) (printf `%v` .item.local_file_status))) (and (ne (printf `%v` .item.link_url) `<nil>`) (ne (printf `%v` .item.link_url) ``) (ne (printf `%v` .item.link_url) (printf `%v` .item.local_link_url))) (and (ne (printf `%v` .item.content) `<nil>`) (ne (printf `%v` .item.content) ``) (ne (printf `%v` .item.content) (printf `%v` .item.local_content))) )}}"
+        save_field: attachment_update_list
+
+      # 21. 修正归属记录补充modify_time
+      - key: update_array
+        name: 修正归属记录补充modify_time
+        enable: "{{must .fix_list}}"
+        foreach: "[fix_list]"
+        item: item
+        fields:
+          - field: modify_time
+            template: "{{current_date_time}}"
+
+      # 22. 附件回写记录补充modify_time
+      - key: update_array
+        name: 附件回写记录补充modify_time
+        enable: "{{must .attachment_update_list}}"
+        foreach: "[attachment_update_list]"
+        item: item
+        fields:
+          - field: analyze_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+
+      # 23. 批量修正已存在聊天记录归属
+      - key: service2field
+        enable: "{{must .fix_list}}"
+        name: 批量修正已存在聊天记录归属
+        service:
+          service: hrm.travel_chat_record_bulk_update_relation
+          record_list: "[fix_list]"
+        save_field: fix_result
+
+      # 24. 批量回写已存在聊天记录附件字段
+      - key: service2field
+        enable: "{{must .attachment_update_list}}"
+        name: 批量回写已存在聊天记录附件字段
+        service:
+          service: hrm.travel_chat_record_bulk_update_attachment
+          record_list: "[attachment_update_list]"
+        save_field: attachment_update_result
+
+      # 25. 批量保存聊天记录
       - key: service2field
         enable: "{{gt (len .add_list) 0}}"
         name: 批量保存聊天记录
@@ -1013,15 +1089,25 @@ service:
           service: hrm.travel_chat_record_bulk_create
           record_list: "[add_list]"
 
-      # 20. 返回同步结果
+      # 26. 返回同步结果
       - key: params2result
         fields:
           - from: "[mode]"
             to: mode
+          - from: "[employee]"
+            to: employee
           - from: "[chat_record_raw_list]"
             to: chat_record_raw_list
           - from: "[mapped_chat_record_list]"
             to: mapped_chat_record_list
+          - from: "[fix_list]"
+            to: fix_list
+          - from: "[fix_result]"
+            to: fix_result
+          - from: "[attachment_update_list]"
+            to: attachment_update_list
+          - from: "[attachment_update_result]"
+            to: attachment_update_result
           - from: "[add_list]"
             to: add_list
 
@@ -1172,6 +1258,8 @@ service:
             template: "[item.phoneType]"
  
           - field: create_time
+            template: "{{current_date_time}}"
+          - field: analyze_time
             template: "{{current_date_time}}"
           - field: modify_time
             template: "{{current_date_time}}"
@@ -1343,7 +1431,7 @@ service:
           err_msg: 旅行社ID不能为空
       message_time_from:
         default: 0
-        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -1 `day`}}*1000{{end}}"
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -2 `day`}}*1000{{end}}"
         exec: true
         type: int64
       message_time_to:
@@ -1454,6 +1542,129 @@ service:
           - from: "[sync_modules]"
             to: sync_modules
 
+  - key: sync_employee_all_for_health
+    name: 单员工体检同步
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: 员工ID不能为空
+      message_time_from:
+        default: 0
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -30 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+      message_time_to:
+        default: 0
+        template: "{{if .message_time_to}}{{.message_time_to}}{{else}}{{unix_time 0 `second`}}*1000{{end}}"
+        exec: true
+        type: int64
+      record_limit:
+        default: 10000
+      transcribe_limit:
+        default: 1000
+      sync_modules:
+        default:
+          - wechat_user
+          - chat_contact
+          - chat_record
+          - call_record
+          - gen_file_text
+          - gen_call_record_text
+    handler_params:
+      - key: service2field
+        name: 刷新旅行社员工映射
+        enable: "{{contains .sync_modules `wechat_user`}}"
+        service:
+          service: hrm.sync_wechat_user
+          agency_id: "[agency_id]"
+        save_field: sync_wechat_user_result
+      - key: service2field
+        name: 同步员工通讯录
+        enable: "{{contains .sync_modules `chat_contact`}}"
+        service:
+          service: hrm.sync_chat_contact
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+        save_field: sync_chat_contact_result
+      - key: service2field
+        name: 同步员工聊天记录
+        enable: "{{contains .sync_modules `chat_record`}}"
+        service:
+          service: hrm.sync_chat_record
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
+          start: 1
+          limit: "[record_limit]"
+        save_field: sync_chat_record_result
+      - key: service2field
+        name: 同步员工电话记录
+        enable: "{{contains .sync_modules `call_record`}}"
+        service:
+          service: hrm.sync_call_record
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          start_time: "[message_time_from]"
+          end_time: "[message_time_to]"
+          pageSize: "[record_limit]"
+        save_field: sync_call_record_result
+      - key: service2field
+        name: 转写员工聊天附件
+        enable: "{{contains .sync_modules `gen_file_text`}}"
+        service:
+          service: hrm.gen_file_text
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
+          limit: "[transcribe_limit]"
+        save_field: gen_file_text_result
+      - key: service2field
+        name: 转写员工电话录音
+        enable: "{{contains .sync_modules `gen_call_record_text`}}"
+        service:
+          service: hrm.gen_call_record_text
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          start_time: "[message_time_from]"
+          end_time: "[message_time_to]"
+          limit: "[transcribe_limit]"
+        save_field: gen_call_record_text_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[employee_id]"
+            to: employee_id
+          - from: "[message_time_from]"
+            to: message_time_from
+          - from: "[message_time_to]"
+            to: message_time_to
+          - from: "[sync_wechat_user_result]"
+            to: sync_wechat_user_result
+          - from: "[sync_chat_contact_result]"
+            to: sync_chat_contact_result
+          - from: "[sync_chat_record_result]"
+            to: sync_chat_record_result
+          - from: "[sync_call_record_result]"
+            to: sync_call_record_result
+          - from: "[gen_file_text_result]"
+            to: gen_file_text_result
+          - from: "[gen_call_record_text_result]"
+            to: gen_call_record_text_result
+          - from: "[sync_modules]"
+            to: sync_modules
+
   - key: sync_agency_all_bulk_batch
     name: 批量执行旅行社微信全量同步
     module: bulk_service
@@ -1496,13 +1707,13 @@ service:
     http: true
     log: true
     schedule:
-      name: "每10分钟同步一次旅行社微信数据"
+      name: "每5分钟同步一次旅行社微信数据"
       enable: "{{eq (get_key \"wechat_schedule_enable\") \"true\"}}"
-      schedule_spec: "@every 600s"
+      schedule_spec: "@every 300s"
     params:
       message_time_from:
         default: 0
-        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -1 `hour`}}*1000{{end}}"
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -2 `day`}}*1000{{end}}"
         exec: true
         type: int64
       message_time_to:
@@ -1562,7 +1773,7 @@ service:
     params:
       message_time_from:
         default: 0
-        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -1 `hour`}}*1000{{end}}"
+        template: "{{if .message_time_from}}{{.message_time_from}}{{else}}{{unix_time -2 `day`}}*1000{{end}}"
         exec: true
         type: int64
       message_time_to:
@@ -1592,6 +1803,11 @@ service:
         default: 500
       max_prompt_length:
         default: 20000
+      cleanup_cutoff_time:
+        default: 0
+        template: "{{if .cleanup_cutoff_time}}{{.cleanup_cutoff_time}}{{else}}{{unix_time -60 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
     handler_params:
       - key: service2field
         name: 执行全量同步
@@ -1602,6 +1818,13 @@ service:
           record_limit: "[record_limit]"
           sync_modules: "[sync_modules]"
         save_field: bulk_sync_result
+
+      - key: service2field
+        name: 清理60天前历史数据
+        service:
+          service: hrm.cleanup_travel_history_data
+          cutoff_time: "[cleanup_cutoff_time]"
+        save_field: cleanup_result
 
       - key: service2field
         name: 执行全量分析
@@ -1620,6 +1843,8 @@ service:
         fields:
           - from: "[bulk_sync_result]"
             to: bulk_sync_result
+          - from: "[cleanup_result]"
+            to: cleanup_result
           - from: "[detect_result]"
             to: detect_result
           - from: "[analyze_strategy]"
@@ -1690,3 +1915,85 @@ service:
             to: clear_employee_result
           - from: "[clear_modules]"
             to: clear_modules
+
+  - key: cleanup_travel_history_data
+    name: 清理旅行社60天前历史数据
+    module: empty
+    http: true
+    log: true
+    params:
+      agency_id:
+        default: ""
+      cutoff_time:
+        default: 0
+        template: "{{if .cutoff_time}}{{.cutoff_time}}{{else}}{{unix_time -60 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+    handler_params:
+      - key: service2field
+        name: 查询旧聊天记录ID
+        service:
+          service: hrm.travel_chat_record_history_delete_query
+          agency_id: "[agency_id]"
+          cutoff_time: "[cutoff_time]"
+        save_field: old_chat_record_list
+
+      - key: service2field
+        name: 删除旧聊天记录
+        enable: "{{must .old_chat_record_list}}"
+        service:
+          service: hrm.travel_chat_record_delete_by_uid_list
+          query_list: "[old_chat_record_list]"
+        save_field: delete_chat_record_result
+
+      - key: service2field
+        name: 查询旧电话记录ID
+        service:
+          service: hrm.travel_call_record_history_delete_query
+          agency_id: "[agency_id]"
+          cutoff_time: "[cutoff_time]"
+        save_field: old_call_record_list
+
+      - key: service2field
+        name: 删除旧电话记录
+        enable: "{{must .old_call_record_list}}"
+        service:
+          service: hrm.travel_call_record_delete_by_uid_list
+          query_list: "[old_call_record_list]"
+        save_field: delete_call_record_result
+
+      - key: service2field
+        name: 查询旧联系人ID
+        service:
+          service: hrm.travel_chat_contact_history_delete_query
+          agency_id: "[agency_id]"
+          cutoff_time: "[cutoff_time]"
+        save_field: old_chat_contact_list
+
+      - key: service2field
+        name: 删除旧联系人
+        enable: "{{must .old_chat_contact_list}}"
+        service:
+          service: hrm.travel_chat_contact_delete_by_contact_id_list
+          query_list: "[old_chat_contact_list]"
+        save_field: delete_chat_contact_result
+
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[cutoff_time]"
+            to: cutoff_time
+          - from: "[old_chat_record_list]"
+            to: old_chat_record_list
+          - from: "[delete_chat_record_result]"
+            to: delete_chat_record_result
+          - from: "[old_call_record_list]"
+            to: old_call_record_list
+          - from: "[delete_call_record_result]"
+            to: delete_call_record_result
+          - from: "[old_chat_contact_list]"
+            to: old_chat_contact_list
+          - from: "[delete_chat_contact_result]"
+            to: delete_chat_contact_result

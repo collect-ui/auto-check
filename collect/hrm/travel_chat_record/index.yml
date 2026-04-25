@@ -10,6 +10,46 @@ service:
           template: "{{must .record_list}}"
           err_msg: 聊天记录列表不能为空
 
+  - key: travel_chat_record_bulk_update_relation
+    http: true
+    module: bulk_upsert
+    table: travel_chat_record
+    model_field: record_list
+    update_fields:
+      - agency_id
+      - employee_id
+      - contact_id
+      - owner_head
+      - modify_time
+    params:
+      record_list:
+        check:
+          template: "{{must .record_list}}"
+          err_msg: 聊天记录列表不能为空
+
+  - key: travel_chat_record_bulk_update_attachment
+    http: true
+    module: bulk_upsert
+    table: travel_chat_record
+    model_field: record_list
+    update_fields:
+      - agency_id
+      - employee_id
+      - contact_id
+      - content
+      - file_name
+      - file_size
+      - file_status
+      - file_url
+      - link_url
+      - analyze_time
+      - modify_time
+    params:
+      record_list:
+        check:
+          template: "{{must .record_list}}"
+          err_msg: 聊天记录列表不能为空
+
   - key: travel_chat_record_list
     http: true
     module: sql
@@ -19,6 +59,40 @@ service:
       limit:
         default: 500
     data_file: travel_chat_record_list.sql
+
+  - key: travel_chat_record_history_delete_query
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+      cutoff_time:
+        default: 0
+        template: "{{if .cutoff_time}}{{.cutoff_time}}{{else}}{{unix_time -60 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+    data_file: travel_chat_record_history_delete_query.sql
+
+  - key: travel_chat_record_delete_by_uid_list
+    http: true
+    module: model_delete
+    table: travel_chat_record
+    params:
+      query_list:
+        default: []
+      uid_list:
+        default: []
+        check:
+          template: "{{or (must .query_list) (must .uid_list)}}"
+          err_msg: 聊天记录ID列表不能为空
+    handler_params:
+      - key: prop_arr
+        enable: "{{must .query_list}}"
+        foreach: "[query_list]"
+        value: "[uid]"
+        save_field: uid_list
+    filter:
+      uid__in: "[uid_list]"
 
   - key: transcribe
     module: http
@@ -68,37 +142,138 @@ service:
           template: "{{must .update_list}}"
           err_msg: 更新列表不能为空
 
+  - key: travel_chat_record_update_file_text_one
+    module: model_update
+    table: travel_chat_record
+    params:
+      uid:
+        check:
+          template: "{{must .uid}}"
+          err_msg: uid不能为空
+      wx_id:
+        check:
+          template: "{{must .wx_id}}"
+          err_msg: wx_id不能为空
+      file_text:
+        default: ""
+      content:
+        default: ""
+      analyze_time:
+        template: "{{current_date_time}}"
+      modify_time:
+        template: "{{current_date_time}}"
+    filter:
+      uid: "[uid]"
+      wx_id: "[wx_id]"
+    update_fields:
+      - file_text
+      - content
+      - analyze_time
+      - modify_time
+
+  - key: transcribe_chat_record_one
+    module: empty
+    params:
+      uid:
+        default: ""
+      wx_id:
+        default: ""
+      file_url:
+        default: ""
+      file_text:
+        default: ""
+      content:
+        default: ""
+      transcribe_text:
+        default: ""
+    handler_params:
+      - key: service2field
+        enable: "{{and (must .file_url) (not (must .file_text))}}"
+        service:
+          service: hrm.transcribe
+          file_url: "[file_url]"
+        save_field: transcribe_text
+      - key: update_field
+        enable: "{{must .transcribe_text}}"
+        fields:
+          - field: file_text
+            template: "[transcribe_text]"
+          - field: content
+            template: "[transcribe_text]"
+          - field: modify_time
+            template: "{{current_date_time}}"
+      - key: service2field
+        enable: "{{must .transcribe_text}}"
+        service:
+          service: hrm.travel_chat_record_update_file_text_one
+          uid: "[uid]"
+          wx_id: "[wx_id]"
+          file_text: "[file_text]"
+          content: "[content]"
+          analyze_time: "[analyze_time]"
+          modify_time: "[modify_time]"
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[uid]"
+            to: uid
+          - from: "[wx_id]"
+            to: wx_id
+          - from: "[transcribe_text]"
+            to: transcribe_text
+          - from: "[update_result]"
+            to: update_result
+
+  - key: transcribe_chat_record_bulk
+    module: bulk_service
+    params:
+      data_list:
+        default: []
+    batch:
+      foreach: "[data_list]"
+      item: item
+      loop_max: 1
+      service:
+        service: hrm.transcribe_chat_record_one
+      save_field: transcribe_result
+      append_item_param: true
+
   - key: gen_file_text
     http: true
     module: empty
+    params:
+      agency_id:
+        default: ""
+      employee_id:
+        default: ""
+      contact_id:
+        default: ""
+      message_time_from:
+        default: ""
+      message_time_to:
+        default: ""
+      limit:
+        default: 500
     handler_params:
       - key: service2field 
         service:
           service: hrm.travel_chat_record_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          contact_id: "[contact_id]"
+          message_time_from: "[message_time_from]"
+          message_time_to: "[message_time_to]"
           no_file_text: true
+          limit: "[limit]"
         save_field: data_list
       - key: service2field
         enable: "{{gt (len .data_list) 0}}"
-        name: 批量调用transcribe
+        name: 串行逐条转写并保存
         service:
-          service: hrm.transcribe_bulk
+          service: hrm.transcribe_chat_record_bulk
           data_list: "[data_list]"
         save_field: transcribe_results
-      - key: update_array
-        foreach: "[transcribe_results]"
-        item: item
-        fields:
-          - field: file_text
-            template: "[item.transcribe_result.data]"
-            
-          - field: content
-            template: "[item.transcribe_result.data]"
-      - key: service2field
-        enable: "{{gt (len .transcribe_results) 0}}"
-        name: 批量更新file_text
-        service:
-          service: hrm.travel_chat_record_bulk_update_file_text
-          update_list: "[transcribe_results]"
     result_handler:
       - key: params2result
         fields:

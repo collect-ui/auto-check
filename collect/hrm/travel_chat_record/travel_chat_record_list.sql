@@ -30,14 +30,30 @@ and (
   )
 )
 {{ end }}
-{{ if .message_time_from }}
+{{ if and .message_time_from (ne (printf "%v" .message_time_from) "0") }}
 and a.message_time >= {{ .message_time_from }}
 {{ end }}
-{{ if .message_time_to }}
+{{ if and .message_time_to (ne (printf "%v" .message_time_to) "0") }}
 and a.message_time <= {{ .message_time_to }}
 {{ end }}
 {{ if .no_file_text }}
-and ifnull(a.file_text,'') = '' and ifnull(a.file_name,'') != ''
+and ifnull(a.file_text,'') = ''
+and (
+  lower(ifnull(a.file_url, '')) like '%.mp3'
+  or lower(ifnull(a.file_url, '')) like '%.wav'
+  or lower(ifnull(a.file_url, '')) like '%.amr'
+  or lower(ifnull(a.file_url, '')) like '%.m4a'
+  or lower(ifnull(a.file_url, '')) like '%.jpg'
+  or lower(ifnull(a.file_url, '')) like '%.jpeg'
+  or lower(ifnull(a.file_url, '')) like '%.png'
+  or lower(ifnull(a.file_url, '')) like '%.gif'
+  or lower(ifnull(a.file_url, '')) like '%.webp'
+  or lower(ifnull(a.file_name, '')) like '%.mp3'
+  or lower(ifnull(a.file_name, '')) like '%.wav'
+  or lower(ifnull(a.file_name, '')) like '%.amr'
+  or lower(ifnull(a.file_name, '')) like '%.m4a'
+  or lower(ifnull(a.file_name, '')) like 'th_%'
+)
 {{ end }}
 order by a.message_time
 limit {{.limit}}

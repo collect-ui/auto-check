@@ -16,6 +16,8 @@ type TravelEscapeAnalyzeLog struct {
 	CallCount             int    `gorm:"column:call_count" json:"call_count"`
 	ChatLatestMessageTime int64  `gorm:"column:chat_latest_message_time" json:"chat_latest_message_time"`
 	CallLatestPhoneTime   int64  `gorm:"column:call_latest_phone_time" json:"call_latest_phone_time"`
+	ChatLatestAnalyzeTime string `gorm:"column:chat_latest_analyze_time" json:"chat_latest_analyze_time"`
+	CallLatestAnalyzeTime string `gorm:"column:call_latest_analyze_time" json:"call_latest_analyze_time"`
 	CreateTime            string `gorm:"column:create_time" json:"create_time"`
 	CreateUser            string `gorm:"column:create_user" json:"create_user"`
 }

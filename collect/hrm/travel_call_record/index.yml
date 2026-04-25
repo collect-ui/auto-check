@@ -62,6 +62,40 @@ service:
       - key: arr2obj
         enable: "[to_obj]"
 
+  - key: travel_call_record_history_delete_query
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+      cutoff_time:
+        default: 0
+        template: "{{if .cutoff_time}}{{.cutoff_time}}{{else}}{{unix_time -60 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+    data_file: travel_call_record_history_delete_query.sql
+
+  - key: travel_call_record_delete_by_uid_list
+    http: true
+    module: model_delete
+    table: travel_call_record
+    params:
+      query_list:
+        default: []
+      uid_list:
+        default: []
+        check:
+          template: "{{or (must .query_list) (must .uid_list)}}"
+          err_msg: 电话记录ID列表不能为空
+    handler_params:
+      - key: prop_arr
+        enable: "{{must .query_list}}"
+        foreach: "[query_list]"
+        value: "[uid]"
+        save_field: uid_list
+    filter:
+      uid__in: "[uid_list]"
+
   - key: travel_call_record_bulk_update_record_text
     http: true
     module: bulk_upsert
@@ -77,11 +111,100 @@ service:
           template: "{{must .update_list}}"
           err_msg: 更新列表不能为空
 
+  - key: travel_call_record_update_record_text_one
+    http: true
+    module: model_update
+    table: travel_call_record
+    params:
+      uid:
+        check:
+          template: "{{must .uid}}"
+          err_msg: uid不能为空
+      phone_record_text:
+        default: ""
+      analyze_time:
+        template: "{{current_date_time}}"
+      modify_time:
+        template: "{{current_date_time}}"
+    filter:
+      uid: "[uid]"
+    update_fields:
+      - phone_record_text
+      - analyze_time
+      - modify_time
+
+  - key: transcribe_call_record_one
+    http: true
+    module: empty
+    params:
+      uid:
+        default: ""
+      phone_record_address:
+        default: ""
+      phone_record_text:
+        default: ""
+      transcribe_text:
+        default: ""
+    handler_params:
+      - key: update_field
+        enable: "{{and (must .phone_record_address) (not (must .phone_record_text))}}"
+        fields:
+          - field: file_url
+            template: "[phone_record_address]"
+      - key: service2field
+        enable: "{{and (must .file_url) (not (must .phone_record_text))}}"
+        service:
+          service: hrm.transcribe
+          file_url: "[file_url]"
+        save_field: transcribe_text
+      - key: update_field
+        enable: "{{must .transcribe_text}}"
+        fields:
+          - field: phone_record_text
+            template: "[transcribe_text]"
+          - field: modify_time
+            template: "{{current_date_time}}"
+      - key: service2field
+        enable: "{{must .transcribe_text}}"
+        service:
+          service: hrm.travel_call_record_update_record_text_one
+          uid: "[uid]"
+          phone_record_text: "[phone_record_text]"
+          analyze_time: "[analyze_time]"
+          modify_time: "[modify_time]"
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[uid]"
+            to: uid
+          - from: "[transcribe_text]"
+            to: transcribe_text
+          - from: "[update_result]"
+            to: update_result
+
+  - key: transcribe_call_record_bulk
+    http: true
+    module: bulk_service
+    params:
+      data_list:
+        default: []
+    batch:
+      foreach: "[data_list]"
+      item: item
+      loop_max: 1
+      service:
+        service: hrm.transcribe_call_record_one
+      save_field: transcribe_result
+      append_item_param: true
+
   - key: gen_call_record_text
     http: true
     module: empty
     params:
       agency_id:
+        default: ""
+      employee_id:
         default: ""
       start_time:
         default: 0
@@ -100,7 +223,10 @@ service:
         service:
           service: hrm.travel_call_record_list
           agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
           no_record_text: true
+          start_time: "[start_time]"
+          end_time: "[end_time]"
           limit: "[limit]"
         save_field: data_list
 
@@ -114,28 +240,11 @@ service:
 
       - key: service2field
         enable: "{{gt (len .data_list) 0}}"
-        name: 批量调用transcribe
+        name: 串行逐条转写并保存
         service:
-          service: hrm.transcribe_bulk
+          service: hrm.transcribe_call_record_bulk
           data_list: "[data_list]"
         save_field: transcribe_results
-
-      - key: update_array
-        enable: "{{gt (len .transcribe_results) 0}}"
-        foreach: "[transcribe_results]"
-        item: item
-        fields:
-          - field: phone_record_text
-            template: "[item.transcribe_result.data]"
-          - field: modify_time
-            template: "{{current_date_time}}"
-
-      - key: service2field
-        enable: "{{gt (len .transcribe_results) 0}}"
-        name: 批量更新电话录音转写文本
-        service:
-          service: hrm.travel_call_record_bulk_update_record_text
-          update_list: "[transcribe_results]"
 
     result_handler:
       - key: params2result
@@ -144,6 +253,70 @@ service:
             to: data_list
           - from: "[transcribe_results]"
             to: transcribe_results
+
+  - key: gen_voice_text
+    http: true
+    module: empty
+    params:
+      agency_id:
+        default: ""
+      employee_id:
+        default: ""
+      start_time:
+        default: 0
+        type: int64
+      end_time:
+        default: 0
+        type: int64
+      chat_limit:
+        default: 500
+      call_limit:
+        default: 500
+      list_limit:
+        default: 10000
+    handler_params:
+      - key: service2field
+        name: 微信语音转写
+        service:
+          service: hrm.gen_file_text
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          message_time_from: "[start_time]"
+          message_time_to: "[end_time]"
+          limit: "[chat_limit]"
+        save_field: gen_file_text_result
+
+      - key: service2field
+        name: 电话录音转写
+        service:
+          service: hrm.gen_call_record_text
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          start_time: "[start_time]"
+          end_time: "[end_time]"
+          limit: "[call_limit]"
+        save_field: gen_call_record_text_result
+
+      - key: service2field
+        name: 刷新电话记录列表
+        service:
+          service: hrm.travel_call_record_list
+          agency_id: "[agency_id]"
+          employee_id: "[employee_id]"
+          start_time: "[start_time]"
+          end_time: "[end_time]"
+          limit: "[list_limit]"
+        save_field: call_record_list
+
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[gen_file_text_result]"
+            to: gen_file_text_result
+          - from: "[gen_call_record_text_result]"
+            to: gen_call_record_text_result
+          - from: "[call_record_list]"
+            to: call_record_list
 
   - key: travel_call_record_delete_by_agency
     http: true

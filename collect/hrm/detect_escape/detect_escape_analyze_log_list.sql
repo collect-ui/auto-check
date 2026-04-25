@@ -9,6 +9,8 @@ select
   l.call_count,
   l.chat_latest_message_time,
   l.call_latest_phone_time,
+  l.chat_latest_analyze_time,
+  l.call_latest_analyze_time,
   l.system_prompt,
   l.prompt_content,
   l.ai_result,

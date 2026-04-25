@@ -297,6 +297,10 @@ data_handler:
     name: 处理缓存
     type: inner
     path: HandlerCache
+  - key: health_chunk_plan
+    name: 月度体检分片规划
+    type: outer
+    path: HealthChunkPlan
   # 防止重复请求
   - key: prevent_duplication
     name: 防止重复请求

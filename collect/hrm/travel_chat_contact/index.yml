@@ -51,6 +51,40 @@ service:
       - key: arr2obj
         enable: "[to_obj]"
 
+  - key: travel_chat_contact_history_delete_query
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+      cutoff_time:
+        default: 0
+        template: "{{if .cutoff_time}}{{.cutoff_time}}{{else}}{{unix_time -60 `day`}}*1000{{end}}"
+        exec: true
+        type: int64
+    data_file: travel_chat_contact_history_delete_query.sql
+
+  - key: travel_chat_contact_delete_by_contact_id_list
+    http: true
+    module: model_delete
+    table: travel_chat_contact
+    params:
+      query_list:
+        default: []
+      contact_id_list:
+        default: []
+        check:
+          template: "{{or (must .query_list) (must .contact_id_list)}}"
+          err_msg: 联系人ID列表不能为空
+    handler_params:
+      - key: prop_arr
+        enable: "{{must .query_list}}"
+        foreach: "[query_list]"
+        value: "[contact_id]"
+        save_field: contact_id_list
+    filter:
+      contact_id__in: "[contact_id_list]"
+
   - key: travel_chat_contact_delete_by_agency
     http: true
     module: model_delete

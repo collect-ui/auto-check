@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:8014/transcribe",
+  "url": "http://collect-ui.top:8014/transcribe",
   "method": "POST",
   "header": {
     "Content-Type": "application/json"

@@ -9,10 +9,18 @@ select
       '，状态' || ifnull(a.phone_status, 0) ||
       '，时长' || ifnull(a.call_time_length, 0) || '秒'
   end as parsed_text,
+  max(ifnull(a.analyze_time, '')) over () as global_latest_analyze_time,
   a.*
 from travel_call_record a
 where 1=1
+{{ if and .start_time (ne (printf "%v" .start_time) "0") }}
+and ifnull(a.phone_start_time, 0) >= {{ .start_time }}
+{{ else }}
 and ifnull(a.phone_start_time, 0) >= cast(strftime('%s', 'now', printf('-%d day', {{ if .days }}{{ .days }}{{ else }}7{{ end }})) as integer) * 1000
+{{ end }}
+{{ if and .end_time (ne (printf "%v" .end_time) "0") }}
+and ifnull(a.phone_start_time, 0) <= {{ .end_time }}
+{{ end }}
 {{ if .employee_id }}
 and (
   a.employee_id = {{ .employee_id }}

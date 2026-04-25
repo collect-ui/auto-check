@@ -67,14 +67,118 @@ copy_runtime_assets() {
   done
 }
 
+copy_logo_assets() {
+  local dest="$1"
+  local icon_src=""
+  local png_src=""
+
+  if [[ -f "moon-check-logo-icon.ico" ]]; then
+    icon_src="moon-check-logo-icon.ico"
+  elif [[ -f "moon-check-logo.ico" ]]; then
+    icon_src="moon-check-logo.ico"
+  fi
+
+  if [[ -f "moon-check-logo.png" ]]; then
+    png_src="moon-check-logo.png"
+  fi
+
+  if [[ -n "$icon_src" ]]; then
+    cp -f "$icon_src" "$dest/logo.ico"
+  else
+    log "skip missing logo ico: moon-check-logo-icon.ico or moon-check-logo.ico"
+  fi
+
+  if [[ -n "$png_src" ]]; then
+    cp -f "$png_src" "$dest/logo.png"
+  else
+    log "skip missing logo png: moon-check-logo.png"
+  fi
+}
+
 write_start_bat() {
   local dest="$1"
   cat > "$dest/start.bat" <<'BAT'
 @echo off
 setlocal
 cd /d %~dp0
+set "APP_URL=http://127.0.0.1:8016"
+set "PORT=8016"
+set "PORT_IN_USE="
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr /r /c:":%PORT% .*LISTENING"') do (
+  set "PORT_IN_USE=1"
+  goto :open_only
+)
+
 echo Starting auto-check server...
-main.exe
+start "" /B main.exe
+timeout /t 2 /nobreak >nul
+
+:open_only
+echo Opening browser: %APP_URL%
+start "" "%APP_URL%"
+BAT
+}
+
+write_icon_setup_bat() {
+  local dest="$1"
+  cat > "$dest/setup_icon.bat" <<'BAT'
+@echo off
+setlocal
+cd /d %~dp0
+
+if not exist "%cd%\logo.ico" (
+  echo [ERROR] missing logo.ico
+  pause
+  exit /b 1
+)
+
+> "%cd%\desktop.ini" echo [.ShellClassInfo]
+>> "%cd%\desktop.ini" echo IconResource=logo.ico,0
+
+attrib +s "%cd%"
+attrib +h +s "%cd%\desktop.ini"
+attrib +h "%cd%\logo.ico"
+
+echo Folder icon configured.
+echo Reopen this folder if Explorer does not refresh immediately.
+pause
+BAT
+}
+
+write_shortcut_bat() {
+  local dest="$1"
+  cat > "$dest/create_desktop_shortcut.bat" <<'BAT'
+@echo off
+setlocal
+cd /d %~dp0
+
+if not exist "%cd%\start.bat" (
+  echo [ERROR] missing start.bat
+  pause
+  exit /b 1
+)
+
+if not exist "%cd%\logo.ico" (
+  echo [ERROR] missing logo.ico
+  pause
+  exit /b 1
+)
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ws = New-Object -ComObject WScript.Shell; " ^
+  "$shortcut = $ws.CreateShortcut([System.IO.Path]::Combine($env:USERPROFILE, 'Desktop', 'Auto Check.lnk')); " ^
+  "$shortcut.TargetPath = [System.IO.Path]::Combine('%cd%', 'start.bat'); " ^
+  "$shortcut.WorkingDirectory = '%cd%'; " ^
+  "$shortcut.IconLocation = [System.IO.Path]::Combine('%cd%', 'logo.ico'); " ^
+  "$shortcut.Save()"
+
+if errorlevel 1 (
+  echo [ERROR] failed to create desktop shortcut
+  pause
+  exit /b 1
+)
+
+echo Desktop shortcut created: %USERPROFILE%\Desktop\Auto Check.lnk
 pause
 BAT
 }
@@ -108,7 +212,10 @@ MOD
   GOOS=windows GOARCH=amd64 CGO_ENABLED=0 "$go_cmd" build "${extra_build_args[@]}" -ldflags='-s -w' -o "$dest/main.exe" -v main.go
 
   copy_runtime_assets "$dest"
+  copy_logo_assets "$dest"
   write_start_bat "$dest"
+  write_icon_setup_bat "$dest"
+  write_shortcut_bat "$dest"
 
   if command -v file >/dev/null 2>&1; then
     file "$dest/main.exe" || true

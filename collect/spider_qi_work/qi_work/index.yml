@@ -100,20 +100,25 @@ service:
         check:
           template: "{{must .companyId}}"
           err_msg: companyId 不能为空
+        type: int64
       controlId:
         check:
           template: "{{must .controlId}}"
           err_msg: controlId 不能为空
+        type: int64
       loginUserId:
         check:
           template: "{{must .loginUserId}}"
           err_msg: loginUserId 不能为空
+        type: int64
       createDepartmentId:
         check:
           template: "{{must .createDepartmentId}}"
           err_msg: createDepartmentId 不能为空
+        type: int64
       userId:
         default: ""
+        type: int64
       messageTimeFrom:
         default: 0
         check:
@@ -186,6 +191,15 @@ service:
         fields:
           - from: "[data.list]"
             to: "[list]"
+      - key: update_array
+        enable: "{{must .employee_id}}"
+        foreach: list
+        item: item
+        fields:
+           - field: employee_id
+             template: "[employee_id]" 
+           - field: agency_id
+             template: "[agency_id]" 
       - key: param2result
         field: "[list]"
   - key: query_user_wx

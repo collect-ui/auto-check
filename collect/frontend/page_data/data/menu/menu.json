@@ -245,5 +245,14 @@
     "api": "post:/template_data/data?service=frontend.customer_assign_manage",
     "url": "/framework/customer_assign_manage",
     "data": "system/customer_assign_manage.json"
+  },
+  {
+    "menu_code": "tencent_key_apply",
+    "menu_name": "腾讯Key申请",
+    "icon": "KeyOutlined",
+    "router_group": "/framework",
+    "api": "post:/template_data/data?service=frontend.tencent_key_apply",
+    "url": "/framework/tencent_key_apply",
+    "data": "system/tencent_key_apply.json"
   }
 ]

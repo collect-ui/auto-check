@@ -1,0 +1,26 @@
+{
+  "service": "hrm.detect_escape_health_order_and_save",
+  "employee_id": "fa5367a6-8d4c-4b23-afe1-5384dfb039f3",
+  "analyze_source": "health_manual_debug",
+  "skip_sync": 0,
+  "run_modules": [
+    "sync",
+    "plan"
+  ],
+  "sync_modules": [
+    "wechat_user",
+    "chat_contact",
+    "chat_record",
+    "call_record",
+    "gen_file_text",
+    "gen_call_record_text"
+  ],
+  "single_chat_text_limit": 20000,
+  "max_days_per_chunk": 0,
+  "max_chat_count_per_chunk": 120,
+  "max_call_count_per_chunk": 20,
+  "max_chat_chars_per_chunk": 12000,
+  "max_call_chars_per_chunk": 6000,
+  "max_chat_content_length": 30000,
+  "max_call_content_length": 10000
+}

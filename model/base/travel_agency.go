@@ -26,6 +26,7 @@ type TravelAgency struct {
 	WxSyncErrorCount   int    `gorm:"column:wx_sync_error_count" json:"wx_sync_error_count"`
 	EscapeSystemPrompt string `gorm:"column:escape_system_prompt" json:"escape_system_prompt"`
 	EscapeUserPrompt   string `gorm:"column:escape_user_prompt" json:"escape_user_prompt"`
+	EscapeRepeatAdKeywords string `gorm:"column:escape_repeat_ad_keywords" json:"escape_repeat_ad_keywords"`
 }
 
 func (*TravelAgency) TableName() string {

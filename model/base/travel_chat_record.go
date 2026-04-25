@@ -75,8 +75,9 @@ type TravelChatRecord struct {
 	UserId           *int64  `gorm:"column:user_id" json:"user_id"`
 
 	// 系统字段
-	CreateTime string `gorm:"column:create_time" json:"create_time"`
-	ModifyTime string `gorm:"column:modify_time" json:"modify_time"`
+	CreateTime   string  `gorm:"column:create_time" json:"create_time"`
+	ModifyTime   string  `gorm:"column:modify_time" json:"modify_time"`
+	AnalyzeTime  *string `gorm:"column:analyze_time" json:"analyze_time"`
 }
 
 func (*TravelChatRecord) TableName() string {

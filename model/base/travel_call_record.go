@@ -29,8 +29,9 @@ type TravelCallRecord struct {
 	ParsedText         string `gorm:"column:parsed_text" json:"parsed_text"`
 	PhoneRecordText    string `gorm:"column:phone_record_text" json:"phone_record_text"`
 
-	CreateTime string `gorm:"column:create_time" json:"create_time"`
-	ModifyTime string `gorm:"column:modify_time" json:"modify_time"`
+	CreateTime  string  `gorm:"column:create_time" json:"create_time"`
+	ModifyTime  string  `gorm:"column:modify_time" json:"modify_time"`
+	AnalyzeTime *string `gorm:"column:analyze_time" json:"analyze_time"`
 }
 
 func (*TravelCallRecord) TableName() string {

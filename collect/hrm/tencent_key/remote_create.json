@@ -1,0 +1,17 @@
+{
+  "url": "{{get_key `to_text_base_url`}}/tencent/account-requests",
+  "method": "POST",
+  "header": {
+    "Content-Type": "application/json"
+  },
+  "result_json": true,
+  "data": {
+    "applicant_name": "[applicant_name]",
+    "account_name": "[account_name]",
+    "secret_id": "[secret_id]",
+    "secret_key": "[secret_key]",
+    "region": "[region]",
+    "monthly_quota_seconds": "[monthly_quota_seconds]",
+    "remark": "[remark]"
+  }
+}

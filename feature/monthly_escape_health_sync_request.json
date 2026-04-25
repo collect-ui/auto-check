@@ -1,0 +1,11 @@
+{
+  "service": "hrm.sync_employee_all_for_health",
+  "agency_id": "UT_CLEANUP_AG_20260424",
+  "employee_id": "fa5367a6-8d4c-4b23-afe1-5384dfb039f3",
+  "record_limit": 200,
+  "transcribe_limit": 20,
+  "sync_modules": [
+    "chat_record",
+    "call_record"
+  ]
+}

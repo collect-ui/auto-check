@@ -1,21 +1,19 @@
-#!/bin/bash
+#!/bin/sh
 
 # 配置文件路径
 CONFIG_FILE="conf/application.properties"
 
-# 从配置文件中提取所有 server_port 值
-SERVER_PORTS=$(grep -Po '(?<=server_port=)\d+' "$CONFIG_FILE")
+# 从配置文件中提取所有 server_port 值（兼容 sh，不依赖 bash 数组）
+SERVER_PORTS=$(sed -n 's/^[[:space:]]*server_port=\([0-9][0-9]*\).*/\1/p' "$CONFIG_FILE")
 
 if [ -z "$SERVER_PORTS" ]; then
     echo "Error: server_port not found in $CONFIG_FILE"
     exit 1
 fi
 
-# 将端口值转换为数组
-IFS=$'\n' read -d '' -r -a SERVER_PORTS_ARRAY <<< "$SERVER_PORTS"
-
 # 遍历每个端口
-for SERVER_PORT in "${SERVER_PORTS_ARRAY[@]}"; do
+echo "$SERVER_PORTS" | while IFS= read -r SERVER_PORT; do
+    [ -n "$SERVER_PORT" ] || continue
     echo "Server port found: $SERVER_PORT"
 
     # 查找使用该端口的进程

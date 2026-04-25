@@ -28,6 +28,12 @@ select
       and c.employee_id = e.employee_id
       and ifnull(c.is_group, 0) = 1
   ) as chat_group_count,
+  (
+    select count(1)
+    from travel_escape_issue i
+    where i.employee_id = e.employee_id
+      and ifnull(i.issue_status, 'pending') = 'pending'
+  ) as pending_issue_count,
   a.agency_name
 from travel_employee e
 left join travel_agency a on a.agency_id = e.agency_id

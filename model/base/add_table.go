@@ -142,6 +142,10 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	modelMap[travelEscapeAnalyzeLog.TableName()] = travelEscapeAnalyzeLog
 	primaryKeyMap[travelEscapeAnalyzeLog.TableName()] = travelEscapeAnalyzeLog.PrimaryKey()
 
+	travelEscapeIssue := TravelEscapeIssue{}
+	modelMap[travelEscapeIssue.TableName()] = travelEscapeIssue
+	primaryKeyMap[travelEscapeIssue.TableName()] = travelEscapeIssue.PrimaryKey()
+
 	travelEscapePromptKeyword := TravelEscapePromptKeyword{}
 	modelMap[travelEscapePromptKeyword.TableName()] = travelEscapePromptKeyword
 	primaryKeyMap[travelEscapePromptKeyword.TableName()] = travelEscapePromptKeyword.PrimaryKey()

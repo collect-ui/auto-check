@@ -1,0 +1,14 @@
+{
+  "url": "{{get_key `to_text_base_url`}}/tencent/account-credentials/validate",
+  "method": "POST",
+  "header": {
+    "X-Admin-Token": "{{get_key `to_text_admin_token`}}",
+    "Content-Type": "application/json"
+  },
+  "result_json": true,
+  "data": {
+    "secret_id": "[secret_id]",
+    "secret_key": "[secret_key]",
+    "region": "[region]"
+  }
+}

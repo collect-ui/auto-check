@@ -29,6 +29,7 @@ func GetRegisterList() []templateService.ModuleResult {
 	l = append(l, &FixJson{})
 	l = append(l, &HandlerTreeLevelOrder{})
 	l = append(l, &ClientIp{})
+	l = append(l, &HealthChunkPlan{})
 	// 执行shell
 	l = append(l, &Ssh{})
 	return l

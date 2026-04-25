@@ -1,0 +1,528 @@
+{
+  "tag": "layout-fit",
+  "className": "padding10 h100",
+  "initStore": {
+    "currentAgency": {},
+    "requestList": [],
+    "validationResult": {
+      "status": "unverified"
+    },
+    "applyForm": {
+      "secret_id": "",
+      "secret_key": "",
+      "region": "ap-beijing",
+      "remark": ""
+    },
+    "nextAccountName": "",
+    "accountPrefix": ""
+  },
+  "initAction": [
+    {
+      "tag": "ajax",
+      "group": "agencyInit",
+      "api": "post:/template_data/data?service=hrm.tencent_key_current_agency",
+      "adapt": {
+        "currentAgency": "${Array.isArray(data)&&data.length>0?data[0]:(data||{})}"
+      }
+    },
+    {
+      "tag": "ajax",
+      "group": "requestList",
+      "enable": "${!!currentAgency.agency_code}",
+      "api": "post:/template_data/data?service=hrm.tencent_key_remote_request_list",
+      "data": {
+        "account_name_query": "${currentAgency.agency_code}"
+      },
+      "adapt": {
+        "requestList": "${data&&Array.isArray(data.requests)?data.requests:[]}"
+      }
+    },
+    {
+      "tag": "update-store",
+      "group": "requestList",
+      "value": {
+        "accountPrefix": "${(currentAgency.agency_name||'')+(currentAgency.agency_code||'')}",
+        "nextAccountName": "${(()=>{const prefix=(currentAgency.agency_name||'')+(currentAgency.agency_code||''); const seq=(Array.isArray(requestList)?requestList.length:0)+1; return prefix?(prefix+'-'+String(seq).padStart(3,'0')):'';})()}",
+        "validationResult": "${validationResult&&validationResult.status?validationResult:{status:'unverified'}}"
+      }
+    }
+  ],
+  "children": [
+    {
+      "tag": "layout-fit",
+      "title": "腾讯 Key 自助申请",
+      "className": "h100",
+      "topRight": [
+        {
+          "tag": "button",
+          "icon": "ReloadOutlined",
+          "children": "刷新状态",
+          "action": [
+            {
+              "tag": "reload-init-action",
+              "group": "agencyInit"
+            },
+            {
+              "tag": "reload-init-action",
+              "group": "requestList"
+            }
+          ]
+        }
+      ],
+      "children": [
+        {
+          "tag": "panel-group",
+          "direction": "horizontal",
+          "className": "h100",
+          "style": {
+            "height": "100%"
+          },
+          "children": [
+            {
+              "tag": "panel",
+              "id": "left_apply_panel",
+              "defaultSize": "${Math.round((420/Math.max((window&&window.innerWidth)||1440,1))*100)}",
+              "minSize": 28,
+              "className": "h100 padding-right10",
+              "children": [
+                {
+                  "tag": "layout-fit",
+                  "className": "h100",
+                  "title": "申请信息",
+                  "children": [
+                    {
+                      "tag": "div",
+                      "className": "h100 overflow-auto",
+                      "children": [
+                        {
+                          "tag": "div",
+                          "style": {
+                            "marginBottom": "16px",
+                            "padding": "14px 16px",
+                            "background": "${currentAgency.agency_id?'linear-gradient(135deg,#eff6ff 0%,#ffffff 100%)':'#fff7ed'}",
+                            "border": "1px solid ${currentAgency.agency_id?'#bfdbfe':'#fed7aa'}",
+                            "borderRadius": "10px"
+                          },
+                          "children": [
+                            {
+                              "tag": "div",
+                              "style": {
+                                "fontSize": "18px",
+                                "fontWeight": "600",
+                                "color": "#0f172a",
+                                "marginBottom": "8px"
+                              },
+                              "children": "${currentAgency.agency_id?((currentAgency.agency_name||'-')+'（'+(currentAgency.agency_code||'-')+'）'):'当前账号未绑定旅行社'}"
+                            },
+                            {
+                              "tag": "div",
+                              "style": {
+                                "display": "grid",
+                                "gridTemplateColumns": "96px 1fr",
+                                "rowGap": "8px",
+                                "columnGap": "10px",
+                                "lineHeight": "1.8",
+                                "color": "#334155"
+                              },
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "children": "申请人"
+                                },
+                                {
+                                  "tag": "div",
+                                  "children": "${currentAgency.applicant_name||currentAgency.username||'-'}"
+                                },
+                                {
+                                  "tag": "div",
+                                  "children": "账号前缀"
+                                },
+                                {
+                                  "tag": "div",
+                                  "children": "${accountPrefix||'-'}"
+                                },
+                                {
+                                  "tag": "div",
+                                  "children": "预生成账号"
+                                },
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "fontWeight": "600",
+                                    "color": "#1677ff"
+                                  },
+                                  "children": "${nextAccountName||'-'}"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "form",
+                          "name": "tencent-key-apply-form",
+                          "initialValues": "${applyForm}",
+                          "labelCol": {
+                            "span": 7
+                          },
+                          "style": {
+                            "padding": "16px 16px 8px",
+                            "background": "#ffffff",
+                            "border": "1px solid #e5e7eb",
+                            "borderRadius": "10px"
+                          },
+                          "children": [
+                            {
+                              "tag": "form-item",
+                              "label": "旅行社",
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "children": "${currentAgency.agency_name?currentAgency.agency_name+'（'+(currentAgency.agency_code||'-')+'）':'-'}"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "form-item",
+                              "label": "账号名称",
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "fontWeight": "600",
+                                    "color": "#1677ff"
+                                  },
+                                  "children": "${nextAccountName||'-'}"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "form-item",
+                              "name": "secret_id",
+                              "label": "SecretId",
+                              "rules": [
+                                {
+                                  "required": true,
+                                  "message": "请输入 SecretId"
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "tag": "input",
+                                  "placeholder": "AKID..."
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "form-item",
+                              "name": "secret_key",
+                              "label": "SecretKey",
+                              "rules": [
+                                {
+                                  "required": true,
+                                  "message": "请输入 SecretKey"
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "tag": "input",
+                                  "type": "password",
+                                  "placeholder": "请输入腾讯云 SecretKey"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "form-item",
+                              "name": "region",
+                              "label": "Region",
+                              "rules": [
+                                {
+                                  "required": true,
+                                  "message": "请输入 Region"
+                                }
+                              ],
+                              "children": [
+                                {
+                                  "tag": "input",
+                                  "placeholder": "ap-beijing"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "form-item",
+                              "name": "remark",
+                              "label": "备注",
+                              "children": [
+                                {
+                                  "tag": "input",
+                                  "isTextarea": true,
+                                  "rows": 3,
+                                  "placeholder": "例如：腾讯免费测试号"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "style": {
+                            "display": "flex",
+                            "gap": "12px",
+                            "flexWrap": "wrap",
+                            "marginTop": "16px"
+                          },
+                          "children": [
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "children": "校验一次",
+                              "disabled": "${!currentAgency.agency_id}",
+                              "action": [
+                                {
+                                  "tag": "submit-form",
+                                  "formName": "tencent-key-apply-form"
+                                },
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.tencent_key_remote_validate",
+                                  "appendFormFields": "tencent-key-apply-form",
+                                  "adapt": {
+                                    "validationResult": "${data || (()=>{try{return JSON.parse(msg||'{}')}catch(e){return {status:'error', error: msg||'校验失败'}}})()}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "primary",
+                              "children": "提交申请",
+                              "disabled": "${!currentAgency.agency_id || validationResult.status!=='ok' || !nextAccountName}",
+                              "action": [
+                                {
+                                  "tag": "submit-form",
+                                  "formName": "tencent-key-apply-form"
+                                },
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.tencent_key_submit",
+                                  "appendFormFields": "tencent-key-apply-form",
+                                  "data": {
+                                    "applicant_name": "${currentAgency.applicant_name||currentAgency.username||''}",
+                                    "account_name": "${nextAccountName}"
+                                  }
+                                },
+                                {
+                                  "tag": "message",
+                                  "type": "success",
+                                  "content": "申请已提交"
+                                },
+                                {
+                                  "tag": "reset-form",
+                                  "formName": "tencent-key-apply-form"
+                                },
+                                {
+                                  "tag": "update-form",
+                                  "formName": "tencent-key-apply-form",
+                                  "value": {
+                                    "secret_id": "",
+                                    "secret_key": "",
+                                    "region": "ap-beijing",
+                                    "remark": ""
+                                  }
+                                },
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "validationResult": {
+                                      "status": "unverified"
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "requestList"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "style": {
+                            "marginTop": "16px",
+                            "padding": "12px 14px",
+                            "background": "${validationResult.status==='ok'?'#f0fdf4':(validationResult.status==='error'?'#fff1f2':'#f8fafc')}",
+                            "border": "1px solid ${validationResult.status==='ok'?'#bbf7d0':(validationResult.status==='error'?'#fecdd3':'#e2e8f0')}",
+                            "borderRadius": "10px",
+                            "lineHeight": "1.9",
+                            "whiteSpace": "pre-wrap",
+                            "marginBottom": "8px"
+                          },
+                          "children": "${validationResult.status==='ok'?('最近校验：成功\\nRegion：'+(validationResult.usage_region||'-')+'\\n时间：'+(validationResult.validated_at||'-')):(validationResult.status==='error'?('最近校验：失败\\n原因：'+(validationResult.error||'-')+'\\n时间：'+(validationResult.validated_at||'-')):'提交前需要先做一次密钥校验。')}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "panel-resize",
+              "className": "bg-slate-200"
+            },
+            {
+              "tag": "panel",
+              "id": "right_request_panel",
+              "minSize": 36,
+              "className": "h100 padding-left10",
+              "children": [
+                {
+                  "tag": "layout-fit",
+                  "className": "h100",
+                  "title": "申请状态",
+                  "topRight": [
+                    {
+                      "tag": "div",
+                      "style": {
+                        "color": "#64748b",
+                        "fontSize": "12px"
+                      },
+                      "children": "${currentAgency.agency_name?('当前旅行社：'+currentAgency.agency_name+'（'+(currentAgency.agency_code||'-')+'）'):'未识别到旅行社'}"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "tag": "table",
+                      "rowSelection": "single",
+                      "rowData": "${requestList}",
+                      "columnDefs": [
+                        {
+                          "headerName": "#",
+                          "width": 60,
+                          "valueGetter": "node.rowIndex + 1",
+                          "sortable": false
+                        },
+                        {
+                          "headerName": "账号名称",
+                          "field": "account_name",
+                          "minWidth": 200
+                        },
+                        {
+                          "headerName": "状态",
+                          "field": "status",
+                          "width": 90,
+                          "cellRender": {
+                            "tag": "div",
+                            "style": {
+                              "height": "100%",
+                              "display": "flex",
+                              "alignItems": "center",
+                              "justifyContent": "center"
+                            },
+                            "children": [
+                              {
+                                "tag": "div",
+                                "style": {
+                                  "width": "24px",
+                                  "height": "24px",
+                                  "borderRadius": "999px",
+                                  "display": "flex",
+                                  "alignItems": "center",
+                                  "justifyContent": "center",
+                                  "background": "${row.status==='approved'?'#dcfce7':((row.status==='reject'||row.status==='rejected')?'#fee2e2':(row.status==='undone'?'#e5e7eb':'#fef3c7'))}",
+                                  "color": "${row.status==='approved'?'#16a34a':((row.status==='reject'||row.status==='rejected')?'#dc2626':(row.status==='undone'?'#6b7280':'#d97706'))}"
+                                },
+                                "children": [
+                                  {
+                                    "tag": "icon",
+                                    "icon": "${row.status==='approved'?'CheckCircleOutlined':((row.status==='reject'||row.status==='rejected')?'CloseCircleOutlined':(row.status==='undone'?'UndoOutlined':'ClockCircleOutlined'))}",
+                                    "style": {
+                                      "fontSize": "12px"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "headerName": "SecretId",
+                          "field": "secret_id_masked",
+                          "minWidth": 140
+                        },
+                        {
+                          "headerName": "Region",
+                          "field": "region",
+                          "width": 120
+                        },
+                        {
+                          "headerName": "月额度秒数",
+                          "field": "monthly_quota_seconds",
+                          "width": 120
+                        },
+                        {
+                          "headerName": "校验结果",
+                          "valueGetter": "data.validation_result && data.validation_result.status ? data.validation_result.status : 'unverified'",
+                          "width": 90,
+                          "cellRender": {
+                            "tag": "div",
+                            "style": {
+                              "height": "100%",
+                              "display": "flex",
+                              "alignItems": "center",
+                              "justifyContent": "center"
+                            },
+                            "children": [
+                              {
+                                "tag": "div",
+                                "style": {
+                                  "width": "24px",
+                                  "height": "24px",
+                                  "borderRadius": "999px",
+                                  "display": "flex",
+                                  "alignItems": "center",
+                                  "justifyContent": "center",
+                                  "background": "${(row.validation_result&&row.validation_result.status)==='ok'?'#dcfce7':((row.validation_result&&row.validation_result.status)==='error'?'#fee2e2':'#f3f4f6')}",
+                                  "color": "${(row.validation_result&&row.validation_result.status)==='ok'?'#16a34a':((row.validation_result&&row.validation_result.status)==='error'?'#dc2626':'#6b7280')}"
+                                },
+                                "children": [
+                                  {
+                                    "tag": "icon",
+                                    "icon": "${(row.validation_result&&row.validation_result.status)==='ok'?'SafetyCertificateOutlined':((row.validation_result&&row.validation_result.status)==='error'?'CloseCircleOutlined':'MinusCircleOutlined')}",
+                                    "style": {
+                                      "fontSize": "12px"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "headerName": "审核说明",
+                          "field": "review_comment",
+                          "minWidth": 180,
+                          "valueFormatter": "${value||'-'}"
+                        },
+                        {
+                          "headerName": "创建时间",
+                          "field": "created_at",
+                          "minWidth": 170
+                        },
+                        {
+                          "headerName": "审核时间",
+                          "field": "reviewed_at",
+                          "minWidth": 170,
+                          "valueFormatter": "${value||'-'}"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
