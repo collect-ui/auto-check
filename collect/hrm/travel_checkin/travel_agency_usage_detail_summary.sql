@@ -9,9 +9,27 @@ select
     ifnull(
       sum(
         (
-          ifnull(l.prompt_cache_hit_tokens, 0) * ifnull(mp.input_cache_hit_price_per_1m, 0)
-          + ifnull(l.prompt_cache_miss_tokens, 0) * ifnull(mp.input_cache_miss_price_per_1m, 0)
-          + ifnull(l.completion_tokens, 0) * ifnull(mp.output_price_per_1m, 0)
+          ifnull(l.prompt_cache_hit_tokens, 0) * (
+            case
+              when mp.input_cache_hit_price_per_1m is not null then mp.input_cache_hit_price_per_1m
+              when instr(l.resolved_model_name, 'deepseek-v4-flash') > 0 then 0.5
+              else 0
+            end
+          )
+          + ifnull(l.prompt_cache_miss_tokens, 0) * (
+              case
+                when mp.input_cache_miss_price_per_1m is not null then mp.input_cache_miss_price_per_1m
+                when instr(l.resolved_model_name, 'deepseek-v4-flash') > 0 then 2
+                else 0
+              end
+            )
+          + ifnull(l.completion_tokens, 0) * (
+              case
+                when mp.output_price_per_1m is not null then mp.output_price_per_1m
+                when instr(l.resolved_model_name, 'deepseek-v4-flash') > 0 then 8
+                else 0
+              end
+            )
         ) / 1000000.0
       ),
       0
@@ -23,6 +41,10 @@ select
 from (
   select
     t.*,
+    case
+      when ifnull(t.model_name, '') <> '' then t.model_name
+      else 'deepseek-v4-flash'
+    end as resolved_model_name,
     ifnull(
       case
         when json_valid(t.usage_json) then json_extract(t.usage_json, '$.prompt_cache_hit_tokens')
@@ -56,12 +78,7 @@ from (
   from travel_escape_analyze_log t
 ) l
 left join travel_model_price mp
-  on mp.model_name = (
-    case
-      when ifnull(l.model_name, '') <> '' then l.model_name
-      else 'deepseek-v4-flash'
-    end
-  )
+  on mp.model_name = l.resolved_model_name
  and ifnull(mp.status, 'normal') = 'normal'
 where l.agency_id = {{.agency_id}}
   and date(l.create_time) >= date(

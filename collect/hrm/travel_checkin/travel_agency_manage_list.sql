@@ -64,7 +64,18 @@ left join (
             else 0
           end,
           0
-        ) * ifnull(mp.input_cache_hit_price_per_1m, 0)
+        ) * (
+          case
+            when mp.input_cache_hit_price_per_1m is not null then mp.input_cache_hit_price_per_1m
+            when (
+              case
+                when ifnull(l.model_name, '') <> '' then l.model_name
+                else 'deepseek-v4-flash'
+              end
+            ) like '%deepseek-v4-flash%' then 0.5
+            else 0
+          end
+        )
         + ifnull(
             case
               when json_valid(l.usage_json) then json_extract(l.usage_json, '$.prompt_cache_miss_tokens')
@@ -87,8 +98,30 @@ left join (
                 )
               else ifnull(l.prompt_tokens, 0)
             end
-          ) * ifnull(mp.input_cache_miss_price_per_1m, 0)
-        + ifnull(l.completion_tokens, 0) * ifnull(mp.output_price_per_1m, 0)
+          ) * (
+            case
+              when mp.input_cache_miss_price_per_1m is not null then mp.input_cache_miss_price_per_1m
+              when (
+                case
+                  when ifnull(l.model_name, '') <> '' then l.model_name
+                  else 'deepseek-v4-flash'
+                end
+              ) like '%deepseek-v4-flash%' then 2
+              else 0
+            end
+          )
+        + ifnull(l.completion_tokens, 0) * (
+            case
+              when mp.output_price_per_1m is not null then mp.output_price_per_1m
+              when (
+                case
+                  when ifnull(l.model_name, '') <> '' then l.model_name
+                  else 'deepseek-v4-flash'
+                end
+              ) like '%deepseek-v4-flash%' then 8
+              else 0
+            end
+          )
       ) / 1000000.0
     ) as today_cost_cny
   from travel_escape_analyze_log l
