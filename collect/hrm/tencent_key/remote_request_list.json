@@ -6,8 +6,8 @@
   },
   "result_json": true,
   "data": {
-    "status": "all",
+    "status": "[status]",
     "account_name": "[account_name_query]",
-    "match_mode": "contains"
+    "match_mode": "[match_mode]"
   }
 }

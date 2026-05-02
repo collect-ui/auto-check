@@ -3,7 +3,7 @@
   "method": "POST",
   "header": {
     "Content-Type": "application/json",
-    "Authorization": "Bearer {{get_key `deepseek_api_key`}}"
+    "Authorization": "Bearer {{.deepseek_api_key}}"
   },
   "timeout": 600,
   "result_json": true,

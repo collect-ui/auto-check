@@ -11,6 +11,9 @@ where 1=1
   {{ if .agency_id }}
   and a.agency_id = {{.agency_id}}
   {{ end }}
+  {{ if .agency_code }}
+  and a.agency_code = {{.agency_code}}
+  {{ end }}
   {{ if .checkin_status }}
   and a.checkin_status = {{.checkin_status}}
   {{ end }}

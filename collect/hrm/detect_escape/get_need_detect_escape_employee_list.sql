@@ -107,6 +107,20 @@ call_latest as (
     select employee_id, call_latest_phone_time, call_latest_analyze_time from call_by_phone
   ) t
   group by t.employee_id
+),
+latest_issue as (
+  select
+    i.employee_id,
+    max(
+      case
+        when ifnull(i.process_time, '') glob '????-??-?? ??:??:??'
+          then i.process_time
+        else ifnull(i.last_modify_time, '')
+      end
+    ) as latest_issue_process_time
+  from travel_escape_issue i
+  inner join emp_scope e on e.employee_id = i.employee_id
+  group by i.employee_id
 )
 select
   e.employee_id,
@@ -127,11 +141,24 @@ left join chat_latest cl on cl.employee_id = e.employee_id
 left join call_latest cal on cal.employee_id = e.employee_id
 left join last_log ll on ll.employee_id = e.employee_id
 left join last_log_time llt on llt.employee_id = e.employee_id
+left join latest_issue li on li.employee_id = e.employee_id
 where
-  max(ifnull(cl.chat_latest_message_time, 0), ifnull(cal.call_latest_phone_time, 0)) > ifnull(ll.last_analyze_time_ms, 0)
+  max(ifnull(cl.chat_latest_message_time, 0), ifnull(cal.call_latest_phone_time, 0)) > 
+    max(
+      ifnull(ll.last_analyze_time_ms, 0),
+      case 
+        when ifnull(li.latest_issue_process_time, '') != '' 
+          then cast(strftime('%s', li.latest_issue_process_time) as integer) * 1000
+        else 0
+      end
+    )
   or (
     max(ifnull(cl.chat_latest_analyze_time, ''), ifnull(cal.call_latest_analyze_time, '')) != ''
-    and max(ifnull(cl.chat_latest_analyze_time, ''), ifnull(cal.call_latest_analyze_time, '')) > ifnull(llt.last_analyze_time, '')
+    and max(ifnull(cl.chat_latest_analyze_time, ''), ifnull(cal.call_latest_analyze_time, '')) > 
+      max(
+        ifnull(llt.last_analyze_time, ''),
+        ifnull(li.latest_issue_process_time, '')
+      )
   )
 order by latest_event_time desc
 limit {{.limit}}

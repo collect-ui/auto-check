@@ -107,7 +107,7 @@
 
               },
               "children": [
-                "没有账号？",
+                "需要申请入住？",
                 {
                   "tag": "a",
                   "style": {
@@ -117,8 +117,8 @@
                     "border-bottom": "1px dashed rgba(255, 255, 255, 0.5)",
                     "padding-bottom": "2px"
                   },
-                  "href": "/collect-ui/#/register",
-                  "children": "立即注册"
+                  "href": "/collect-ui/#/collect-ui/travel_checkin_apply",
+                  "children": "旅行社入住申请"
                 }
               ]
             }

@@ -1216,7 +1216,7 @@ service:
         item: item
         fields:
           - field: uid
-            template: "[item.uid]"
+            template: "{{.agency_id}}::{{.item.uid}}"
           - field: agency_id
             template: "[agency_id]"
 
@@ -1318,6 +1318,7 @@ service:
         name: 获取本地电话记录
         service:
           service: hrm.travel_call_record_list
+          agency_id: "[agency_id]"
           start_time: "[start_time]"
           end_time: "[end_time]"
           limit: 100000

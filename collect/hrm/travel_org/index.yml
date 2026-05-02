@@ -5,6 +5,8 @@ service:
     params:
       agency_id:
         default: ""
+      agency_code:
+        default: ""
       checkin_status:
         default: ""
       wx_sync_enabled:
@@ -262,11 +264,12 @@ service:
 
   - key: travel_agency_save_raw
     http: true
+    log: true
     module: model_save
     table: travel_agency
     params:
       agency_id:
-        template: "{{uuid}}"
+        template: "{{ if .agency_id}}{{.agency_id}}{{else}}{{uuid}}{{end}}"
       agency_name:
         check:
           template: "{{must .agency_name}}"
@@ -282,13 +285,15 @@ service:
       checkin_status:
         default: not_checked_in
       wx_sync_enabled:
-        default: no
+        default: "no"
       wx_sync_error_count:
         default: 0
         type: int
       wx_sync_expire_time:
         default: 0
         type: int
+      deepseek_api_key:
+        default: ""
       escape_system_prompt:
         default: ""
       escape_user_prompt:
@@ -321,13 +326,15 @@ service:
       checkin_status:
         default: not_checked_in
       wx_sync_enabled:
-        default: no
+        default: "no"
       wx_sync_error_count:
         default: 0
         type: int
       wx_sync_expire_time:
         default: 0
         type: int
+      deepseek_api_key:
+        default: ""
       escape_system_prompt:
         default: ""
       escape_user_prompt:
@@ -393,6 +400,7 @@ service:
           wx_sync_role_id: "[wx_sync_role_id]"
           wx_sync_company_id: "[wx_sync_company_id]"
           wx_last_sync_time: "[wx_last_sync_time]"
+          deepseek_api_key: "[deepseek_api_key]"
           logo_path: "[logo_path]"
           description: "[description]"
           escape_system_prompt: "[escape_system_prompt]"
@@ -474,6 +482,8 @@ service:
         type: int
       wx_sync_expire_time:
         type: int
+      deepseek_api_key:
+        default: ""
       escape_system_prompt:
         default: ""
       escape_user_prompt:
@@ -503,6 +513,8 @@ service:
         type: int
       wx_sync_expire_time:
         type: int
+      deepseek_api_key:
+        default: ""
       escape_system_prompt:
         default: ""
       escape_user_prompt:
@@ -570,6 +582,7 @@ service:
           wx_sync_role_id: "[wx_sync_role_id]"
           wx_sync_company_id: "[wx_sync_company_id]"
           wx_last_sync_time: "[wx_last_sync_time]"
+          deepseek_api_key: "[deepseek_api_key]"
           logo_path: "[logo_path]"
           description: "[description]"
           escape_system_prompt: "[escape_system_prompt]"

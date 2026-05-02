@@ -103,32 +103,64 @@ service:
         check:
           template: "{{must .file_url}}"
           err_msg: file_url不能为空
+      allow:
+        default: []
     handler_params:
+      - key: check_field
+        fields:
+          - field: allow
+            template: "{{gt (len .allow) 0}}"
+            err_msg: 未配置语音转写白名单，禁止调用语音转写
       - key: update_field
         name: 更新字段
         fields:
           - field: file_url
-            template: "https://df.qi.work/{{.file_url}}"
+            template: "{{if or (str_contains .file_url `http://`) (str_contains .file_url `https://`)}}{{.file_url}}{{else}}{{get_key `qi_work_file_base_url`}}/{{.file_url}}{{end}}"
     http_json: transcribe.json
     result_handler:
       - key: result2params
         fields:
-          - from: "[data]"
-            to: "[data]"
-      - key: param2result
-        field: "[data]"
+          - from: "[status]"
+            to: "[status]"
+          - from: "[text]"
+            to: "[text]"
+          - from: "[error]"
+            to: "[error]"
+          - from: "[tencent_account_name]"
+            to: "[tencent_account_name]"
+          - from: "[tencent_secret_id_masked]"
+            to: "[tencent_secret_id_masked]"
+          - from: "[cache_hit]"
+            to: "[cache_hit]"
+      - key: params2result
+        fields:
+          - from: "[status]"
+            to: status
+          - from: "[text]"
+            to: text
+          - from: "[error]"
+            to: error
+          - from: "[tencent_account_name]"
+            to: tencent_account_name
+          - from: "[tencent_secret_id_masked]"
+            to: tencent_secret_id_masked
+          - from: "[cache_hit]"
+            to: cache_hit
 
   - key: transcribe_bulk
     module: bulk_service
     params:
       data_list:
         default: []
+      allow:
+        default: []
     batch:
       foreach: "[data_list]"
       item: item
-      loop_max: 2
+      loop_max: 30
       service:
         service: hrm.transcribe
+        allow: "[params.allow]"
       save_field: transcribe_result
       append_item_param: true
 
@@ -180,11 +212,21 @@ service:
         default: ""
       file_url:
         default: ""
+      allow:
+        default: []
       file_text:
         default: ""
       content:
         default: ""
+      transcribe_result:
+        default: {}
       transcribe_text:
+        default: ""
+      transcribe_status:
+        default: ""
+      transcribe_error:
+        default: ""
+      tencent_account_name:
         default: ""
     handler_params:
       - key: service2field
@@ -192,7 +234,19 @@ service:
         service:
           service: hrm.transcribe
           file_url: "[file_url]"
-        save_field: transcribe_text
+          allow: "[allow]"
+        save_field: transcribe_result
+      - key: update_field
+        enable: "{{must .transcribe_result}}"
+        fields:
+          - field: transcribe_text
+            template: "[transcribe_result.text]"
+          - field: transcribe_status
+            template: "[transcribe_result.status]"
+          - field: transcribe_error
+            template: "[transcribe_result.error]"
+          - field: tencent_account_name
+            template: "[transcribe_result.tencent_account_name]"
       - key: update_field
         enable: "{{must .transcribe_text}}"
         fields:
@@ -220,6 +274,12 @@ service:
             to: uid
           - from: "[wx_id]"
             to: wx_id
+          - from: "[transcribe_status]"
+            to: transcribe_status
+          - from: "[transcribe_error]"
+            to: transcribe_error
+          - from: "[tencent_account_name]"
+            to: tencent_account_name
           - from: "[transcribe_text]"
             to: transcribe_text
           - from: "[update_result]"
@@ -230,12 +290,15 @@ service:
     params:
       data_list:
         default: []
+      allow:
+        default: []
     batch:
       foreach: "[data_list]"
       item: item
-      loop_max: 1
+      loop_max: 30
       service:
         service: hrm.transcribe_chat_record_one
+        allow: "[params.allow]"
       save_field: transcribe_result
       append_item_param: true
 
@@ -255,6 +318,8 @@ service:
         default: ""
       limit:
         default: 500
+      allow:
+        default: []
     handler_params:
       - key: service2field 
         service:
@@ -269,10 +334,31 @@ service:
         save_field: data_list
       - key: service2field
         enable: "{{gt (len .data_list) 0}}"
+        service:
+          service: hrm.tencent_key_agency_key_list
+          agency_id: "[agency_id]"
+          status: normal
+          pagination: false
+          count: false
+        save_field: key_list
+      - key: prop_arr
+        enable: "{{gt (len .data_list) 0}}"
+        foreach: "[key_list]"
+        value: "[account_name]"
+        save_field: allow
+      - key: check_field
+        enable: "{{gt (len .data_list) 0}}"
+        fields:
+          - field: allow
+            template: "{{gt (len .allow) 0}}"
+            err_msg: 当前旅行社未配置语音转写白名单账号，禁止调用语音转写
+      - key: service2field
+        enable: "{{gt (len .data_list) 0}}"
         name: 串行逐条转写并保存
         service:
           service: hrm.transcribe_chat_record_bulk
           data_list: "[data_list]"
+          allow: "[allow]"
         save_field: transcribe_results
     result_handler:
       - key: params2result

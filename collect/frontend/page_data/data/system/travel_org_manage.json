@@ -1,6 +1,6 @@
 {
   "tag": "layout-fit",
-  "className": "padding10 h100 overflow-auto",
+  "className": "padding10 h100",
   "initStore": {
     "agencyDialogVisible": false,
     "agencyOp": "add",
@@ -10,7 +10,7 @@
     "employeeSelection": [],
     "agencySearchForm": {
       "page": 1,
-      "size": 1,
+      "size": 50,
       "search": ""
     },
     "employeeSearchForm": {
@@ -34,7 +34,7 @@
       "wx_last_sync_time": "",
       "wx_sync_error_count": 0,
       "escape_system_prompt": "你是资深旅游销售风控分析助手。\n- 你只基于提供的微信聊天与电话转写内容做判断，不臆测、不\n  补造事实。\n- 你的目标是识别员工是否存在“逃单/飞单”风险行为，包括但不限于：引导客户脱离公司渠道、交换私人联系方式、私下收款或成交、规避公司监管、诱导删除聊天记录、拒绝走公司流程。\n请输出清晰、可审计、可复核的结论。",
-      "escape_user_prompt": "请对",
+      "escape_user_prompt": "请对本次会话按“明确行为 / 疑似倾向 / 无相关迹象”三类输出结论，并给出对应原文证据。",
       "escape_repeat_ad_keywords": "换群,速来咨询,7*24小时服务,加微信,VX,vx,微信,注册,代记账,许可证,挂靠,退税,收户"
     },
     "employeeForm": {
@@ -95,10 +95,25 @@
     "escapeLogLoading": false,
     "escapeLogList": [],
     "escapeLogCount": 0,
+    "escapeLogTodaySummary": {
+      "today_analyze_count": 0,
+      "today_prompt_tokens": 0,
+      "today_completion_tokens": 0,
+      "today_total_tokens": 0,
+      "today_prompt_cache_hit_tokens": 0,
+      "today_prompt_cache_miss_tokens": 0,
+      "today_cost_cny": 0,
+      "currency": "CNY",
+      "latest_analyze_time": ""
+    },
     "rightPanelTab": "issue",
     "escapeIssueLoading": false,
     "escapeIssueList": [],
     "escapeIssueCount": 0,
+    "escapeIssuePendingCount": 0,
+    "escapeIssueProcessDialogVisible": false,
+    "escapeIssueViewDialogVisible": false,
+    "selectedEscapeIssue": null,
     "selectedEscapeLog": null,
     "escapeLogSearchForm": {
       "page": 1,
@@ -107,7 +122,7 @@
     "escapeIssueSearchForm": {
       "page": 1,
       "size": 20,
-      "issue_status": ""
+      "issue_status": "pending"
     },
     "contactList": [],
     "contactCount": 0,
@@ -116,6 +131,8 @@
     ],
     "chatDetailList": [],
     "callRecordList": [],
+    "callRecordLoadedEmployeeId": "",
+    "callRecordLoading": false,
     "callAudioTestingUid": "",
     "playingCallUid": "",
     "promptKeywordDialogVisible": false,
@@ -135,7 +152,7 @@
     {
       "tag": "ajax",
       "group": "agencyList",
-      "api": "post:/template_data/data?service=hrm.travel_agency_list",
+      "api": "post:/template_data/data?service=hrm.travel_agency_accessible_list",
       "appendFields": "${agencySearchForm}",
       "adapt": {
         "agencyList": "${data}",
@@ -153,6 +170,17 @@
       "tag": "reload-init-action",
       "enable": "${!!currentAgency.agency_id && rightPanelTab==='issue'}",
       "group": "escapeIssueList"
+    },
+    {
+      "tag": "ajax",
+      "enable": "${!!currentAgency.agency_id}",
+      "api": "post:/template_data/data?service=hrm.detect_escape_issue_pending_count",
+      "data": {
+        "agency_id": "${currentAgency.agency_id}"
+      },
+      "adapt": {
+        "escapeIssuePendingCount": "${data?.[0]?.pending_count||0}"
+      }
     },
     {
       "tag": "ajax",
@@ -374,6 +402,7 @@
                         "selectedEmployee": null,
                         "rightPanelTab": "issue",
                         "callRecordList": [],
+                        "callRecordLoadedEmployeeId": "",
                         "employeeSearchForm": {
                           "page": 1,
                           "size": 20,
@@ -576,7 +605,7 @@
                         "lineHeight": "22px",
                         "marginBottom": "16px"
                       },
-                      "children": "当前仅支持维护一个旅行社，请先创建后再进行成员与沟通记录管理。"
+                      "children": "请先创建旅行社基础信息，保存后即可继续成员、沟通记录与风控管理。"
                     },
                     {
                       "tag": "row",
@@ -742,7 +771,7 @@
                         "lineHeight": "22px",
                         "color": "#334155"
                       },
-                      "children": "说明：旅行社数据为单条维护，保存后会自动加载并用于成员管理。"
+                      "children": "说明：可维护多个旅行社；当前登录账号仅能看到自己有权限访问的旅行社。"
                     }
                   ]
                 }
@@ -780,6 +809,77 @@
                           "tag": "update-store",
                           "value": {
                             "debugMode": "${value}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "div",
+                  "visible": "${debugMode && agencyList.length>1}",
+                  "style": {
+                    "display": "inline-flex",
+                    "alignItems": "center",
+                    "gap": "8px"
+                  },
+                  "children": [
+                    {
+                      "tag": "span",
+                      "style": {
+                        "fontSize": "12px",
+                        "color": "#6b7280"
+                      },
+                      "children": "当前旅行社"
+                    },
+                    {
+                      "tag": "select",
+                      "value": "${currentAgency.agency_id}",
+                      "placeholder": "请选择旅行社",
+                      "style": {
+                        "width": "260px"
+                      },
+                      "options": "${agencyList.map(item=>({label:item.agency_name+' · '+(item.agency_code||'-'),value:item.agency_id}))}",
+                      "action": [
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "currentAgency": "${agencyList.find(item=>item.agency_id===value)||{}}",
+                            "agencySelection": "${agencyList.find(item=>item.agency_id===value)?[agencyList.find(item=>item.agency_id===value)]:[]}",
+                            "selectedEmployee": null,
+                            "selectedContact": null,
+                            "employeeSelection": [],
+                            "rightPanelTab": "issue",
+                            "contactList": [],
+                            "contactCount": 0,
+                            "chatList": [],
+                            "chatDetailList": [],
+                            "callRecordList": [],
+                            "callRecordLoadedEmployeeId": "",
+                            "employeeSearchForm": {
+                              "page": 1,
+                              "size": 20,
+                              "search": ""
+                            }
+                          }
+                        },
+                        {
+                          "tag": "reload-init-action",
+                          "group": "employeeList"
+                        },
+                        {
+                          "tag": "reload-init-action",
+                          "group": "escapeIssueList"
+                        },
+                        {
+                          "tag": "ajax",
+                          "enable": "${!!(agencyList.find(item=>item.agency_id===value)||{}).agency_id}",
+                          "api": "post:/template_data/data?service=hrm.detect_escape_issue_pending_count",
+                          "data": {
+                            "agency_id": "${(agencyList.find(item=>item.agency_id===value)||{}).agency_id}"
+                          },
+                          "adapt": {
+                            "escapeIssuePendingCount": "${data?.[0]?.pending_count||0}"
                           }
                         }
                       ]
@@ -952,7 +1052,8 @@
                         "contactCount": 0,
                         "chatList": [],
                         "chatDetailList": [],
-                        "callRecordList": []
+                        "callRecordList": [],
+                        "callRecordLoadedEmployeeId": ""
                       }
                     },
                     {
@@ -992,7 +1093,8 @@
                         "contactCount": 0,
                         "chatList": [],
                         "chatDetailList": [],
-                        "callRecordList": []
+                        "callRecordList": [],
+                        "callRecordLoadedEmployeeId": ""
                       }
                     },
                     {
@@ -1213,6 +1315,8 @@
                                     "contactCount": 0,
                                     "chatDetailList": [],
                                     "callRecordList": [],
+                                    "callRecordLoadedEmployeeId": "",
+                                    "callRecordLoading": false,
                                     "playingCallUid": "",
                                     "rightPanelTab": "chat"
                                   }
@@ -1228,8 +1332,15 @@
                                     "end_time": "${Date.now()}",
                                     "limit": 10000
                                   },
+                                  "start": {
+                                    "callRecordLoading": true
+                                  },
+                                  "end": {
+                                    "callRecordLoading": false
+                                  },
                                   "adapt": {
-                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}",
+                                    "callRecordLoadedEmployeeId": "${row.employee_id}"
                                   }
                                 },
                                 {
@@ -1634,7 +1745,8 @@
                                     "voiceTextLoading": false
                                   },
                                   "adapt": {
-                                    "callRecordList": "${(data&&data.call_record_list)||[]}"
+                                    "callRecordList": "${(data&&data.call_record_list)||[]}",
+                                    "callRecordLoadedEmployeeId": "${selectedEmployee.employee_id}"
                                   }
                                 }
                               ]
@@ -1681,7 +1793,8 @@
                                     "limit": 10000
                                   },
                                   "adapt": {
-                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}",
+                                    "callRecordLoadedEmployeeId": "${selectedEmployee.employee_id}"
                                   }
                                 }
                               ]
@@ -1836,6 +1949,10 @@
                                 {
                                   "tag": "reload-init-action",
                                   "group": "escapeLogList"
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "escapeLogTodaySummary"
                                 },
                                 {
                                   "tag": "update-store",
@@ -2084,6 +2201,8 @@
                             {
                               "tag": "tabs",
                               "activeKey": "${rightPanelTab}",
+                              "onlyRenderActive": true,
+                              "destroyInactiveTabPane": true,
                               "tabBarStyle": {
                                 "marginBottom": "12px"
                               },
@@ -2096,7 +2215,8 @@
                                 },
                                 {
                                   "tag": "ajax",
-                                  "enable": "${(activeKey||key)=='call'&&selectedEmployee&&currentAgency.agency_id}",
+                                  "async": true,
+                                  "enable": "${(activeKey||key)=='call'&&selectedEmployee&&currentAgency.agency_id&&callRecordLoadedEmployeeId!==selectedEmployee.employee_id&&!callRecordLoading}",
                                   "api": "post:/template_data/data?service=hrm.travel_call_record_list",
                                   "data": {
                                     "agency_id": "${currentAgency.agency_id}",
@@ -2105,12 +2225,20 @@
                                     "end_time": "${Date.now()}",
                                     "limit": 10000
                                   },
+                                  "start": {
+                                    "callRecordLoading": true
+                                  },
+                                  "end": {
+                                    "callRecordLoading": false
+                                  },
                                   "adapt": {
-                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}",
+                                    "callRecordLoadedEmployeeId": "${selectedEmployee.employee_id}"
                                   }
                                 },
                                 {
                                   "tag": "reload-init-action",
+                                  "async": true,
                                   "enable": "${(activeKey||key)=='issue'&&currentAgency&&currentAgency.agency_id}",
                                   "group": "escapeIssueList"
                                 }
@@ -2141,12 +2269,18 @@
                                           "children": [
                                             {
                                               "tag": "layout-fit",
-                                              "className": "h100 overflow-auto padding-right10",
+                                              "className": "h100 padding-right10",
                                               "children": [
                                                  {
                                                    "tag": "listview",
                                                    "keyField": "contact_id",
                                                    "itemData": "${contactList}",
+                                                   "virtual": {
+                                                     "enabled": true,
+                                                     "height": "100%",
+                                                     "defaultItemHeight": 96,
+                                                     "overscan": 384
+                                                   },
                                                    "rowClickAction": [
                                                      {
                                                        "tag": "update-store",
@@ -2413,7 +2547,7 @@
                                                "children": [
                                                  {
                                                    "tag": "div",
-                                                   "className": "h100 overflow-auto padding-right10",
+                                                   "className": "h100 padding-right10",
                                                    "children": [
 
                                                        {
@@ -2446,6 +2580,12 @@
                                                          "visible": "${selectedContact&&chatDetailList.length>0}",
                                                          "keyField": "id",
                                                          "autoScrollToBottom": true,
+                                                         "virtual": {
+                                                           "enabled": true,
+                                                           "height": "100%",
+                                                           "defaultItemHeight": 88,
+                                                           "overscan": 640
+                                                         },
                                                          "itemData": "${chatDetailList}",
                                                         "itemAttr": {
                                                           "tag": "div",
@@ -2857,7 +2997,8 @@
                                                           "callAudioTestingUid": ""
                                                         },
                                                         "adapt": {
-                                                          "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                                          "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}",
+                                                          "callRecordLoadedEmployeeId": "${selectedEmployee.employee_id}"
                                                         }
                                                       },
                                                       {
@@ -2942,10 +3083,10 @@
                                       },
                                       {
                                         "tag": "badge",
-                                        "count": "${escapeIssueCount||0}",
+                                        "count": "${escapeIssuePendingCount||0}",
                                         "showZero": true,
                                         "style": {
-                                          "backgroundColor": "${(escapeIssueCount||0)>0?'#ef4444':'#cbd5e1'}",
+                                          "backgroundColor": "#ef4444",
                                           "boxShadow": "none"
                                         }
                                       }
@@ -2956,6 +3097,56 @@
                                       "tag": "layout-fit",
                                       "className": "h100",
                                       "topRight": [
+                                        {
+                                          "tag": "form",
+                                          "name": "escapeIssueSearchForm",
+                                          "initialValues": "${escapeIssueSearchForm}",
+                                          "submitOnChange": true,
+                                          "action": [
+                                            {
+                                              "tag": "reload-init-action",
+                                              "group": "escapeIssueList"
+                                            }
+                                          ],
+                                          "style": {
+                                            "display": "flex",
+                                            "alignItems": "center",
+                                            "gap": "8px"
+                                          },
+                                          "children": [
+                                            {
+                                              "tag": "form-item",
+                                              "name": "issue_status",
+                                              "style": {
+                                                "marginBottom": "0"
+                                              },
+                                              "children": [
+                                                {
+                                                  "tag": "select",
+                                                  "size": "small",
+                                                  "style": {
+                                                    "width": "120px"
+                                                  },
+                                                  "action": [
+                                                    {
+                                                      "tag": "update-store",
+                                                      "value": {
+                                                        "escapeIssueSearchForm.issue_status": "${value}",
+                                                        "escapeIssueSearchForm.page": 1
+                                                      }
+                                                    }
+                                                  ],
+                                                  "options": [
+                                                    {"label": "待处理", "value": "pending"},
+                                                    {"label": "已处理", "value": "processed"},
+                                                    {"label": "已忽略", "value": "ignored"},
+                                                    {"label": "全部", "value": ""}
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
                                         {
                                           "tag": "button",
                                           "size": "small",
@@ -2994,8 +3185,8 @@
                                             "marginBottom": "12px",
                                             "padding": "12px 14px",
                                             "borderRadius": "12px",
-                                            "border": "1px solid #fecaca",
-                                            "background": "linear-gradient(135deg,#fff1f2 0%,#ffffff 100%)",
+                                            "border": "${(()=>{const s=escapeIssueSearchForm.issue_status;if(s===undefined||s===null)return '1px solid #fecaca';return s==='pending'?'1px solid #fecaca':s==='processed'?'1px solid #bbf7d0':s==='ignored'?'1px solid #d1d5db':'1px solid #bfdbfe';})()}",
+                                            "background": "${(()=>{const s=escapeIssueSearchForm.issue_status;if(s===undefined||s===null)return 'linear-gradient(135deg,#fff1f2 0%,#ffffff 100%)';return s==='pending'?'linear-gradient(135deg,#fff1f2 0%,#ffffff 100%)':s==='processed'?'linear-gradient(135deg,#f0fdf4 0%,#ffffff 100%)':s==='ignored'?'linear-gradient(135deg,#f9fafb 0%,#ffffff 100%)':'linear-gradient(135deg,#eff6ff 0%,#ffffff 100%)';})()}",
                                             "display": "flex",
                                             "alignItems": "center",
                                             "justifyContent": "space-between",
@@ -3012,10 +3203,10 @@
                                               "children": [
                                                 {
                                                   "tag": "icon",
-                                                  "icon": "AlertOutlined",
+                                                  "icon": "${(()=>{const s=escapeIssueSearchForm.issue_status;if(s===undefined||s===null)return 'AlertOutlined';return s==='pending'?'AlertOutlined':s==='processed'?'CheckCircleOutlined':s==='ignored'?'MinusCircleOutlined':'InfoCircleOutlined';})()}",
                                                   "style": {
                                                     "fontSize": "18px",
-                                                    "color": "#dc2626"
+                                                    "color": "${(()=>{const s=escapeIssueSearchForm.issue_status;if(s===undefined||s===null)return '#dc2626';return s==='pending'?'#dc2626':s==='processed'?'#16a34a':s==='ignored'?'#6b7280':'#2563eb';})()}"
                                                   }
                                                 },
                                                 {
@@ -3023,10 +3214,10 @@
                                                   "style": {
                                                     "fontSize": "13px",
                                                     "lineHeight": "20px",
-                                                    "color": "#7f1d1d",
+                                                    "color": "${(()=>{const s=escapeIssueSearchForm.issue_status;if(s===undefined||s===null)return '#7f1d1d';return s==='pending'?'#7f1d1d':s==='processed'?'#14532d':s==='ignored'?'#374151':'#1e3a5f';})()}",
                                                     "fontWeight": 600
                                                   },
-                                                  "children": "${'当前旅行社待处理逃单工单：'+(escapeIssueCount||0)+' 条；存在待处理工单的员工会跳过重复分析。'}"
+                                                  "children": "${(()=>{const s=escapeIssueSearchForm.issue_status,c=escapeIssueCount||0;if(s===undefined||s===null||s==='pending')return '当前旅行社待处理逃单工单：'+c+' 条；存在待处理工单的员工会跳过重复分析。';if(s==='processed')return '已处理逃单工单：'+c+' 条。';if(s==='ignored')return '已忽略逃单工单：'+c+' 条。';return '全部逃单工单：'+c+' 条。';})()}"
                                                 }
                                               ]
                                             }
@@ -3036,6 +3227,15 @@
                                           "tag": "table",
                                           "rowKey": "issue_id",
                                           "rowData": "${escapeIssueList}",
+                                          "rowDoubleClickAction": [
+                                            {
+                                              "tag": "update-store",
+                                              "value": {
+                                                "selectedEscapeIssue": "${row}",
+                                                "escapeIssueViewDialogVisible": true
+                                              }
+                                            }
+                                          ],
                                           "style": {
                                             "height": "calc(100% - 64px)"
                                           },
@@ -3099,7 +3299,7 @@
                                             {
                                               "headerName": "操作",
                                               "field": "op",
-                                              "width": 180,
+                                              "width": 220,
                                               "cellRender": [
                                                 {
                                                   "tag": "button",
@@ -3107,27 +3307,13 @@
                                                   "type": "primary",
                                                   "children": "标记已处理",
                                                   "visible": "${row.issue_status==='pending'}",
-                                                  "confirm": {
-                                                    "title": "确认标记已处理吗？",
-                                                    "description": "将把当前逃单工单状态更新为已处理。"
-                                                  },
                                                   "action": [
                                                     {
-                                                      "tag": "ajax",
-                                                      "api": "post:/template_data/data?service=hrm.detect_escape_issue_update",
-                                                      "data": {
-                                                        "issue_id": "${row.issue_id}",
-                                                        "issue_status": "processed",
-                                                        "process_result": "已处理逃单工单"
+                                                      "tag": "update-store",
+                                                      "value": {
+                                                        "selectedEscapeIssue": "${row}",
+                                                        "escapeIssueProcessDialogVisible": true
                                                       }
-                                                    },
-                                                    {
-                                                      "tag": "reload-init-action",
-                                                      "group": "escapeIssueList"
-                                                    },
-                                                    {
-                                                      "tag": "reload-init-action",
-                                                      "group": "employeeList"
                                                     }
                                                   ]
                                                 },
@@ -3143,10 +3329,11 @@
                                                   "action": [
                                                     {
                                                       "tag": "ajax",
-                                                      "api": "post:/template_data/data?service=hrm.detect_escape_issue_update",
+                                                      "api": "post:/template_data/data?service=hrm.detect_escape_issue_update_and_reset",
                                                       "data": {
                                                         "issue_id": "${row.issue_id}",
                                                         "issue_status": "ignored",
+                                                        "employee_id": "${row.employee_id}",
                                                         "process_result": "已忽略该逃单工单"
                                                       }
                                                     },
@@ -3157,6 +3344,21 @@
                                                     {
                                                       "tag": "reload-init-action",
                                                       "group": "employeeList"
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "tag": "button",
+                                                  "size": "small",
+                                                  "children": "查看",
+                                                  "visible": "${row.issue_status!=='pending'}",
+                                                  "action": [
+                                                    {
+                                                      "tag": "update-store",
+                                                      "value": {
+                                                        "selectedEscapeIssue": "${row}",
+                                                        "escapeIssueViewDialogVisible": true
+                                                      }
                                                     }
                                                   ]
                                                 }
@@ -3177,6 +3379,187 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "查看逃单工单",
+      "width": "42%",
+      "open": "${escapeIssueViewDialogVisible}",
+      "okText": "确定",
+      "cancelText": "关闭",
+      "cancelAction": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeIssueViewDialogVisible": false,
+            "selectedEscapeIssue": null
+          }
+        }
+      ],
+      "action": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeIssueViewDialogVisible": false,
+            "selectedEscapeIssue": null
+          }
+        }
+      ],
+      "children": [
+        {
+          "tag": "div",
+          "style": {
+            "display": "flex",
+            "flexDirection": "column",
+            "gap": "12px",
+            "fontSize": "13px",
+            "lineHeight": "22px",
+            "color": "#334155"
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "padding": "10px 12px",
+                "borderRadius": "8px",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0"
+              },
+              "children": "${'员工：'+(selectedEscapeIssue?.employee_name||'-')+'\\n原因：'+(selectedEscapeIssue?.issue_reason||'-')+'\\n创建时间：'+(selectedEscapeIssue?.create_time||'-')}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "工单详情"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "maxHeight": "320px",
+                "overflow": "auto",
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "padding": "12px",
+                "borderRadius": "8px",
+                "border": "1px solid #e2e8f0",
+                "background": "#ffffff",
+                "color": "#1e293b"
+              },
+              "children": "${selectedEscapeIssue?.issue_detail||'-'}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "处理逃单工单",
+      "width": "42%",
+      "open": "${escapeIssueProcessDialogVisible}",
+      "cancelText": "取消",
+      "okText": "标记已处理",
+      "cancelAction": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeIssueProcessDialogVisible": false,
+            "selectedEscapeIssue": null
+          }
+        }
+      ],
+      "action": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeIssueProcessDialogVisible": false
+          }
+        },
+        {
+          "tag": "ajax",
+          "api": "post:/template_data/data?service=hrm.detect_escape_issue_update_and_reset",
+          "data": {
+            "issue_id": "${selectedEscapeIssue?.issue_id}",
+            "issue_status": "processed",
+            "employee_id": "${selectedEscapeIssue?.employee_id}",
+            "process_result": "已处理逃单工单"
+          }
+        },
+        {
+          "tag": "reload-init-action",
+          "group": "escapeIssueList"
+        },
+        {
+          "tag": "ajax",
+          "api": "post:/template_data/data?service=hrm.detect_escape_issue_pending_count",
+          "data": {
+            "agency_id": "${currentAgency.agency_id}"
+          },
+          "adapt": {
+            "escapeIssuePendingCount": "${data?.[0]?.pending_count||0}"
+          }
+        },
+        {
+          "tag": "reload-init-action",
+          "group": "employeeList"
+        },
+        {
+          "tag": "update-store",
+          "value": {
+            "selectedEscapeIssue": null
+          }
+        }
+      ],
+      "children": [
+        {
+          "tag": "div",
+          "style": {
+            "display": "flex",
+            "flexDirection": "column",
+            "gap": "12px",
+            "fontSize": "13px",
+            "lineHeight": "22px",
+            "color": "#334155"
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "padding": "10px 12px",
+                "borderRadius": "8px",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0"
+              },
+              "children": "${'员工：'+(selectedEscapeIssue?.employee_name||'-')+'\\n原因：'+(selectedEscapeIssue?.issue_reason||'-')+'\\n创建时间：'+(selectedEscapeIssue?.create_time||'-')}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "工单详情"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "maxHeight": "320px",
+                "overflow": "auto",
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "padding": "12px",
+                "borderRadius": "8px",
+                "border": "1px solid #e2e8f0",
+                "background": "#ffffff",
+                "color": "#1e293b"
+              },
+              "children": "${selectedEscapeIssue?.issue_detail||'-'}"
             }
           ]
         }
@@ -4272,6 +4655,78 @@
                 {
                   "tag": "reload-init-action",
                   "group": "escapeLogList"
+                },
+                {
+                  "tag": "reload-init-action",
+                  "group": "escapeLogTodaySummary"
+                }
+              ]
+            }
+          ],
+          "searchToolBar": [
+            {
+              "tag": "div",
+              "style": {
+                "display": "flex",
+                "flexWrap": "wrap",
+                "gap": "8px"
+              },
+              "children": [
+                {
+                  "tag": "div",
+                  "style": {
+                    "padding": "6px 10px",
+                    "borderRadius": "8px",
+                    "background": "#f1f5f9",
+                    "fontSize": "12px",
+                    "color": "#0f172a"
+                  },
+                  "children": "${'今日分析次数：'+(escapeLogTodaySummary.today_analyze_count||0)}"
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "padding": "6px 10px",
+                    "borderRadius": "8px",
+                    "background": "#ecfeff",
+                    "fontSize": "12px",
+                    "color": "#155e75"
+                  },
+                  "children": "${'今日总Token：'+(escapeLogTodaySummary.today_total_tokens||0)}"
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "padding": "6px 10px",
+                    "borderRadius": "8px",
+                    "background": "#eff6ff",
+                    "fontSize": "12px",
+                    "color": "#1e3a8a"
+                  },
+                  "children": "${'Prompt：'+(escapeLogTodaySummary.today_prompt_tokens||0)+'（命中 '+(escapeLogTodaySummary.today_prompt_cache_hit_tokens||0)+' / 未命中 '+(escapeLogTodaySummary.today_prompt_cache_miss_tokens||0)+'）'}"
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "padding": "6px 10px",
+                    "borderRadius": "8px",
+                    "background": "#fef3c7",
+                    "fontSize": "12px",
+                    "color": "#92400e",
+                    "fontWeight": 600
+                  },
+                  "children": "${'今日费用：'+Number(escapeLogTodaySummary.today_cost_cny||0).toFixed(6)+' '+(escapeLogTodaySummary.currency||'CNY')}"
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "padding": "6px 10px",
+                    "borderRadius": "8px",
+                    "background": "#f8fafc",
+                    "fontSize": "12px",
+                    "color": "#64748b"
+                  },
+                  "children": "${'最后分析：'+(escapeLogTodaySummary.latest_analyze_time||'-')}"
                 }
               ]
             }
@@ -4355,6 +4810,16 @@
                     "style": {
                       "fontSize": "12px",
                       "lineHeight": "18px",
+                      "color": "#0f766e",
+                      "marginBottom": "8px"
+                    },
+                    "children": "${'模型：'+(row.model_name||'-')+'；Token：'+(row.total_tokens||0)+'（Prompt '+(row.prompt_tokens||0)+' / Completion '+(row.completion_tokens||0)+'）；费用：'+Number(row.cost_cny||0).toFixed(6)+' '+(row.model_currency||'CNY')}"
+                  },
+                  {
+                    "tag": "div",
+                    "style": {
+                      "fontSize": "12px",
+                      "lineHeight": "18px",
                       "color": "#334155",
                       "whiteSpace": "normal",
                       "wordBreak": "break-all",
@@ -4414,6 +4879,55 @@
                 "color": "#475569"
               },
               "children": "${'时间：'+((selectedEscapeLog&&selectedEscapeLog.create_time)||'-')+'；员工ID：'+((selectedEscapeLog&&selectedEscapeLog.employee_id)||'-')+'；来源：'+((selectedEscapeLog&&selectedEscapeLog.analyze_source)||'-')}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "Token消耗明细"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px",
+                "color": "#334155"
+              },
+              "children": "${'模型：'+((selectedEscapeLog&&selectedEscapeLog.model_name)||'-')+'（'+((selectedEscapeLog&&selectedEscapeLog.model_provider)||'-')+'）\\n总Token：'+((selectedEscapeLog&&selectedEscapeLog.total_tokens)||0)+'，Prompt：'+((selectedEscapeLog&&selectedEscapeLog.prompt_tokens)||0)+'（命中 '+((selectedEscapeLog&&selectedEscapeLog.prompt_cache_hit_tokens)||0)+' / 未命中 '+((selectedEscapeLog&&selectedEscapeLog.prompt_cache_miss_tokens)||0)+'），Completion：'+((selectedEscapeLog&&selectedEscapeLog.completion_tokens)||0)+'\\n单价：命中 '+Number((selectedEscapeLog&&selectedEscapeLog.input_cache_hit_price_per_1m)||0).toFixed(6)+' / 未命中 '+Number((selectedEscapeLog&&selectedEscapeLog.input_cache_miss_price_per_1m)||0).toFixed(6)+' / 输出 '+Number((selectedEscapeLog&&selectedEscapeLog.output_price_per_1m)||0).toFixed(6)+'（每1M）\\n本次费用：'+Number((selectedEscapeLog&&selectedEscapeLog.cost_cny)||0).toFixed(6)+' '+((selectedEscapeLog&&selectedEscapeLog.model_currency)||'CNY')}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "Usage原始明细"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "120px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(selectedEscapeLog&&selectedEscapeLog.usage_json)||'-'}"
             },
             {
               "tag": "div",
@@ -5276,16 +5790,30 @@
         }
       }
     ],
+    "escapeLogTodaySummary": [
+      {
+        "tag": "ajax",
+        "enable": "${selectedEmployee&&selectedEmployee.employee_id}",
+        "group": "escapeLogTodaySummary",
+        "api": "post:/template_data/data?service=hrm.detect_escape_analyze_log_today_summary",
+        "data": {
+          "employee_id": "${selectedEmployee.employee_id}",
+          "agency_id": "${selectedEmployee.agency_id}"
+        },
+        "adapt": {
+          "escapeLogTodaySummary": "${(data&&data.length>0)?data[0]:{today_analyze_count:0,today_prompt_tokens:0,today_completion_tokens:0,today_total_tokens:0,today_prompt_cache_hit_tokens:0,today_prompt_cache_miss_tokens:0,today_cost_cny:0,currency:'CNY',latest_analyze_time:''}}"
+        }
+      }
+    ],
     "escapeIssueList": [
       {
         "tag": "ajax",
         "enable": "${currentAgency&&currentAgency.agency_id}",
         "group": "escapeIssueList",
         "api": "post:/template_data/data?service=hrm.detect_escape_issue_list",
-        "appendFields": "${escapeIssueSearchForm}",
+        "appendFormFields": "escapeIssueSearchForm",
         "data": {
           "agency_id": "${currentAgency.agency_id}",
-          "issue_status": "pending",
           "pagination": true,
           "count": true
         },

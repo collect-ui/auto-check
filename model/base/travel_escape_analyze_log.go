@@ -8,10 +8,15 @@ type TravelEscapeAnalyzeLog struct {
 	AgencyID              string `gorm:"column:agency_id" json:"agency_id"`
 	EmployeeName          string `gorm:"column:employee_name" json:"employee_name"`
 	AnalyzeSource         string `gorm:"column:analyze_source" json:"analyze_source"`
+	ModelName             string `gorm:"column:model_name" json:"model_name"`
 	SystemPrompt          string `gorm:"column:system_prompt" json:"system_prompt"`
 	PromptContent         string `gorm:"column:prompt_content" json:"prompt_content"`
 	AiResult              string `gorm:"column:ai_result" json:"ai_result"`
 	IsEscape              int    `gorm:"column:is_escape" json:"is_escape"`
+	PromptTokens          int    `gorm:"column:prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens      int    `gorm:"column:completion_tokens" json:"completion_tokens"`
+	TotalTokens           int    `gorm:"column:total_tokens" json:"total_tokens"`
+	UsageJSON             string `gorm:"column:usage_json" json:"usage_json"`
 	ChatCount             int    `gorm:"column:chat_count" json:"chat_count"`
 	CallCount             int    `gorm:"column:call_count" json:"call_count"`
 	ChatLatestMessageTime int64  `gorm:"column:chat_latest_message_time" json:"chat_latest_message_time"`

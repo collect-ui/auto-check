@@ -877,7 +877,7 @@
                               "treeTitle": "${item.menu_type=='1'?item.menu_name:item.menu_name+'('+item.url+')'}",
                               "treeData": "${menu_data}",
                               "openLevel": 2,
-                              "treeIcon": "${item.menu_type==='1'?'FolderOutlined':'FaRoute'}",
+                              "treeIcon": "${item.menu_type==='1'?'FolderOutlined':'RiRouteLine'}",
                               "showIcon": true,
                               "checkedKeysTransfer": "${menu_check_keys}",
                               "checkAction": [
@@ -928,7 +928,7 @@
                                       "treeData": "${menu_data}",
                                       "treeSelected": "${treeSelected}",
                                       "openLevel": 2,
-                                      "treeIcon": "${item.menu_type==='1'?'FolderOutlined':'FaRoute'}",
+                                      "treeIcon": "${item.menu_type==='1'?'FolderOutlined':'RiRouteLine'}",
                                       "showIcon": true,
                                       "checkedKeysTransfer": "${menu_check_keys}",
                                       "selectAction": [
@@ -1038,4 +1038,3 @@
     }
   ]
 }
-

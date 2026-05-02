@@ -336,6 +336,12 @@ func main() {
 	}
 	// 设置数据库
 	templateService.SetDatabaseModel(&model.TableData{})
+	if err := model.EnsureTencentKeySchema(); err != nil {
+		panic(err)
+	}
+	if err := model.EnsureTravelCallRecordUIDScope(); err != nil {
+		panic(err)
+	}
 	// 设置外部处理器
 	templateService.SetOuterModuleRegister(plugins.GetRegisterList())
 	// 添加定时任务

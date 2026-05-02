@@ -199,7 +199,7 @@
                         },
                         {
                           "tag": "redirect",
-                          "url": "/#/login"
+                          "url": "/collect-ui/#/collect-ui/login"
                         }
                       ],
                       "arrow": true,

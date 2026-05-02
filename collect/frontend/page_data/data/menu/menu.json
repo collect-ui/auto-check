@@ -9,7 +9,7 @@
   {
     "menu_code": "home_first",
     "menu_name": "首页",
-    "icon": "FaHome",
+    "icon": "RiHomeLine",
     "api": "post:/template_data/data?service=frontend.home",
     "data": "framework/home.json",
     "url": "/home_full",
@@ -18,7 +18,7 @@
   {
     "menu_code": "training_dashboard_full",
     "menu_name": "",
-    "icon": "FaHome",
+    "icon": "RiHomeLine",
     "api": "post:/template_data/data?service=frontend.training_dashboard",
     "data": "framework/training_dashboard.json",
     "url": "/training_dashboard_full",
@@ -27,7 +27,7 @@
   {
     "menu_code": "learn_before_full",
     "menu_name": "",
-    "icon": "FaHome",
+    "icon": "RiHomeLine",
     "api": "post:/template_data/data?service=frontend.learn_before",
     "data": "framework/learn_before.json",
     "url": "/learn_before_full",
@@ -36,7 +36,7 @@
   {
     "menu_code": "first",
     "menu_name": "首页",
-    "icon": "FaHome",
+    "icon": "RiHomeLine",
     "is_index": "1",
     "router_group": "/framework",
     "group_path": "/framework",
@@ -49,7 +49,7 @@
   {
     "menu_code": "dashboard",
     "menu_name": "大屏管理",
-    "icon": "FaStoreAlt",
+    "icon": "RiStore2Line",
     "children": [
       {
         "menu_code": "training_first",
@@ -88,7 +88,7 @@
   {
     "menu_code": "sub1",
     "menu_name": "课程管理",
-    "icon": "FaStoreAlt",
+    "icon": "RiStore2Line",
     "children": [
       {
         "menu_code": "app_level",
@@ -133,7 +133,7 @@
   {
     "menu_code": "price",
     "menu_name": "招投标",
-    "icon": "FaStoreAlt",
+    "icon": "RiStore2Line",
     "children": [
       {
         "menu_code": "doc_price",
@@ -148,7 +148,7 @@
   {
     "menu_code": "technical-management",
     "menu_name": "技术部分",
-    "icon": "FaWarehouse",
+    "icon": "LuWarehouse",
     "children": [
       {
         "menu_code": "documentation",
@@ -170,7 +170,7 @@
   {
     "menu_code": "home",
     "menu_name": "系统管理",
-    "icon": "FaHouseUser",
+    "icon": "LuUserCog",
     "children": [
       {
         "menu_code": "g1",
@@ -204,6 +204,7 @@
           {
             "menu_code": "menu_manage",
             "menu_name": "菜单管理",
+            "icon": "RiMenuLine",
             "api": "post:/template_data/data?service=frontend.menu_manage",
             "router_group": "/framework",
             "url": "/framework/menu_manage"
@@ -231,11 +232,29 @@
   {
     "menu_code": "travel_org_manage",
     "menu_name": "商家组织维护",
-    "icon": "FaSitemap",
+    "icon": "PiTreeStructure",
     "router_group": "/framework",
     "api": "post:/template_data/data?service=frontend.travel_org_manage",
     "url": "/framework/travel_org_manage",
     "data": "system/travel_org_manage.json"
+  },
+  {
+    "menu_code": "travel_checkin_apply",
+    "menu_name": "旅行社入住申请",
+    "icon": "FormOutlined",
+    "api": "post:/template_data/data?service=frontend.travel_checkin_apply",
+    "url": "/travel_checkin_apply",
+    "data": "system/travel_checkin_apply.json",
+    "in_menu": false
+  },
+  {
+    "menu_code": "travel_checkin_manage",
+    "menu_name": "旅行社入住申请",
+    "icon": "FormOutlined",
+    "router_group": "/framework",
+    "api": "post:/template_data/data?service=frontend.travel_checkin_manage",
+    "url": "/framework/travel_checkin_manage",
+    "data": "system/travel_checkin_manage.json"
   },
   {
     "menu_code": "customer_assign_manage",

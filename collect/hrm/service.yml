@@ -45,3 +45,5 @@ service:
     path: "detect_escape/index.yml"
   - name: "腾讯Key申请"
     path: "tencent_key/index.yml"
+  - name: "旅行社入住申请"
+    path: "travel_checkin/index.yml"

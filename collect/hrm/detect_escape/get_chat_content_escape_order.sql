@@ -193,7 +193,12 @@ with base as (
   from travel_chat_record r
   left join travel_employee e on e.employee_id = r.employee_id
   left join travel_agency a on a.agency_id = e.agency_id
-  where r.employee_id = {{ .employee_id }}
+  where 1=1
+    {{ if .employee_scope_token }}
+    and instr({{ .employee_scope_token }}, ',' || ifnull(r.employee_id, '') || ',') > 0
+    {{ else }}
+    and r.employee_id = {{ .employee_id }}
+    {{ end }}
     {{ if and .start_time (ne (printf "%v" .start_time) "0") }}
     and ifnull(r.message_time, 0) >= {{ .start_time }}
     {{ else }}

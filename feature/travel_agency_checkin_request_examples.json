@@ -1,0 +1,96 @@
+{
+  "service_examples": [
+    {
+      "name": "提交入住申请",
+      "service": "hrm.travel_checkin_apply_submit",
+      "request": {
+        "agency_name": "示例旅行社",
+        "agency_code": "TRAVEL_DEMO_001",
+        "contact_name": "张三",
+        "contact_phone": "13800138000",
+        "username": "travel_demo_admin",
+        "password": "123456"
+      }
+    },
+    {
+      "name": "管理员查询申请列表",
+      "service": "hrm.travel_checkin_apply_list",
+      "request": {
+        "search": "示例旅行社",
+        "status": "pending",
+        "page": 1,
+        "size": 20,
+        "pagination": true,
+        "count": true
+      }
+    },
+    {
+      "name": "管理员查看申请详情",
+      "service": "hrm.travel_checkin_apply_detail",
+      "request": {
+        "apply_id": "demo-apply-id"
+      }
+    },
+    {
+      "name": "管理员编辑申请",
+      "service": "hrm.travel_checkin_apply_update",
+      "request": {
+        "apply_id": "demo-apply-id",
+        "agency_name": "示例旅行社(更新)",
+        "agency_code": "TRAVEL_DEMO_001",
+        "contact_name": "李四",
+        "contact_phone": "13900139000",
+        "username": "travel_demo_admin",
+        "password": "123456"
+      }
+    },
+    {
+      "name": "管理员驳回申请",
+      "service": "hrm.travel_checkin_apply_reject",
+      "request": {
+        "apply_id": "demo-apply-id",
+        "reject_reason": "旅行社编码不符合规范"
+      }
+    },
+    {
+      "name": "管理员审批通过",
+      "service": "hrm.travel_checkin_apply_approve",
+      "request": {
+        "apply_id": "demo-apply-id"
+      }
+    },
+    {
+      "name": "管理员删除申请",
+      "service": "hrm.travel_checkin_apply_delete",
+      "request": {
+        "apply_id_list": [
+          "demo-apply-id-1",
+          "demo-apply-id-2"
+        ]
+      }
+    },
+    {
+      "name": "查询当前用户可访问旅行社",
+      "service": "hrm.travel_agency_accessible_list",
+      "request": {
+        "search": "",
+        "page": 1,
+        "size": 20,
+        "pagination": true,
+        "count": true
+      }
+    }
+  ],
+  "frontend_routes": [
+    {
+      "name": "公共申请页",
+      "url": "/collect-ui#/travel_checkin_apply",
+      "must_login": false
+    },
+    {
+      "name": "管理员申请管理页",
+      "url": "/collect-ui#/framework/travel_checkin_manage",
+      "must_login": true
+    }
+  ]
+}

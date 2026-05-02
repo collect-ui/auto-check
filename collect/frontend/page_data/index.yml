@@ -1,6 +1,7 @@
 service:
   - key: menu
     http: true
+    must_login: false
     module: empty
     handler_params:
       - key: file2datajson
@@ -172,6 +173,27 @@ service:
       - key: param2result
         field: data
     data_file: data/system/travel_org_manage.json
+
+  - key: travel_checkin_apply
+    http: true
+    must_login: false
+    module: empty
+    handler_params:
+      - key: file2datajson
+        save_field: data
+      - key: param2result
+        field: data
+    data_file: data/system/travel_checkin_apply.json
+
+  - key: travel_checkin_manage
+    http: true
+    module: empty
+    handler_params:
+      - key: file2datajson
+        save_field: data
+      - key: param2result
+        field: data
+    data_file: data/system/travel_checkin_manage.json
 
   - key: customer_assign_manage
     http: true

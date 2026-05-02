@@ -19,6 +19,12 @@ Guidance for coding agents working in `/data/project/auto-check`.
 - No `.github/copilot-instructions.md` file was found.
 - The repository-specific agent guidance currently lives in this file only.
 
+## Docs Index
+
+- Low-code docs overview: [docs/lowcode/README.md](/data/project/auto-check/docs/lowcode/README.md)
+- Low-code frontend AJAX value sourcing: [docs/lowcode/frontend_ajax_row_value_guideline.md](/data/project/auto-check/docs/lowcode/frontend_ajax_row_value_guideline.md)
+  - Rule: for row-triggered AJAX, non-form fields should prefer `row/currentRow` values instead of hidden form fields.
+
 ## Common Commands
 
 ### Run Locally
@@ -64,6 +70,38 @@ go build -ldflags="-s -w" -o windows/main.exe -v main.go
 ```
 
 Note: the Windows script also runs a hard-coded UPX path: `F:\upx-5.1.0-win64\upx.exe`.
+
+### Windows 7 Packaging
+
+This repository has a dedicated Win7 packaging flow. Do not assume "Go 1.23 does not support Win7" means this repo cannot produce a Win7 package.
+
+- Canonical script:
+
+```bash
+scripts/package_windows.sh --target win7 --go120 <go1.20 binary> --out dist
+```
+
+- The script isolates Win7 builds with a separate modfile and pinned dependency versions under `dist/.go-win7.mod` / `dist/.go-win7.sum`.
+- On this Linux environment, using Go toolchain download is acceptable. Example:
+
+```bash
+export GOTOOLCHAIN=go1.20.14
+bash scripts/package_windows.sh --target win7 --go120 go --out dist
+```
+
+- Expected output directory:
+
+```text
+dist/windows-win7-x64/
+```
+
+- If the user asks for a tarball similar to previous Win7 outputs, package that directory directly, for example:
+
+```bash
+tar -czf dist/auto-check-win7-x64-$(date +%Y%m%d-%H%M%S).tar.gz -C dist windows-win7-x64
+```
+
+- Before claiming Win7 is unsupported, check whether `dist/windows-win7-x64/` or `dist/windows-win7-x64.tar.gz` already exists, and prefer the repository packaging scripts over ad hoc `go build`.
 
 ### Tests
 
@@ -219,6 +257,9 @@ For config-only changes in `collect/` or `conf/`, at minimum run:
 - Preserve key names, indentation style, and schema shape when editing configuration-driven files.
 - Avoid mass reformatting JSON/YAML unless the file is already being normalized for a reason.
 - Check for references across `collect/`, `conf/`, and plugin code before renaming service keys.
+- Low-code variable expression hard rule: when a field uses variables, the entire value must be a single expression string in the form `"${...}"`.
+- Do not mix plain text with inline placeholders in one string (for example, avoid `"Region：${row.region}"`); use `"${'Region：'+(row.region||'-')}"` instead.
+- This rule applies to dynamic text fields such as `children`, `title`, `placeholder`, `value`, and similar renderable string fields.
 
 ### Database and Generated Artifacts
 

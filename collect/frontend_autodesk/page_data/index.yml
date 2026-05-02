@@ -1,6 +1,7 @@
 service:
   - key: menu
     http: true
+    must_login: false
     module: empty
     handler_params:
       - key: file2datajson
@@ -132,6 +133,17 @@ service:
       - key: param2result
         field: data
     data_file: data/framework/login.json
+  - key: travel_checkin_apply
+    http: true
+    must_login: false
+    module: empty
+    handler_params:
+      - key: service2field
+        service:
+          service: frontend.travel_checkin_apply
+        save_field: data
+      - key: param2result
+        field: data
   - key: register
     http: true
     must_login: false

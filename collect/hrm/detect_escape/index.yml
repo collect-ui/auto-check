@@ -99,7 +99,7 @@ service:
           - field: call_count
             template: "{{len .call_list}}"
           - field: chat_latest_message_time
-            template: "{{if gt (len .chat_list) 0}}{{(index .chat_list 0).message_time}}{{else}}0{{end}}"
+            template: "0"
           - field: call_latest_phone_time
             template: "{{if gt (len .call_list) 0}}{{(index .call_list 0).phone_start_time}}{{else}}0{{end}}"
           - field: chat_latest_analyze_time
@@ -240,7 +240,7 @@ service:
           - field: skip_reason
             template: "{{if or (gt (len .chat_list) 0) (gt (len .call_list) 0)}}{{else}}SKIP_NO_MESSAGE{{end}}"
           - field: chat_latest_message_time
-            template: "{{if gt (len .chat_list) 0}}{{(index .chat_list 0).message_time}}{{else}}0{{end}}"
+            template: "0"
           - field: call_latest_phone_time
             template: "{{if gt (len .call_list) 0}}{{(index .call_list 0).phone_start_time}}{{else}}0{{end}}"
           - field: chat_latest_analyze_time
@@ -254,14 +254,19 @@ service:
           service: hrm.call_deepseek_detect
           system_prompt: "[system_prompt]"
           prompt_content: "[prompt_content]"
-        save_field: ai_result
+          deepseek_api_key: "[employee_info.deepseek_api_key]"
+          agency_id: "[employee_info.agency_id]"
+          employee_id: "[employee_id]"
+          analyze_source: detect_escape_order
+          usage_scene: detect_escape_order
+        save_field: ai_response
       - key: update_field
         name: 解析AI返回结果
         fields:
           - field: is_escape
-            template: "{{if eq .should_analyze \"1\"}}{{if str_contains (to_json .ai_result) `【有逃单行为】`}}1{{else if str_contains (to_json .ai_result) `【无逃单行为】`}}0{{else if or (str_contains (to_json .ai_result) `存在明确的高风险行为`) (str_contains (to_json .ai_result) `明确的高风险行为`) (str_contains (to_json .ai_result) `私下收款`) (str_contains (to_json .ai_result) `飞单`)}}1{{else if or (str_contains (to_json .ai_result) `存疑`) (str_contains (to_json .ai_result) `疑似`) (str_contains (to_json .ai_result) `倾向`) (str_contains (to_json .ai_result) `可能性`)}}2{{else}}2{{end}}{{else}}0{{end}}"
+            template: "{{if eq .should_analyze \"1\"}}{{if str_contains (to_json .ai_response.content) `【有逃单行为】`}}1{{else if str_contains (to_json .ai_response.content) `【无逃单行为】`}}0{{else if or (str_contains (to_json .ai_response.content) `存在明确的高风险行为`) (str_contains (to_json .ai_response.content) `明确的高风险行为`) (str_contains (to_json .ai_response.content) `私下收款`) (str_contains (to_json .ai_response.content) `飞单`)}}1{{else if or (str_contains (to_json .ai_response.content) `存疑`) (str_contains (to_json .ai_response.content) `疑似`) (str_contains (to_json .ai_response.content) `倾向`) (str_contains (to_json .ai_response.content) `可能性`)}}2{{else}}2{{end}}{{else}}0{{end}}"
           - field: ai_content
-            template: "{{if eq .should_analyze \"1\"}}{{if must .ai_result}}{{.ai_result}}{{else}}分析失败：模型无返回，请重试{{end}}{{else}}无聊天和电话消息，跳过分析{{end}}"
+            template: "{{if eq .should_analyze \"1\"}}{{if must .ai_response.content}}{{.ai_response.content}}{{else}}分析失败：模型无返回，请重试{{end}}{{else}}无聊天和电话消息，跳过分析{{end}}"
     result_handler:
       - key: params2result
         fields:
@@ -299,6 +304,16 @@ service:
             to: chat_latest_analyze_time
           - from: "[call_latest_analyze_time]"
             to: call_latest_analyze_time
+          - from: "[ai_response.prompt_tokens]"
+            to: prompt_tokens
+          - from: "[ai_response.completion_tokens]"
+            to: completion_tokens
+          - from: "[ai_response.total_tokens]"
+            to: total_tokens
+          - from: "{{to_json .ai_response.usage}}"
+            to: usage_json
+          - from: "[ai_response.model_name]"
+            to: model_name
 
   - key: detect_escape_health_chunk_plan
     name: 月度体检分片规划
@@ -310,6 +325,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       start_time:
         default: 0
         template: "{{if .start_time}}{{.start_time}}{{else}}{{unix_time -30 `day`}}*1000{{end}}"
@@ -337,10 +354,18 @@ service:
         type: int
     handler_params:
       - key: service2field
+        name: 获取员工信息
+        service:
+          service: hrm.get_employee_info
+          employee_id: "[employee_id]"
+          to_obj: true
+        save_field: employee_info
+      - key: service2field
         name: 获取体检聊天明细
         service:
           service: hrm.travel_chat_record_list
-          employee_id: "[employee_id]"
+          agency_id: "[employee_info.agency_id]"
+          employee_scope_token: "[employee_scope_token]"
           message_time_from: "[start_time]"
           message_time_to: "[end_time]"
           limit: 100000
@@ -349,7 +374,8 @@ service:
         name: 获取体检电话明细
         service:
           service: hrm.travel_call_record_list
-          employee_id: "[employee_id]"
+          agency_id: "[employee_info.agency_id]"
+          employee_scope_token: "[employee_scope_token]"
           start_time: "[start_time]"
           end_time: "[end_time]"
           limit: 100000
@@ -373,6 +399,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       chunk_no:
         default: 1
         type: int
@@ -413,6 +441,7 @@ service:
         service:
           service: hrm.get_chat_content_escape_order
           employee_id: "[employee_id]"
+          employee_scope_token: "[employee_scope_token]"
           start_time: "[chunk_start_time]"
           end_time: "[chunk_end_time]"
           limit: "[limit]"
@@ -423,6 +452,7 @@ service:
         service:
           service: hrm.get_call_content_escape_order
           employee_id: "[employee_id]"
+          employee_scope_token: "[employee_scope_token]"
           start_time: "[chunk_start_time]"
           end_time: "[chunk_end_time]"
           limit: "[call_limit]"
@@ -487,6 +517,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       chunk_list:
         default: []
       limit:
@@ -509,6 +541,7 @@ service:
       service:
         service: hrm.detect_escape_health_chunk_prepare_one
         employee_id: "[params.employee_id]"
+        employee_scope_token: "[params.employee_scope_token]"
         chunk_no: "[chunk_no]"
         chunk_start_time: "[chunk_start_time]"
         chunk_end_time: "[chunk_end_time]"
@@ -556,6 +589,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       chunk_no:
         default: 1
         type: int
@@ -589,6 +624,7 @@ service:
         service:
           service: hrm.detect_escape_health_chunk_prepare_one
           employee_id: "[employee_id]"
+          employee_scope_token: "[employee_scope_token]"
           chunk_no: "[chunk_no]"
           chunk_start_time: "[chunk_start_time]"
           chunk_end_time: "[chunk_end_time]"
@@ -605,14 +641,19 @@ service:
           service: hrm.call_deepseek_detect
           system_prompt: "[chunk_prepare_data.system_prompt]"
           prompt_content: "[chunk_prepare_data.prompt_content]"
-        save_field: ai_result
+          deepseek_api_key: "[chunk_prepare_data.employee_info.deepseek_api_key]"
+          agency_id: "[chunk_prepare_data.employee_info.agency_id]"
+          employee_id: "[employee_id]"
+          analyze_source: health_chunk
+          usage_scene: health_chunk
+        save_field: ai_response
       - key: update_field
         name: 解析分片结果
         fields:
           - field: chunk_is_escape
-            template: "{{if must .ai_result}}{{if str_contains (to_json .ai_result) `【本片结论】：有逃单`}}1{{else if str_contains (to_json .ai_result) `【本片结论】：无逃单`}}0{{else if or (str_contains (to_json .ai_result) `【有逃单行为】`) (str_contains (to_json .ai_result) `明确的高风险行为`) (str_contains (to_json .ai_result) `私下收款`) (str_contains (to_json .ai_result) `飞单`)}}1{{else if or (str_contains (to_json .ai_result) `存疑`) (str_contains (to_json .ai_result) `疑似`)}}2{{else}}2{{end}}{{else}}0{{end}}"
+            template: "{{if must .ai_response.content}}{{if str_contains (to_json .ai_response.content) `【本片结论】：有逃单`}}1{{else if str_contains (to_json .ai_response.content) `【本片结论】：无逃单`}}0{{else if or (str_contains (to_json .ai_response.content) `【有逃单行为】`) (str_contains (to_json .ai_response.content) `明确的高风险行为`) (str_contains (to_json .ai_response.content) `私下收款`) (str_contains (to_json .ai_response.content) `飞单`)}}1{{else if or (str_contains (to_json .ai_response.content) `存疑`) (str_contains (to_json .ai_response.content) `疑似`)}}2{{else}}2{{end}}{{else}}0{{end}}"
           - field: chunk_ai_result
-            template: "{{if must .ai_result}}{{.ai_result}}{{else if eq (printf `%v` .preview_only) `1`}}预览模式：未调用模型接口{{else}}当前分片无有效聊天和电话消息，跳过模型分析{{end}}"
+            template: "{{if must .ai_response.content}}{{.ai_response.content}}{{else if eq (printf `%v` .preview_only) `1`}}预览模式：未调用模型接口{{else}}当前分片无有效聊天和电话消息，跳过模型分析{{end}}"
     result_handler:
       - key: params2result
         fields:
@@ -640,6 +681,20 @@ service:
             to: is_escape
           - from: "[preview_only]"
             to: preview_only
+          - from: "{{if .ai_response.prompt_tokens}}{{.ai_response.prompt_tokens}}{{else}}0{{end}}"
+            to: prompt_tokens
+          - from: "{{if .ai_response.completion_tokens}}{{.ai_response.completion_tokens}}{{else}}0{{end}}"
+            to: completion_tokens
+          - from: "{{if .ai_response.total_tokens}}{{.ai_response.total_tokens}}{{else}}0{{end}}"
+            to: total_tokens
+          - from: "{{if must .ai_response.usage}}{{to_json .ai_response.usage}}{{else}}{}{{end}}"
+            to: usage_json
+          - from: "{{if .ai_response.model_name}}{{.ai_response.model_name}}{{else}}{{end}}"
+            to: model_name
+          - from: "{{if .ai_response.usage.prompt_cache_hit_tokens}}{{.ai_response.usage.prompt_cache_hit_tokens}}{{else}}0{{end}}"
+            to: prompt_cache_hit_tokens
+          - from: "{{if .ai_response.usage.prompt_cache_miss_tokens}}{{.ai_response.usage.prompt_cache_miss_tokens}}{{else}}0{{end}}"
+            to: prompt_cache_miss_tokens
 
   - key: detect_escape_health_chunk_analyze_bulk
     name: 月度体检批量分片分析
@@ -651,6 +706,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       chunk_list:
         default: []
       limit:
@@ -672,10 +729,11 @@ service:
     batch:
       foreach: "[chunk_list]"
       item: item
-      loop_max: 1
+      loop_max: 15
       service:
         service: hrm.detect_escape_health_chunk_analyze_one
         employee_id: "[params.employee_id]"
+        employee_scope_token: "[params.employee_scope_token]"
         chunk_no: "[chunk_no]"
         chunk_start_time: "[chunk_start_time]"
         chunk_end_time: "[chunk_end_time]"
@@ -719,6 +777,20 @@ service:
             template: "{{.item.analyze_result.Data.is_escape}}"
           - field: preview_only
             template: "{{.item.analyze_result.Data.preview_only}}"
+          - field: prompt_tokens
+            template: "{{.item.analyze_result.Data.prompt_tokens}}"
+          - field: completion_tokens
+            template: "{{.item.analyze_result.Data.completion_tokens}}"
+          - field: total_tokens
+            template: "{{.item.analyze_result.Data.total_tokens}}"
+          - field: usage_json
+            template: "{{.item.analyze_result.Data.usage_json}}"
+          - field: model_name
+            template: "{{.item.analyze_result.Data.model_name}}"
+          - field: prompt_cache_hit_tokens
+            template: "{{.item.analyze_result.Data.prompt_cache_hit_tokens}}"
+          - field: prompt_cache_miss_tokens
+            template: "{{.item.analyze_result.Data.prompt_cache_miss_tokens}}"
       - key: param2result
         field: "[list]"
 
@@ -756,14 +828,19 @@ service:
           service: hrm.call_deepseek_detect
           system_prompt: "[merge_system_prompt]"
           prompt_content: "[merge_prompt_content]"
-        save_field: ai_result
+          deepseek_api_key: "[employee_info.deepseek_api_key]"
+          agency_id: "[employee_info.agency_id]"
+          employee_id: "[employee_id]"
+          analyze_source: health_merge
+          usage_scene: health_merge
+        save_field: ai_response
       - key: update_field
         name: 解析汇总结果
         fields:
           - field: is_escape
-            template: "{{if must .ai_result}}{{if str_contains (to_json .ai_result) `【有逃单行为】`}}1{{else if str_contains (to_json .ai_result) `【无逃单行为】`}}0{{else if or (str_contains (to_json .ai_result) `明确的高风险行为`) (str_contains (to_json .ai_result) `私下收款`) (str_contains (to_json .ai_result) `飞单`)}}1{{else if or (str_contains (to_json .ai_result) `存疑`) (str_contains (to_json .ai_result) `疑似`)}}2{{else}}2{{end}}{{else}}0{{end}}"
+            template: "{{if must .ai_response.content}}{{if str_contains (to_json .ai_response.content) `【有逃单行为】`}}1{{else if str_contains (to_json .ai_response.content) `【无逃单行为】`}}0{{else if or (str_contains (to_json .ai_response.content) `明确的高风险行为`) (str_contains (to_json .ai_response.content) `私下收款`) (str_contains (to_json .ai_response.content) `飞单`)}}1{{else if or (str_contains (to_json .ai_response.content) `存疑`) (str_contains (to_json .ai_response.content) `疑似`)}}2{{else}}2{{end}}{{else}}0{{end}}"
           - field: ai_content
-            template: "{{if must .ai_result}}{{.ai_result}}{{else}}体检未获取到有效分片分析结果{{end}}"
+            template: "{{if must .ai_response.content}}{{.ai_response.content}}{{else}}体检未获取到有效分片分析结果{{end}}"
     result_handler:
       - key: params2result
         fields:
@@ -779,6 +856,20 @@ service:
             to: is_escape
           - from: "[chunk_result_list]"
             to: chunk_result_list
+          - from: "{{if .ai_response.prompt_tokens}}{{.ai_response.prompt_tokens}}{{else}}0{{end}}"
+            to: prompt_tokens
+          - from: "{{if .ai_response.completion_tokens}}{{.ai_response.completion_tokens}}{{else}}0{{end}}"
+            to: completion_tokens
+          - from: "{{if .ai_response.total_tokens}}{{.ai_response.total_tokens}}{{else}}0{{end}}"
+            to: total_tokens
+          - from: "{{if must .ai_response.usage}}{{to_json .ai_response.usage}}{{else}}{}{{end}}"
+            to: usage_json
+          - from: "{{if .ai_response.model_name}}{{.ai_response.model_name}}{{else}}{{end}}"
+            to: model_name
+          - from: "{{if .ai_response.usage.prompt_cache_hit_tokens}}{{.ai_response.usage.prompt_cache_hit_tokens}}{{else}}0{{end}}"
+            to: prompt_cache_hit_tokens
+          - from: "{{if .ai_response.usage.prompt_cache_miss_tokens}}{{.ai_response.usage.prompt_cache_miss_tokens}}{{else}}0{{end}}"
+            to: prompt_cache_miss_tokens
 
   - key: detect_escape_health_prompt_preview
     name: 预览月度体检提示词
@@ -979,6 +1070,12 @@ service:
       max_call_content_length:
         default: 10000
         type: int
+      employee_scope_employee_list:
+        default: []
+      employee_scope_id_list:
+        default: []
+      employee_scope_token:
+        default: ""
     handler_params:
       - key: service2field
         name: 获取员工信息
@@ -987,6 +1084,39 @@ service:
           employee_id: "[employee_id]"
           to_obj: true
         save_field: employee_info
+      - key: service2field
+        name: 获取目标员工主档
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[employee_info.agency_id]"
+          employee_id: "[employee_id]"
+          pagination: false
+          count: false
+          to_obj: true
+        save_field: target_employee
+      - key: service2field
+        name: 获取旅行社员工列表
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[employee_info.agency_id]"
+          pagination: false
+          count: false
+        save_field: agency_employee_list
+      - key: filter_arr
+        name: 计算体检员工范围
+        foreach: "[agency_employee_list]"
+        item: item
+        if_template: "{{or (eq .item.employee_id .employee_id) (and (must .target_employee.user_id) (ne (printf `%v` .target_employee.user_id) `0`) (eq (printf `%v` .item.user_id) (printf `%v` .target_employee.user_id))) (and (must .target_employee.wx_id) (eq .item.wx_id .target_employee.wx_id)) (and (must .target_employee.phone) (eq .item.phone .target_employee.phone))}}"
+        save_field: employee_scope_employee_list
+      - key: prop_arr
+        foreach: "[employee_scope_employee_list]"
+        value: "[employee_id]"
+        save_field: employee_scope_id_list
+      - key: update_field
+        name: 计算体检员工范围令牌
+        fields:
+          - field: employee_scope_token
+            template: "{{if gt (len .employee_scope_id_list) 0}},{{join .employee_scope_id_list \",\"}},{{else}},{{.employee_id}},{{end}}"
       - key: service2field
         name: 查询待处理逃单工单
         service:
@@ -1012,6 +1142,7 @@ service:
         service:
           service: hrm.detect_escape_health_chunk_plan
           employee_id: "[employee_id]"
+          employee_scope_token: "[employee_scope_token]"
           start_time: "[start_time]"
           end_time: "[end_time]"
           max_days_per_chunk: "[max_days_per_chunk]"
@@ -1026,6 +1157,7 @@ service:
         service:
           service: hrm.detect_escape_health_chunk_analyze_bulk
           employee_id: "[employee_id]"
+          employee_scope_token: "[employee_scope_token]"
           chunk_list: "[chunk_list]"
           limit: "[limit]"
           call_limit: "[call_limit]"
@@ -1041,27 +1173,41 @@ service:
         item: item
         fields:
           - field: chunk_no
-            template: "[item.analyze_result.data.chunk_no]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.chunk_no}}{{else}}{{.item.chunk_no}}{{end}}"
           - field: chunk_start_time
-            template: "[item.analyze_result.data.chunk_start_time]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.chunk_start_time}}{{else}}{{.item.chunk_start_time}}{{end}}"
           - field: chunk_end_time
-            template: "[item.analyze_result.data.chunk_end_time]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.chunk_end_time}}{{else}}{{.item.chunk_end_time}}{{end}}"
           - field: chat_count
-            template: "[item.analyze_result.data.chat_count]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.chat_count}}{{else}}{{.item.chat_count}}{{end}}"
           - field: call_count
-            template: "[item.analyze_result.data.call_count]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.call_count}}{{else}}{{.item.call_count}}{{end}}"
           - field: preview_system_prompt
-            template: "[item.analyze_result.data.preview_system_prompt]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.preview_system_prompt}}{{else}}{{.item.preview_system_prompt}}{{end}}"
           - field: preview_prompt_content
-            template: "[item.analyze_result.data.preview_prompt_content]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.preview_prompt_content}}{{else}}{{.item.preview_prompt_content}}{{end}}"
           - field: preview_chat_content
-            template: "[item.analyze_result.data.preview_chat_content]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.preview_chat_content}}{{else}}{{.item.preview_chat_content}}{{end}}"
           - field: preview_call_content
-            template: "[item.analyze_result.data.preview_call_content]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.preview_call_content}}{{else}}{{.item.preview_call_content}}{{end}}"
           - field: ai_result
-            template: "[item.analyze_result.data.ai_result]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.ai_result}}{{else}}{{.item.ai_result}}{{end}}"
           - field: is_escape
-            template: "[item.analyze_result.data.is_escape]"
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.is_escape}}{{else}}{{.item.is_escape}}{{end}}"
+          - field: prompt_tokens
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.prompt_tokens}}{{else}}{{.item.prompt_tokens}}{{end}}"
+          - field: completion_tokens
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.completion_tokens}}{{else}}{{.item.completion_tokens}}{{end}}"
+          - field: total_tokens
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.total_tokens}}{{else}}{{.item.total_tokens}}{{end}}"
+          - field: usage_json
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.usage_json}}{{else}}{{.item.usage_json}}{{end}}"
+          - field: model_name
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.model_name}}{{else}}{{.item.model_name}}{{end}}"
+          - field: prompt_cache_hit_tokens
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.prompt_cache_hit_tokens}}{{else}}{{.item.prompt_cache_hit_tokens}}{{end}}"
+          - field: prompt_cache_miss_tokens
+            template: "{{if .item.analyze_result}}{{.item.analyze_result.Data.prompt_cache_miss_tokens}}{{else}}{{.item.prompt_cache_miss_tokens}}{{end}}"
       - key: service2field
         enable: "{{and (ne (printf `%v` .preview_only) `1`) (contains .run_modules `merge`) (gt (len .chunk_result_list) 0)}}"
         name: 汇总分片分析结果
@@ -1070,12 +1216,19 @@ service:
           employee_id: "[employee_id]"
           chunk_result_list: "[chunk_result_list]"
         save_field: merge_result
+      - key: health_usage_summary
+        enable: "{{and (ne (printf `%v` .preview_only) `1`) (gt (len .chunk_result_list) 0)}}"
+        name: 汇总月度token消耗
+        foreach: "[chunk_result_list]"
+        right: "[merge_result]"
+        save_field: health_usage_summary
       - key: service2field
         name: 获取体检聊天总量
         enable: "{{contains .run_modules `stats`}}"
         service:
           service: hrm.travel_chat_record_list
-          employee_id: "[employee_id]"
+          agency_id: "[employee_info.agency_id]"
+          employee_scope_token: "[employee_scope_token]"
           message_time_from: "[start_time]"
           message_time_to: "[end_time]"
           limit: 100000
@@ -1085,7 +1238,8 @@ service:
         enable: "{{contains .run_modules `stats`}}"
         service:
           service: hrm.travel_call_record_list
-          employee_id: "[employee_id]"
+          agency_id: "[employee_info.agency_id]"
+          employee_scope_token: "[employee_scope_token]"
           start_time: "[start_time]"
           end_time: "[end_time]"
           limit: 100000
@@ -1117,6 +1271,16 @@ service:
             template: "{{if .full_chat_list}}{{len .full_chat_list}}{{else}}0{{end}}"
           - field: escape_log_call_count
             template: "{{if .full_call_list}}{{len .full_call_list}}{{else}}0{{end}}"
+          - field: escape_log_prompt_tokens
+            template: "{{if .health_usage_summary}}{{.health_usage_summary.prompt_tokens}}{{else}}0{{end}}"
+          - field: escape_log_completion_tokens
+            template: "{{if .health_usage_summary}}{{.health_usage_summary.completion_tokens}}{{else}}0{{end}}"
+          - field: escape_log_total_tokens
+            template: "{{if .health_usage_summary}}{{.health_usage_summary.total_tokens}}{{else}}0{{end}}"
+          - field: escape_log_usage_json
+            template: "{{if .health_usage_summary}}{{.health_usage_summary.usage_json}}{{else}}{}{{end}}"
+          - field: escape_log_model_name
+            template: "{{if .health_usage_summary}}{{.health_usage_summary.model_name}}{{else}}{{end}}"
       - key: service2field
         name: 记录分析日志
         enable: "{{contains .run_modules `log`}}"
@@ -1132,6 +1296,11 @@ service:
           is_escape: "[escape_log_is_escape]"
           chat_count: "[escape_log_chat_count]"
           call_count: "[escape_log_call_count]"
+          prompt_tokens: "[escape_log_prompt_tokens]"
+          completion_tokens: "[escape_log_completion_tokens]"
+          total_tokens: "[escape_log_total_tokens]"
+          usage_json: "[escape_log_usage_json]"
+          model_name: "[escape_log_model_name]"
           create_time: "[escape_last_analyze_time]"
         save_field: escape_log_save_result
       - key: service2field
@@ -1191,6 +1360,10 @@ service:
             to: end_time
           - from: "[employee_info]"
             to: employee_info
+          - from: "[employee_scope_id_list]"
+            to: employee_scope_id_list
+          - from: "[employee_scope_token]"
+            to: employee_scope_token
 
   - key: detect_escape_order_and_save
     name: 检测逃单并回写员工结果
@@ -1264,6 +1437,16 @@ service:
             template: "{{if gt (len .pending_issue_list) 0}}{{else}}{{.detect_result.chat_latest_analyze_time}}{{end}}"
           - field: escape_log_call_latest_analyze_time
             template: "{{if gt (len .pending_issue_list) 0}}{{else}}{{.detect_result.call_latest_analyze_time}}{{end}}"
+          - field: escape_log_prompt_tokens
+            template: "{{if gt (len .pending_issue_list) 0}}0{{else}}{{.detect_result.prompt_tokens}}{{end}}"
+          - field: escape_log_completion_tokens
+            template: "{{if gt (len .pending_issue_list) 0}}0{{else}}{{.detect_result.completion_tokens}}{{end}}"
+          - field: escape_log_total_tokens
+            template: "{{if gt (len .pending_issue_list) 0}}0{{else}}{{.detect_result.total_tokens}}{{end}}"
+          - field: escape_log_usage_json
+            template: "{{if gt (len .pending_issue_list) 0}}{{else}}{{.detect_result.usage_json}}{{end}}"
+          - field: escape_log_model_name
+            template: "{{if gt (len .pending_issue_list) 0}}{{else}}{{.detect_result.model_name}}{{end}}"
       - key: service2field
         name: 记录分析日志
         service:
@@ -1282,6 +1465,11 @@ service:
           call_latest_phone_time: "[escape_log_call_latest_phone_time]"
           chat_latest_analyze_time: "[escape_log_chat_latest_analyze_time]"
           call_latest_analyze_time: "[escape_log_call_latest_analyze_time]"
+          prompt_tokens: "[escape_log_prompt_tokens]"
+          completion_tokens: "[escape_log_completion_tokens]"
+          total_tokens: "[escape_log_total_tokens]"
+          usage_json: "[escape_log_usage_json]"
+          model_name: "[escape_log_model_name]"
           create_time: "[escape_last_analyze_time]"
         save_field: escape_log_save_result
       - key: service2field
@@ -1511,6 +1699,25 @@ service:
     filter:
       employee_id: "[employee_id]"
 
+  - key: travel_employee_reset_escape_status
+    name: 重置员工逃单状态(清空escape_is_escape和escape_ai_content)
+    http: true
+    module: model_update
+    table: travel_employee
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      escape_is_escape:
+        default: 0
+      escape_ai_content:
+        default: ""
+      modify_time:
+        template: "{{current_date_time}}"
+    filter:
+      employee_id: "[employee_id]"
+
   - key: get_employee_info
     module: sql
     params:
@@ -1543,6 +1750,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       limit:
         default: 200
       days:
@@ -1572,6 +1781,8 @@ service:
         check:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
+      employee_scope_token:
+        default: ""
       limit:
         default: 50
       days:
@@ -1595,11 +1806,15 @@ service:
         enable: "[to_obj]"
 
 
-  - key: call_deepseek_detect
+  - key: call_deepseek_detect_raw
     module: http
     log: true
     http: true
     params:
+      deepseek_api_key:
+        check:
+          template: "{{must .deepseek_api_key}}"
+          err_msg: DeepSeek Key不能为空
       system_prompt:
         default: "你是一个专业的销售行为分析助手，负责分析员工沟通记录（微信聊天记录与电话录音转写文本），判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。"
       prompt_content:
@@ -1612,15 +1827,102 @@ service:
         fields:
           - from: "[choices]"
             to: "[choices]"
-      - key: param2result
-        field: "[choices]"
-      - key: arr2obj
-      - key: result2params
+          - from: "[choices[0]]"
+            to: "[choice0]"
+          - from: "[usage.prompt_tokens]"
+            to: "[prompt_tokens]"
+          - from: "[usage.completion_tokens]"
+            to: "[completion_tokens]"
+          - from: "[usage.total_tokens]"
+            to: "[total_tokens]"
+          - from: "[usage]"
+            to: "[usage]"
+          - from: "[model]"
+            to: "[model_name]"
+      - key: update_field
         fields:
-          - from: "[message.content]"
-            to: "[content]"
-      - key: param2result
-        field: "[content]"
+          - field: content_resolved
+            template: "{{if .choice0.message.content}}{{.choice0.message.content}}{{else if .choice0.message.reasoning_content}}{{.choice0.message.reasoning_content}}{{else}}{{end}}"
+      - key: params2result
+        fields:
+          - from: "[content_resolved]"
+            to: content
+          - from: "[prompt_tokens]"
+            to: prompt_tokens
+          - from: "[completion_tokens]"
+            to: completion_tokens
+          - from: "[total_tokens]"
+            to: total_tokens
+          - from: "[usage]"
+            to: usage
+          - from: "[model_name]"
+            to: model_name
+
+  - key: call_deepseek_detect
+    module: empty
+    log: true
+    http: true
+    params:
+      deepseek_api_key:
+        default: ""
+      system_prompt:
+        default: "你是一个专业的销售行为分析助手，负责分析员工沟通记录（微信聊天记录与电话录音转写文本），判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。"
+      prompt_content:
+        check:
+          template: "{{must .prompt_content}}"
+          err_msg: prompt_content不能为空
+      agency_id:
+        default: ""
+      employee_id:
+        default: ""
+      analyze_source:
+        default: detect_escape
+      usage_scene:
+        default: detect_escape
+    handler_params:
+      - key: update_field
+        fields:
+          - field: resolved_input_deepseek_api_key
+            template: "{{if .deepseek_api_key}}{{replace (replace (replace .deepseek_api_key \"\\r\" \"\") \"\\n\" \"\") \" \" \"\"}}{{else}}{{end}}"
+          - field: global_deepseek_api_key
+            template: "{{replace (replace (replace (get_key `deepseek_api_key`) \"\\r\" \"\") \"\\n\" \"\") \" \" \"\"}}"
+          - field: resolved_deepseek_api_key
+            template: "{{if and (must .resolved_input_deepseek_api_key) (str_contains .resolved_input_deepseek_api_key `sk-`)}}{{.resolved_input_deepseek_api_key}}{{else}}{{.global_deepseek_api_key}}{{end}}"
+      - key: check_field
+        fields:
+          - field: resolved_deepseek_api_key
+            template: "{{must .resolved_deepseek_api_key}}"
+            err_msg: DeepSeek Key不能为空
+      - key: service2field
+        service:
+          service: hrm.call_deepseek_detect_raw
+          deepseek_api_key: "[resolved_deepseek_api_key]"
+          system_prompt: "[system_prompt]"
+          prompt_content: "[prompt_content]"
+        save_field: deepseek_result
+      - key: service2field
+        enable: "{{and (must .resolved_input_deepseek_api_key) (str_contains .resolved_input_deepseek_api_key `sk-`) (ne .resolved_input_deepseek_api_key .global_deepseek_api_key) (ne (printf `%v` .deepseek_result.success) `true`) (or (str_contains (to_json .deepseek_result) `Authentication Fails`) (str_contains (to_json .deepseek_result) `authentication_error`) (str_contains (to_json .deepseek_result) `invalid_request_error`))}}"
+        service:
+          service: hrm.call_deepseek_detect_raw
+          deepseek_api_key: "[global_deepseek_api_key]"
+          system_prompt: "[system_prompt]"
+          prompt_content: "[prompt_content]"
+        save_field: deepseek_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[deepseek_result.content]"
+            to: content
+          - from: "[deepseek_result.prompt_tokens]"
+            to: prompt_tokens
+          - from: "[deepseek_result.completion_tokens]"
+            to: completion_tokens
+          - from: "[deepseek_result.total_tokens]"
+            to: total_tokens
+          - from: "[deepseek_result.usage]"
+            to: usage
+          - from: "[deepseek_result.model_name]"
+            to: model_name
 
   - key: detect_escape_analyze_log_save
     module: model_save
@@ -1638,6 +1940,8 @@ service:
         default: ""
       analyze_source:
         default: manual
+      model_name:
+        default: ""
       system_prompt:
         default: ""
       prompt_content:
@@ -1647,6 +1951,17 @@ service:
       is_escape:
         default: 0
         type: int
+      prompt_tokens:
+        default: 0
+        type: int
+      completion_tokens:
+        default: 0
+        type: int
+      total_tokens:
+        default: 0
+        type: int
+      usage_json:
+        default: ""
       chat_count:
         default: 0
         type: int
@@ -1734,6 +2049,49 @@ service:
     filter:
       issue_id: "[issue_id]"
 
+  - key: detect_escape_issue_update_and_reset
+    http: true
+    module: empty
+    params:
+      issue_id:
+        check:
+          template: "{{must .issue_id}}"
+          err_msg: issue_id不能为空
+      issue_status:
+        check:
+          template: "{{must .issue_status}}"
+          err_msg: issue_status不能为空
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      process_result:
+        default: ""
+    handler_params:
+      - key: service2field
+        name: 更新工单状态
+        service:
+          service: hrm.detect_escape_issue_update
+          issue_id: "[issue_id]"
+          issue_status: "[issue_status]"
+          process_result: "[process_result]"
+        save_field: issue_update_result
+      - key: service2field
+        name: 查询该员工是否还有待处理工单
+        service:
+          service: hrm.detect_escape_issue_list
+          employee_id: "[employee_id]"
+          issue_status: pending
+          pagination: false
+        save_field: remaining_pending_issues
+      - key: service2field
+        name: 无待处理工单时重置员工逃单状态
+        enable: "{{le (len .remaining_pending_issues) 0}}"
+        service:
+          service: hrm.travel_employee_reset_escape_status
+          employee_id: "[employee_id]"
+        save_field: reset_result
+
   - key: detect_escape_issue_list
     http: true
     module: sql
@@ -1760,8 +2118,14 @@ service:
         default: true
     data_file: detect_escape_issue_list.sql
     count_file: detect_escape_issue_count.sql
-    pagination: pagination
-    count: "[count]"
+
+  - key: detect_escape_issue_pending_count
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+    data_file: detect_escape_issue_pending_count.sql
 
   - key: detect_escape_analyze_log_list
     http: true
@@ -1791,3 +2155,15 @@ service:
     count_file: detect_escape_analyze_log_count.sql
     pagination: pagination
     count: "[count]"
+
+  - key: detect_escape_analyze_log_today_summary
+    http: true
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      agency_id:
+        default: ""
+    data_file: detect_escape_analyze_log_today_summary.sql

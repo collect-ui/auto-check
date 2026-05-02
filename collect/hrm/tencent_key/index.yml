@@ -67,7 +67,506 @@ service:
         check:
           template: "{{must .account_name_query}}"
           err_msg: 查询关键字不能为空
+      status:
+        default: all
+      match_mode:
+        default: contains
     http_json: remote_request_list.json
+
+  - key: tencent_key_remote_quota
+    http: true
+    module: http
+    log: true
+    params:
+      refresh:
+        default: "1"
+    http_json: remote_quota.json
+
+  - key: tencent_key_agency_key_list
+    http: true
+    module: sql
+    params:
+      key_id:
+        default: ""
+      agency_id:
+        default: ""
+      account_name:
+        default: ""
+      status:
+        default: ""
+      source_type:
+        default: ""
+      search:
+        template: "{{if .search}}%{{.search}}%{{end}}"
+      page:
+        type: int
+        default: 1
+      size:
+        type: int
+        default: 20
+      start:
+        template: "({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+      to_obj:
+        default: false
+    data_file: agency_key_list.sql
+    count_file: agency_key_count.sql
+    pagination: pagination
+    count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: tencent_key_agency_key_save_raw
+    module: model_save
+    table: travel_agency_tencent_key
+    params:
+      key_id:
+        template: "{{uuid}}"
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      account_name:
+        check:
+          template: "{{must .account_name}}"
+          err_msg: 账号名称不能为空
+      region:
+        default: ap-beijing
+      monthly_quota_seconds:
+        default: 36000
+        type: int64
+      source_type:
+        default: manual
+      remote_request_id:
+        default: ""
+      remote_created_at:
+        default: ""
+      remote_reviewed_at:
+        default: ""
+      remote_status:
+        default: ""
+      remote_review_comment:
+        default: ""
+      status:
+        default: normal
+      remark:
+        default: ""
+      last_health_status:
+        default: unknown
+      last_health_message:
+        default: ""
+      last_used_duration_seconds:
+        default: 0
+        type: int64
+      last_remaining_quota_seconds:
+        default: 0
+        type: int64
+      last_sync_time:
+        default: ""
+      create_time:
+        template: "{{current_date_time}}"
+      create_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+      is_delete:
+        default: "0"
+
+  - key: tencent_key_agency_key_update_status_raw
+    module: model_update
+    table: travel_agency_tencent_key
+    params:
+      key_id:
+        check:
+          template: "{{must .key_id}}"
+          err_msg: key_id不能为空
+      status:
+        check:
+          template: "{{must .status}}"
+          err_msg: 状态不能为空
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+    filter:
+      key_id: "[key_id]"
+    update_fields:
+      - status
+      - modify_time
+      - modify_user
+
+  - key: tencent_key_agency_key_bulk_sync_update
+    module: bulk_upsert
+    table: travel_agency_tencent_key
+    model_field: update_list
+    update_fields:
+      - last_health_status
+      - last_health_message
+      - last_used_duration_seconds
+      - last_remaining_quota_seconds
+      - last_sync_time
+      - modify_time
+      - modify_user
+    params:
+      update_list:
+        check:
+          template: "{{must .update_list}}"
+          err_msg: 更新列表不能为空
+
+  - key: tencent_key_agency_key_manual_add
+    http: true
+    module: empty
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      account_name:
+        check:
+          template: "{{must .account_name}}"
+          err_msg: 账号名称不能为空
+      region:
+        default: ap-beijing
+      monthly_quota_seconds:
+        default: 36000
+        type: int64
+      remark:
+        default: ""
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_agency_accessible_list
+          agency_id: "[agency_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: target_agency
+        template: "{{must .target_agency.agency_id}}"
+        err_msg: 当前账号无权限操作该旅行社
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_save_raw
+          agency_id: "[agency_id]"
+          account_name: "[account_name]"
+          region: "[region]"
+          monthly_quota_seconds: "[monthly_quota_seconds]"
+          source_type: manual
+          remark: "[remark]"
+        save_field: save_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[save_result.key_id]"
+            to: key_id
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[account_name]"
+            to: account_name
+
+  - key: tencent_key_agency_key_convert_from_remote
+    http: true
+    module: empty
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      account_name:
+        check:
+          template: "{{must .account_name}}"
+          err_msg: 账号名称不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_agency_accessible_list
+          agency_id: "[agency_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: target_agency
+        template: "{{must .target_agency.agency_id}}"
+        err_msg: 当前账号无权限操作该旅行社
+      - key: service2field
+        service:
+          service: hrm.tencent_key_remote_request_list
+          account_name_query: "[account_name]"
+          status: all
+          match_mode: exact
+        save_field: remote_request_list
+      - key: filter_arr
+        foreach: "[remote_request_list.requests]"
+        item: item
+        if_template: "{{eq .item.account_name .account_name}}"
+        save_field: exact_request_list
+      - key: check_field
+        fields:
+          - field: request_size
+            template: "{{gt (len .exact_request_list) 0}}"
+            err_msg: 远端未查询到匹配的申请记录
+      - key: arr2obj
+        field: "[exact_request_list]"
+      - key: check_field
+        fields:
+          - field: request_status
+            template: "{{eq .exact_request_list.status `approved`}}"
+            err_msg: 仅远端已通过申请允许转归到旅行社台账
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_save_raw
+          agency_id: "[agency_id]"
+          account_name: "[exact_request_list.account_name]"
+          region: "[exact_request_list.region]"
+          monthly_quota_seconds: "[exact_request_list.monthly_quota_seconds]"
+          source_type: remote
+          remote_request_id: "[exact_request_list.id]"
+          remote_created_at: "[exact_request_list.created_at]"
+          remote_reviewed_at: "[exact_request_list.reviewed_at]"
+          remote_status: "[exact_request_list.status]"
+          remote_review_comment: "[exact_request_list.review_comment]"
+          remark: "[exact_request_list.remark]"
+        save_field: save_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[save_result.key_id]"
+            to: key_id
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[exact_request_list.account_name]"
+            to: account_name
+          - from: "[exact_request_list.status]"
+            to: remote_status
+
+  - key: tencent_key_agency_key_disable
+    http: true
+    module: empty
+    params:
+      key_id:
+        check:
+          template: "{{must .key_id}}"
+          err_msg: key_id不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_list
+          key_id: "[key_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: key_info
+        template: "{{must .key_info.key_id}}"
+        err_msg: key不存在或无权限
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_update_status_raw
+          key_id: "[key_id]"
+          status: disabled
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[key_id]"
+            to: key_id
+          - from: disabled
+            to: status
+
+  - key: tencent_key_agency_key_enable
+    http: true
+    module: empty
+    params:
+      key_id:
+        check:
+          template: "{{must .key_id}}"
+          err_msg: key_id不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_list
+          key_id: "[key_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: key_info
+        template: "{{must .key_info.key_id}}"
+        err_msg: key不存在或无权限
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_update_status_raw
+          key_id: "[key_id]"
+          status: normal
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[key_id]"
+            to: key_id
+          - from: normal
+            to: status
+
+  - key: tencent_key_agency_key_soft_delete_raw
+    module: model_update
+    table: travel_agency_tencent_key
+    params:
+      key_id:
+        check:
+          template: "{{must .key_id}}"
+          err_msg: key_id不能为空
+      is_delete:
+        default: "1"
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+    filter:
+      key_id: "[key_id]"
+    update_fields:
+      - is_delete
+      - modify_time
+      - modify_user
+
+  - key: tencent_key_agency_key_delete
+    http: true
+    module: empty
+    params:
+      key_id:
+        check:
+          template: "{{must .key_id}}"
+          err_msg: key_id不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_list
+          key_id: "[key_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: key_info
+        template: "{{must .key_info.key_id}}"
+        err_msg: key不存在或无权限
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_soft_delete_raw
+          key_id: "[key_id]"
+        save_field: delete_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[key_id]"
+            to: key_id
+          - from: "1"
+            to: is_delete
+
+  - key: tencent_key_quota_sync
+    http: true
+    module: empty
+    params:
+      key_id:
+        default: ""
+      agency_id:
+        default: ""
+      active_only:
+        default: true
+      query_status:
+        default: ""
+      refresh:
+        default: "1"
+    handler_params:
+      - key: update_field
+        fields:
+          - field: query_status
+            template: "{{if .active_only}}normal{{else}}{{.query_status}}{{end}}"
+      - key: service2field
+        service:
+          service: hrm.tencent_key_agency_key_list
+          key_id: "[key_id]"
+          agency_id: "[agency_id]"
+          status: "[query_status]"
+          pagination: false
+          count: false
+        save_field: local_key_list
+      - key: service2field
+        enable: "{{gt (len .local_key_list) 0}}"
+        service:
+          service: hrm.tencent_key_remote_quota
+          refresh: "[refresh]"
+        save_field: quota_data
+      - key: update_array_from_array
+        enable: "{{and (gt (len .local_key_list) 0) (must .quota_data.accounts)}}"
+        foreach: "[local_key_list]"
+        item: item
+        field: "[account_name]"
+        right: "[quota_data.accounts]"
+        right_field: "[name]"
+        right_value_field: "*"
+        none_fill_right: true
+      - key: update_array
+        enable: "{{gt (len .local_key_list) 0}}"
+        foreach: "[local_key_list]"
+        item: item
+        fields:
+          - field: key_id
+            template: "{{.item.key_id}}"
+          - field: last_health_status
+            template: "{{if .item.name}}{{if .item.error}}error{{else}}ok{{end}}{{else}}not_found{{end}}"
+          - field: last_health_message
+            template: "{{if .item.name}}{{if .item.error}}{{.item.error}}{{else}}ok{{end}}{{else}}未在远端额度列表找到该账号{{end}}"
+          - field: last_used_duration_seconds
+            template: "{{if .item.name}}{{if .item.used_duration_seconds}}{{.item.used_duration_seconds}}{{else}}0{{end}}{{else}}{{if .item.last_used_duration_seconds}}{{.item.last_used_duration_seconds}}{{else}}0{{end}}{{end}}"
+            type: int64
+          - field: last_remaining_quota_seconds
+            template: "{{if .item.name}}{{if .item.remaining_quota_seconds}}{{.item.remaining_quota_seconds}}{{else}}0{{end}}{{else}}{{if .item.last_remaining_quota_seconds}}{{.item.last_remaining_quota_seconds}}{{else}}0{{end}}{{end}}"
+            type: int64
+          - field: last_sync_time
+            template: "{{current_date_time}}"
+          - field: modify_time
+            template: "{{current_date_time}}"
+          - field: modify_user
+            template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+      - key: service2field
+        enable: "{{gt (len .local_key_list) 0}}"
+        service:
+          service: hrm.tencent_key_agency_key_bulk_sync_update
+          update_list: "[local_key_list]"
+        save_field: bulk_update_result
+      - key: update_field
+        fields:
+          - field: sync_count
+            template: "{{len .local_key_list}}"
+            type: int64
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[sync_count]"
+            to: sync_count
+          - from: "[local_key_list]"
+            to: key_list
+
+  - key: tencent_key_quota_sync_schedule
+    module: empty
+    schedule:
+      enable: "{{eq (get_key \"tencent_key_schedule_enable\") \"true\"}}"
+      schedule_spec: "@every 300s"
+    params:
+      refresh:
+        default: "1"
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.tencent_key_quota_sync
+          active_only: true
+          refresh: "[refresh]"
+        save_field: sync_result
+    result_handler:
+      - key: param2result
+        field: "[sync_result]"
 
   - key: tencent_key_request_list
     http: true
@@ -83,7 +582,17 @@ service:
         service:
           service: hrm.tencent_key_remote_request_list
           account_name_query: "[current_agency.agency_code]"
+          status: all
+          match_mode: contains
         save_field: request_list
+      - key: service2field
+        enable: "{{must .current_agency.agency_id}}"
+        service:
+          service: hrm.tencent_key_agency_key_list
+          agency_id: "[current_agency.agency_id]"
+          pagination: false
+          count: false
+        save_field: key_list
     result_handler:
       - key: params2result
         fields:
@@ -91,6 +600,8 @@ service:
             to: current_agency
           - from: "[request_list]"
             to: request_list
+          - from: "[key_list]"
+            to: key_list
 
   - key: tencent_key_submit
     http: true

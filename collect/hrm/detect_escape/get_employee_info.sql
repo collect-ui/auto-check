@@ -6,6 +6,7 @@ select
   e.wx_id as employee_wx_id,
   a.agency_id,
   a.agency_name,
+  a.deepseek_api_key,
   a.escape_system_prompt,
   a.escape_user_prompt,
   a.escape_repeat_ad_keywords,

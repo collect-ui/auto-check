@@ -53,7 +53,7 @@
     {
       "tag": "ajax",
       "group": "agencyList",
-      "api": "post:/template_data/data?service=hrm.travel_agency_list",
+      "api": "post:/template_data/data?service=hrm.travel_agency_accessible_list",
       "appendFields": "${agencySearchForm}",
       "appendFormFields": "agency-search-form",
       "adapt": {

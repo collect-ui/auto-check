@@ -21,7 +21,9 @@ and ifnull(a.phone_start_time, 0) >= cast(strftime('%s', 'now', printf('-%d day'
 {{ if and .end_time (ne (printf "%v" .end_time) "0") }}
 and ifnull(a.phone_start_time, 0) <= {{ .end_time }}
 {{ end }}
-{{ if .employee_id }}
+{{ if .employee_scope_token }}
+and instr({{ .employee_scope_token }}, ',' || ifnull(a.employee_id, '') || ',') > 0
+{{ else if .employee_id }}
 and (
   a.employee_id = {{ .employee_id }}
   or (

@@ -1,0 +1,465 @@
+{
+  "tag": "layout-fit",
+  "className": "h100",
+  "initStore": {
+    "submitLoading": false,
+    "validateLoading": false,
+    "accountValidationStatus": "pending",
+    "accountValidationMsg": "请先校验同步账号",
+    "validatedUsername": "",
+    "validatedPassword": "",
+    "applyForm": {
+      "agency_name": "",
+      "agency_code": "",
+      "contact_name": "",
+      "contact_phone": "",
+      "username": "",
+      "password": ""
+    }
+  },
+  "children": [
+    {
+      "tag": "div",
+      "style": {
+        "height": "100%",
+        "boxSizing": "border-box",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": "24px 12px",
+        "background": "linear-gradient(180deg,#f0f9ff 0%,#ffffff 100%)"
+      },
+      "children": [
+        {
+          "tag": "div",
+          "style": {
+            "width": "min(760px, 100%)",
+            "background": "#ffffff",
+            "border": "1px solid #dbeafe",
+            "borderRadius": "16px",
+            "boxShadow": "0 18px 40px rgba(14,116,144,0.10)",
+            "padding": "24px"
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "display": "flex",
+                "alignItems": "center",
+                "justifyContent": "space-between",
+                "gap": "12px",
+                "marginBottom": "8px"
+              },
+              "children": [
+                {
+                  "tag": "div",
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700,
+                    "color": "#0f172a"
+                  },
+                  "children": "旅行社入住申请"
+                },
+                {
+                  "tag": "button",
+                  "type": "link",
+                  "children": "已有账号，去登录",
+                  "action": [
+                    {
+                      "tag": "redirect",
+                      "url": "/collect-ui/#/collect-ui/login"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "14px",
+                "lineHeight": "22px",
+                "color": "#475569",
+                "marginBottom": "18px"
+              },
+              "children": "请填写旅行社基础资料，并校验第三方同步账号密码是否正确。提交后由管理员审核，审核通过后自动生成旅行社并保存该同步账号用于数据同步。"
+            },
+            {
+              "tag": "form",
+              "name": "travel-checkin-apply-form",
+              "initialValues": "${applyForm}",
+              "changeAction": [
+                {
+                  "tag": "update-store",
+                  "value": {
+                    "applyForm.agency_name": "${agency_name}",
+                    "applyForm.agency_code": "${agency_code}",
+                    "applyForm.contact_name": "${contact_name}",
+                    "applyForm.contact_phone": "${contact_phone}",
+                    "applyForm.username": "${username}",
+                    "applyForm.password": "${password}"
+                  }
+                },
+                {
+                  "tag": "update-store",
+                  "value": {
+                    "accountValidationStatus": "${username===validatedUsername && password===validatedPassword && validatedUsername ? accountValidationStatus : 'pending'}",
+                    "accountValidationMsg": "${username===validatedUsername && password===validatedPassword && validatedUsername ? accountValidationMsg : '账号修改后请重新校验'}"
+                  }
+                }
+              ],
+              "labelCol": {
+                "span": 6
+              },
+              "children": [
+                {
+                  "tag": "row",
+                  "gutter": 16,
+                  "children": [
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "agency_name",
+                          "label": "旅行社名称",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入旅行社名称"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "placeholder": "请输入旅行社名称"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "agency_code",
+                          "label": "旅行社编码",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入旅行社编码"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "placeholder": "请输入旅行社编码"
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "div",
+                          "style": {
+                            "fontSize": "12px",
+                            "color": "#64748b",
+                            "marginTop": "-12px",
+                            "marginBottom": "12px",
+                            "paddingLeft": "25%"
+                          },
+                          "children": "该编码将作为平台登录账号"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "row",
+                  "gutter": 16,
+                  "children": [
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "contact_name",
+                          "label": "联系人",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入联系人"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "placeholder": "请输入联系人"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "contact_phone",
+                          "label": "联系手机号",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入联系手机号"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "placeholder": "请输入联系手机号"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "divider",
+                  "orientation": "left",
+                  "children": "账号校验"
+                },
+                {
+                  "tag": "row",
+                  "gutter": 16,
+                  "children": [
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "username",
+                          "label": "同步账号",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入同步账号"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "placeholder": "请输入第三方系统同步账号"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "col",
+                      "span": 12,
+                      "children": [
+                        {
+                          "tag": "form-item",
+                          "name": "password",
+                          "label": "同步密码",
+                          "rules": [
+                            {
+                              "required": true,
+                              "message": "请输入同步密码"
+                            }
+                          ],
+                          "children": [
+                            {
+                              "tag": "input",
+                              "type": "password",
+                              "placeholder": "请输入第三方系统同步密码"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "display": "flex",
+                    "alignItems": "center",
+                    "justifyContent": "space-between",
+                    "gap": "12px",
+                    "marginTop": "4px",
+                    "marginBottom": "12px",
+                    "paddingLeft": "25%"
+                  },
+                  "children": [
+                    {
+                      "tag": "div",
+                      "style": {
+                        "fontSize": "13px",
+                        "color": "${accountValidationStatus==='success' ? '#16a34a' : accountValidationStatus==='error' ? '#dc2626' : '#64748b'}"
+                      },
+                      "children": "${accountValidationStatus==='success' ? '同步账号已校验通过' : accountValidationMsg}"
+                    },
+                    {
+                      "tag": "button",
+                      "children": "校验账号",
+                      "loading": "${validateLoading}",
+                      "action": [
+                        {
+                          "tag": "custom-validate",
+                          "formName": "travel-checkin-apply-form",
+                          "validate": "${async (form)=>{await form.validateFields(['username','password']);return true}}"
+                        },
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "validateLoading": true
+                          }
+                        },
+                        {
+                          "tag": "ajax",
+                          "api": "post:/template_data/data?service=hrm.travel_checkin_validate_account",
+                          "appendFormFields": "travel-checkin-apply-form",
+                          "onError": [
+                            {
+                              "tag": "update-store",
+                              "value": {
+                                "validateLoading": false,
+                                "accountValidationStatus": "error",
+                                "accountValidationMsg": "${msg||'同步账号校验失败'}",
+                                "validatedUsername": "",
+                                "validatedPassword": ""
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "validateLoading": false,
+                            "accountValidationStatus": "success",
+                            "accountValidationMsg": "同步账号校验通过",
+                            "validatedUsername": "${applyForm.username}",
+                            "validatedPassword": "${applyForm.password}"
+                          }
+                        },
+                        {
+                          "tag": "message",
+                          "type": "success",
+                          "content": "同步账号校验通过"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "div",
+                  "style": {
+                    "display": "flex",
+                    "justifyContent": "flex-end",
+                    "gap": "12px",
+                    "marginTop": "12px"
+                  },
+                  "children": [
+                    {
+                      "tag": "button",
+                      "children": "重置",
+                      "action": [
+                        {
+                          "tag": "reset-form",
+                          "formName": "travel-checkin-apply-form"
+                        },
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "submitLoading": false,
+                            "validateLoading": false,
+                            "accountValidationStatus": "pending",
+                            "accountValidationMsg": "请先校验同步账号",
+                            "validatedUsername": "",
+                            "validatedPassword": "",
+                            "applyForm": {
+                              "agency_name": "",
+                              "agency_code": "",
+                              "contact_name": "",
+                              "contact_phone": "",
+                              "username": "",
+                              "password": ""
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "tag": "button",
+                      "type": "primary",
+                      "children": "提交申请",
+                      "loading": "${submitLoading}",
+                      "action": [
+                        {
+                          "tag": "submit-form",
+                          "formName": "travel-checkin-apply-form"
+                        },
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "submitLoading": true
+                          }
+                        },
+                        {
+                          "tag": "ajax",
+                          "api": "post:/template_data/data?service=hrm.travel_checkin_apply_submit",
+                          "appendFormFields": "travel-checkin-apply-form",
+                          "onError": [
+                            {
+                              "tag": "update-store",
+                              "value": {
+                                "submitLoading": false
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "tag": "message",
+                          "type": "success",
+                          "content": "申请已提交，请等待管理员审核"
+                        },
+                        {
+                          "tag": "reset-form",
+                          "formName": "travel-checkin-apply-form"
+                        },
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "submitLoading": false,
+                            "validateLoading": false,
+                            "accountValidationStatus": "pending",
+                            "accountValidationMsg": "请先校验同步账号",
+                            "validatedUsername": "",
+                            "validatedPassword": "",
+                            "applyForm": {
+                              "agency_name": "",
+                              "agency_code": "",
+                              "contact_name": "",
+                              "contact_phone": "",
+                              "username": "",
+                              "password": ""
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

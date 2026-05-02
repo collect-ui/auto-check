@@ -31,6 +31,9 @@ and (
   )
 )
 {{ end }}
+{{ if .employee_scope_token }}
+and instr({{ .employee_scope_token }}, ',' || ifnull(a.employee_id, '') || ',') > 0
+{{ end }}
 {{ if .start_time }}
 and a.phone_start_time >= {{ .start_time }}
 {{ end }}

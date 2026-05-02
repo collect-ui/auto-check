@@ -1,5 +1,13 @@
 [
   {
+    "menu_code": "travel_checkin_apply",
+    "menu_name": "旅行社入住申请",
+    "icon": "FormOutlined",
+    "api": "post:/template_data/data?service=frontend_autodesk.travel_checkin_apply",
+    "url": "/travel_checkin_apply",
+    "in_menu": false
+  },
+  {
     "menu_code": "first",
     "menu_name": "首页",
     "icon": "FaHome",

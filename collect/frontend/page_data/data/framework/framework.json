@@ -40,6 +40,56 @@
               },
 
               "items": "${menu_list.filter((item)=>item.in_menu!=='0')}"
+            },
+            {
+              "tag": "layout-fit",
+              "initStore": {
+                "user": {}
+              },
+              "initAction": [
+                {
+                  "tag": "ajax",
+                  "api": "post:/template_data/data?service=system.current_user",
+                  "adapt": {
+                    "user": "${data}"
+                  }
+                }
+              ],
+              "children": [
+                {
+                  "tag": "dropdown",
+                  "menu": {
+                    "items": [
+                      {
+                        "label": "注销",
+                        "code": "logout"
+                      }
+                    ]
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "enable": "${code=='logout'}",
+                      "api": "post:/template_data/data?service=system.logout"
+                    },
+                    {
+                      "tag": "redirect",
+                      "url": "/collect-ui/#/collect-ui/login"
+                    }
+                  ],
+                  "arrow": true,
+                  "children": [
+                    "${user.nick||user.username||'未登录'}",
+                    {
+                      "tag": "icon",
+                      "style": {
+                        "marginLeft": 10
+                      },
+                      "icon": "DownOutlined"
+                    }
+                  ]
+                }
+              ]
             }
           ],
           "style": {

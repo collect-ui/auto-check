@@ -82,6 +82,10 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	modelMap[registration.TableName()] = registration
 	primaryKeyMap[registration.TableName()] = registration.PrimaryKey()
 
+	travelAgencyCheckinApply := TravelAgencyCheckinApply{}
+	modelMap[travelAgencyCheckinApply.TableName()] = travelAgencyCheckinApply
+	primaryKeyMap[travelAgencyCheckinApply.TableName()] = travelAgencyCheckinApply.PrimaryKey()
+
 	sysBtn := SysBtn{}
 	modelMap[sysBtn.TableName()] = sysBtn
 	primaryKeyMap[sysBtn.TableName()] = sysBtn.PrimaryKey()
@@ -109,6 +113,10 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	travelAgency := TravelAgency{}
 	modelMap[travelAgency.TableName()] = travelAgency
 	primaryKeyMap[travelAgency.TableName()] = travelAgency.PrimaryKey()
+
+	travelAgencyUserRel := TravelAgencyUserRel{}
+	modelMap[travelAgencyUserRel.TableName()] = travelAgencyUserRel
+	primaryKeyMap[travelAgencyUserRel.TableName()] = travelAgencyUserRel.PrimaryKey()
 
 	travelEmployee := TravelEmployee{}
 	modelMap[travelEmployee.TableName()] = travelEmployee
@@ -153,6 +161,14 @@ func GetTable() (map[string]interface{}, map[string][]string) {
 	travelAgencyEscapePromptRel := TravelAgencyEscapePromptRel{}
 	modelMap[travelAgencyEscapePromptRel.TableName()] = travelAgencyEscapePromptRel
 	primaryKeyMap[travelAgencyEscapePromptRel.TableName()] = travelAgencyEscapePromptRel.PrimaryKey()
+
+	travelModelPrice := TravelModelPrice{}
+	modelMap[travelModelPrice.TableName()] = travelModelPrice
+	primaryKeyMap[travelModelPrice.TableName()] = travelModelPrice.PrimaryKey()
+
+	travelAgencyTencentKey := TravelAgencyTencentKey{}
+	modelMap[travelAgencyTencentKey.TableName()] = travelAgencyTencentKey
+	primaryKeyMap[travelAgencyTencentKey.TableName()] = travelAgencyTencentKey.PrimaryKey()
 
 	return modelMap, primaryKeyMap
 }

@@ -301,6 +301,10 @@ data_handler:
     name: 月度体检分片规划
     type: outer
     path: HealthChunkPlan
+  - key: health_usage_summary
+    name: 月度体检token聚合
+    type: outer
+    path: HealthUsageSummary
   # 防止重复请求
   - key: prevent_duplication
     name: 防止重复请求

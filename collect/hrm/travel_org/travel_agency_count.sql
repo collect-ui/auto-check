@@ -1,6 +1,9 @@
 select count(1) as count
 from travel_agency a
 where 1=1
+  {{ if .agency_code }}
+  and a.agency_code = {{.agency_code}}
+  {{ end }}
   {{ if .checkin_status }}
   and a.checkin_status = {{.checkin_status}}
   {{ end }}
