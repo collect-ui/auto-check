@@ -1,6 +1,6 @@
 service:
-  - key: detect_escape_order
-    name: 检测逃单行为
+  - key: detect_escape_prompt_preview
+    name: 预览逃单分析提示词
     http: true
     module: empty
     log: true
@@ -10,7 +10,17 @@ service:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
       limit:
-        default: 300
+        default: 200
+      days:
+        default: 2
+      call_limit:
+        default: 50
+      max_prompt_length:
+        default: 20000
+      max_chat_content_length:
+        default: 20000
+      max_call_content_length:
+        default: 6000
     handler_params:
       - key: service2field
         name: 获取员工信息
@@ -22,33 +32,192 @@ service:
       - key: service2field
         name: 获取聊天记录
         service:
-          service: hrm.get_chat_content
+          service: hrm.get_chat_content_escape_order
           employee_id: "[employee_id]"
           limit: "[limit]"
+          days: "[days]"
         save_field: chat_list
+      - key: service2field
+        name: 获取电话录音转写记录
+        service:
+          service: hrm.get_call_content_escape_order
+          employee_id: "[employee_id]"
+          limit: "[call_limit]"
+          days: "[days]"
+        save_field: call_list
       - key: update_field
         name: 拼接聊天内容
         fields:
           - field: chat_content
-            template: "{{range $i, $v := .chat_list}}【{{$v.contact_nick_name}}】{{$v.message_time_formatted}}: {{$v.content}}\n{{end}}"
+            template: "{{range $i, $v := .chat_list}}【{{if $v.contact_name}}{{$v.contact_name}}{{else if $v.contact_wx_id}}{{$v.contact_wx_id}}{{else}}未知联系人{{end}}】{{$v.message_time_formatted}} {{if $v.group_user_wx_nick_name}}{{$v.group_user_wx_nick_name}}{{else if eq $v.message_type 0}}{{if $v.contact_name}}{{$v.contact_name}}{{else}}对方{{end}}{{else}}{{if $v.owner_nick_name}}{{$v.owner_nick_name}}{{else}}我{{end}}{{end}}: {{if $v.analysis_text}}{{$v.analysis_text}}{{else}}[空消息]{{end}}\n{{end}}"
+      - key: update_field
+        name: 拼接电话内容
+        fields:
+          - field: call_content
+            template: "{{range $i, $v := .call_list}}{{if or (must $v.phone_record_text) (must $v.parsed_text)}}【电话】{{$v.phone_start_time_formatted}} {{$v.phone_out_number}} -> {{$v.phone_in_number}}: {{if $v.phone_record_text}}{{$v.phone_record_text}}{{else}}{{$v.parsed_text}}{{end}}\n{{end}}{{end}}"
+      - key: update_field
+        name: 生成系统提示词
+        fields:
+          - field: system_prompt
+            template: "{{if .employee_info.escape_system_prompt}}{{.employee_info.escape_system_prompt}}{{else}}你是一个专业的销售行为分析助手，负责分析员工沟通记录（微信聊天记录与电话录音转写文本），判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。{{end}}"
+      - key: update_field
+        name: 生成普通提示词正文
+        fields:
+          - field: user_prompt_intro
+            template: "{{if .employee_info.escape_user_prompt}}{{.employee_info.escape_user_prompt}}{{else}}请分析以下沟通记录（微信聊天记录 + 电话录音转写文本），判断员工【{{.employee_info.employee_name}}】（旅行社：{{.employee_info.agency_name}}）是否存在\"逃单\"行为。{{end}}"
+      - key: update_field
+        name: 分段截断聊天与电话内容
+        fields:
+          - field: chat_content_for_prompt
+            template: "{{if gt (len .chat_content) .max_chat_content_length}}{{sub_str .chat_content 0 .max_chat_content_length}}\n...[聊天记录已按分段截断]{{else}}{{.chat_content}}{{end}}"
+          - field: call_content_for_prompt
+            template: "{{if gt (len .call_content) .max_call_content_length}}{{sub_str .call_content 0 .max_call_content_length}}\n...[电话记录已按分段截断]{{else}}{{.call_content}}{{end}}"
       - key: update_field
         name: 拼接提示词
         fields:
           - field: prompt_content
-            template: "请分析以下微信聊天记录，判断员工【{{.employee_info.employee_name}}】（旅行社：{{.employee_info.agency_name}}）是否存在\"逃单\"行为。\n\n聊天记录：\n{{.chat_content}}\n\n判断标准：\n1. 是否引导客户更换联系方式（如\"加我另一个微信\"、\"换个号码\"）\n2. 是否暗示私下交易\n3. 是否规避公司监管\n\n重要：请在回复的第一行必须输出以下两个标记之一：\n- 如果有逃单行为，第一行输出：【有逃单行为】\n- 如果无逃单行为，第一行输出：【无逃单行为】\n\n然后在第二行开始输出分析内容：\n【判断理由】：具体理由\n【关键证据】：相关聊天内容摘录"
+            template: "{{.user_prompt_intro}}\n\n微信聊天记录：\n{{if .chat_content_for_prompt}}{{.chat_content_for_prompt}}{{else}}（无）{{end}}\n\n电话录音转写：\n{{if .call_content_for_prompt}}{{.call_content_for_prompt}}{{else}}（无）{{end}}\n\n判断标准：\n1. 是否引导客户更换联系方式（如\"加我另一个微信\"、\"换个号码\"）\n2. 是否暗示私下交易\n3. 是否规避公司监管\n\n重要：请在回复的第一行必须输出以下两个标记之一：\n- 如果有逃单行为，第一行输出：【有逃单行为】\n- 如果无逃单行为，第一行输出：【无逃单行为】\n\n然后在第二行开始输出分析内容：\n【判断理由】：具体理由\n【关键证据】：请分别给出聊天记录和电话录音中的关键证据（如果某一类无证据请明确写“无”）"
+      - key: update_field
+        name: 统计本轮样本信息
+        fields:
+          - field: chat_count
+            template: "{{len .chat_list}}"
+          - field: call_count
+            template: "{{len .call_list}}"
+          - field: chat_latest_message_time
+            template: "0"
+          - field: call_latest_phone_time
+            template: "{{range $i, $v := .call_list}}{{if eq $i 0}}{{$v.phone_start_time}}{{end}}{{else}}0{{end}}"
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[employee_info]"
+            to: employee_info
+          - from: "[chat_content]"
+            to: chat_content
+          - from: "[call_content]"
+            to: call_content
+          - from: "[system_prompt]"
+            to: system_prompt
+          - from: "[prompt_content]"
+            to: prompt_content
+          - from: "[chat_count]"
+            to: chat_count
+          - from: "[call_count]"
+            to: call_count
+          - from: "[chat_latest_message_time]"
+            to: chat_latest_message_time
+          - from: "[call_latest_phone_time]"
+            to: call_latest_phone_time
+
+  - key: detect_escape_order
+    name: 检测逃单行为
+    http: true
+    module: empty
+    log: true
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 200
+      days:
+        default: 2
+      call_limit:
+        default: 50
+      max_prompt_length:
+        default: 20000
+      max_chat_content_length:
+        default: 20000
+      max_call_content_length:
+        default: 6000
+    handler_params:
       - key: service2field
+        name: 获取员工信息
+        service:
+          service: hrm.get_employee_info
+          employee_id: "[employee_id]"
+          to_obj: true
+        save_field: employee_info
+      - key: service2field
+        name: 获取聊天记录
+        service:
+          service: hrm.get_chat_content_escape_order
+          employee_id: "[employee_id]"
+          limit: "[limit]"
+          days: "[days]"
+        save_field: chat_list
+      - key: service2field
+        name: 获取电话录音转写记录
+        service:
+          service: hrm.get_call_content_escape_order
+          employee_id: "[employee_id]"
+          limit: "[call_limit]"
+          days: "[days]"
+        save_field: call_list
+      - key: update_field
+        name: 拼接聊天内容
+        fields:
+          - field: chat_content
+            template: "{{range $i, $v := .chat_list}}【{{if $v.contact_name}}{{$v.contact_name}}{{else if $v.contact_wx_id}}{{$v.contact_wx_id}}{{else}}未知联系人{{end}}】{{$v.message_time_formatted}} {{if $v.group_user_wx_nick_name}}{{$v.group_user_wx_nick_name}}{{else if eq $v.message_type 0}}{{if $v.contact_name}}{{$v.contact_name}}{{else}}对方{{end}}{{else}}{{if $v.owner_nick_name}}{{$v.owner_nick_name}}{{else}}我{{end}}{{end}}: {{if $v.analysis_text}}{{$v.analysis_text}}{{else}}[空消息]{{end}}\n{{end}}"
+      - key: update_field
+        name: 拼接电话内容
+        fields:
+          - field: call_content
+            template: "{{range $i, $v := .call_list}}{{if or (must $v.phone_record_text) (must $v.parsed_text)}}【电话】{{$v.phone_start_time_formatted}} {{$v.phone_out_number}} -> {{$v.phone_in_number}}: {{if $v.phone_record_text}}{{$v.phone_record_text}}{{else}}{{$v.parsed_text}}{{end}}\n{{end}}{{end}}"
+      - key: update_field
+        name: 生成系统提示词
+        fields:
+          - field: system_prompt
+            template: "{{if .employee_info.escape_system_prompt}}{{.employee_info.escape_system_prompt}}{{else}}你是一个专业的销售行为分析助手，负责分析员工沟通记录（微信聊天记录与电话录音转写文本），判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。{{end}}"
+      - key: update_field
+        name: 生成普通提示词正文
+        fields:
+          - field: user_prompt_intro
+            template: "{{if .employee_info.escape_user_prompt}}{{.employee_info.escape_user_prompt}}{{else}}请分析以下沟通记录（微信聊天记录 + 电话录音转写文本），判断员工【{{.employee_info.employee_name}}】（旅行社：{{.employee_info.agency_name}}）是否存在\"逃单\"行为。{{end}}"
+      - key: update_field
+        name: 分段截断聊天与电话内容
+        fields:
+          - field: chat_content_for_prompt
+            template: "{{if gt (len .chat_content) .max_chat_content_length}}{{sub_str .chat_content 0 .max_chat_content_length}}\n...[聊天记录已按分段截断]{{else}}{{.chat_content}}{{end}}"
+          - field: call_content_for_prompt
+            template: "{{if gt (len .call_content) .max_call_content_length}}{{sub_str .call_content 0 .max_call_content_length}}\n...[电话记录已按分段截断]{{else}}{{.call_content}}{{end}}"
+      - key: update_field
+        name: 拼接提示词
+        fields:
+          - field: prompt_content
+            template: "{{.user_prompt_intro}}\n\n微信聊天记录：\n{{if .chat_content_for_prompt}}{{.chat_content_for_prompt}}{{else}}（无）{{end}}\n\n电话录音转写：\n{{if .call_content_for_prompt}}{{.call_content_for_prompt}}{{else}}（无）{{end}}\n\n判断标准：\n1. 是否引导客户更换联系方式（如\"加我另一个微信\"、\"换个号码\"）\n2. 是否暗示私下交易\n3. 是否规避公司监管\n\n重要：请在回复的第一行必须输出以下两个标记之一：\n- 如果有逃单行为，第一行输出：【有逃单行为】\n- 如果无逃单行为，第一行输出：【无逃单行为】\n\n然后在第二行开始输出分析内容：\n【判断理由】：具体理由\n【关键证据】：请分别给出聊天记录和电话录音中的关键证据（如果某一类无证据请明确写“无”）"
+      - key: update_field
+        name: 统计本轮样本信息
+        fields:
+          - field: chat_count
+            template: "{{len .chat_list}}"
+          - field: call_count
+            template: "{{len .call_list}}"
+          - field: should_analyze
+            template: "{{if or (gt (len .chat_list) 0) (gt (len .call_list) 0)}}1{{else}}0{{end}}"
+          - field: skip_reason
+            template: "{{if or (gt (len .chat_list) 0) (gt (len .call_list) 0)}}{{else}}SKIP_NO_MESSAGE{{end}}"
+          - field: chat_latest_message_time
+            template: "0"
+          - field: call_latest_phone_time
+            template: "{{range $i, $v := .call_list}}{{if eq $i 0}}{{$v.phone_start_time}}{{end}}{{else}}0{{end}}"
+      - key: service2field
+        enable: "{{eq .should_analyze \"1\"}}"
         name: 调用DeepSeek分析
         service:
           service: hrm.call_deepseek_detect
+          system_prompt: "[system_prompt]"
           prompt_content: "[prompt_content]"
         save_field: ai_result
       - key: update_field
         name: 解析AI返回结果
         fields:
           - field: is_escape
-            template: "{{ if str_contains .ai_result `【有逃单行为】`}}1{{else}}0{{end}}"
+            template: "{{if eq .should_analyze \"1\"}}{{if str_contains (to_json .ai_result) `【有逃单行为】`}}1{{else if str_contains (to_json .ai_result) `【无逃单行为】`}}0{{else if or (str_contains (to_json .ai_result) `存在明确的高风险行为`) (str_contains (to_json .ai_result) `明确的高风险行为`) (str_contains (to_json .ai_result) `私下收款`) (str_contains (to_json .ai_result) `飞单`)}}1{{else if or (str_contains (to_json .ai_result) `存疑`) (str_contains (to_json .ai_result) `疑似`) (str_contains (to_json .ai_result) `倾向`) (str_contains (to_json .ai_result) `可能性`)}}2{{else}}2{{end}}{{else}}0{{end}}"
           - field: ai_content
-            template: "{{.ai_result}}"
+            template: "{{if eq .should_analyze \"1\"}}{{if (must .ai_result)}}{{.ai_result}}{{else}}分析失败：模型无返回，请重试{{end}}{{else}}无聊天和电话消息，跳过分析{{end}}"
     result_handler:
       - key: params2result
         fields:
@@ -60,6 +229,24 @@ service:
             to: employee_info
           - from: "[chat_content]"
             to: chat_content
+          - from: "[call_content]"
+            to: call_content
+          - from: "[system_prompt]"
+            to: system_prompt
+          - from: "[prompt_content]"
+            to: prompt_content
+          - from: "[chat_count]"
+            to: chat_count
+          - from: "[call_count]"
+            to: call_count
+          - from: "[should_analyze]"
+            to: should_analyze
+          - from: "[skip_reason]"
+            to: skip_reason
+          - from: "[chat_latest_message_time]"
+            to: chat_latest_message_time
+          - from: "[call_latest_phone_time]"
+            to: call_latest_phone_time
 
   - key: detect_escape_order_and_save
     name: 检测逃单并回写员工结果
@@ -72,7 +259,13 @@ service:
           template: "{{must .employee_id}}"
           err_msg: employee_id不能为空
       limit:
-        default: 300
+        default: 200
+      days:
+        default: 2
+      analyze_source:
+        default: manual
+      max_prompt_length:
+        default: 20000
     handler_params:
       - key: service2field
         name: 调用逃单分析
@@ -80,6 +273,8 @@ service:
           service: hrm.detect_escape_order
           employee_id: "[employee_id]"
           limit: "[limit]"
+          days: "[days]"
+          max_prompt_length: "[max_prompt_length]"
         save_field: detect_result
       - key: update_field
         name: 准备回写字段
@@ -92,6 +287,44 @@ service:
             template: "{{current_date_time}}"
           - field: modify_time
             template: "{{current_date_time}}"
+          - field: escape_log_ai_result
+            template: "[detect_result.result]"
+          - field: escape_log_is_escape
+            template: "[detect_result.is_escape]"
+          - field: escape_log_agency_id
+            template: "[detect_result.employee_info.agency_id]"
+          - field: escape_log_employee_name
+            template: "[detect_result.employee_info.employee_name]"
+          - field: escape_log_system_prompt
+            template: "[detect_result.system_prompt]"
+          - field: escape_log_prompt_content
+            template: "[detect_result.prompt_content]"
+          - field: escape_log_chat_count
+            template: "[detect_result.chat_count]"
+          - field: escape_log_call_count
+            template: "[detect_result.call_count]"
+          - field: escape_log_chat_latest_message_time
+            template: "[detect_result.chat_latest_message_time]"
+          - field: escape_log_call_latest_phone_time
+            template: "[detect_result.call_latest_phone_time]"
+      - key: service2field
+        name: 记录分析日志
+        service:
+          service: hrm.detect_escape_analyze_log_save
+          employee_id: "[employee_id]"
+          agency_id: "[escape_log_agency_id]"
+          employee_name: "[escape_log_employee_name]"
+          analyze_source: "[analyze_source]"
+          system_prompt: "[escape_log_system_prompt]"
+          prompt_content: "[escape_log_prompt_content]"
+          ai_result: "[escape_log_ai_result]"
+          is_escape: "[escape_log_is_escape]"
+          chat_count: "[escape_log_chat_count]"
+          call_count: "[escape_log_call_count]"
+          chat_latest_message_time: "[escape_log_chat_latest_message_time]"
+          call_latest_phone_time: "[escape_log_call_latest_phone_time]"
+          create_time: "[escape_last_analyze_time]"
+        save_field: escape_log_save_result
       - key: service2field
         name: 回写员工分析结果
         service:
@@ -109,6 +342,8 @@ service:
             to: employee_id
           - from: "[detect_result]"
             to: detect_result
+          - from: "[escape_log_save_result]"
+            to: escape_log_save_result
           - from: "[save_result]"
             to: save_result
 
@@ -121,17 +356,90 @@ service:
       employee_list:
         default: []
       limit:
-        default: 300
+        default: 200
+      days:
+        default: 2
+      analyze_source:
+        default: schedule
+      max_prompt_length:
+        default: 20000
     batch:
       foreach: "[employee_list]"
       item: item
-      loop_max: 3
+      loop_max: 1
       service:
         service: hrm.detect_escape_order_and_save
         employee_id: "[employee_id]"
         limit: "[params.limit]"
+        days: "[params.days]"
+        max_prompt_length: "[params.max_prompt_length]"
+        analyze_source: "[params.analyze_source]"
       save_field: detect_result
       append_item_param: true
+
+  - key: detect_escape_order_manual_bulk
+    name: 手动分析（当前旅行社）
+    http: true
+    module: empty
+    log: true
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: agency_id不能为空
+      limit:
+        default: 200
+      days:
+        default: 2
+      employee_limit:
+        default: 5000
+      max_prompt_length:
+        default: 20000
+      analyze_source:
+        default: manual_bulk
+      analyze_strategy:
+        default: force
+    handler_params:
+      - key: service2field
+        enable: "{{eq .analyze_strategy \"force\"}}"
+        name: 查询当前旅行社员工
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          pagination: false
+          count: false
+          size: "[employee_limit]"
+        save_field: agency_employee_list
+      - key: service2field
+        enable: "{{ne .analyze_strategy \"force\"}}"
+        name: 查询当前旅行社增量员工
+        service:
+          service: hrm.get_need_detect_escape_employee_list
+          agency_id: "[agency_id]"
+          limit: "[employee_limit]"
+        save_field: agency_employee_list
+      - key: service2field
+        enable: "{{gt (len .agency_employee_list) 0}}"
+        name: 批量分析并回写
+        service:
+          service: hrm.detect_escape_order_and_save_bulk
+          employee_list: "[agency_employee_list]"
+          limit: "[limit]"
+          days: "[days]"
+          max_prompt_length: "[max_prompt_length]"
+          analyze_source: "[analyze_source]"
+        save_field: bulk_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[analyze_strategy]"
+            to: analyze_strategy
+          - from: "[agency_employee_list]"
+            to: employee_list
+          - from: "[bulk_result]"
+            to: bulk_result
 
   - key: detect_escape_order_schedule
     name: 逃单检测定时任务
@@ -143,15 +451,37 @@ service:
       enable: "{{eq (get_key \"wechat_schedule_enable\") \"true\"}}"
       schedule_spec: "@every 600s"
     params:
+      agency_id:
+        default: ""
       limit:
-        default: 300
+        default: 200
+      days:
+        default: 2
       employee_limit:
         default: 500
+      max_prompt_length:
+        default: 20000
+      analyze_source:
+        default: schedule
+      analyze_strategy:
+        default: incremental
     handler_params:
       - key: service2field
-        name: 查询需要分析的员工
+        enable: "{{eq .analyze_strategy \"force\"}}"
+        name: 查询强制分析员工
+        service:
+          service: hrm.travel_employee_list
+          agency_id: "[agency_id]"
+          pagination: false
+          count: false
+          size: "[employee_limit]"
+        save_field: need_detect_employee_list
+      - key: service2field
+        enable: "{{ne .analyze_strategy \"force\"}}"
+        name: 查询增量分析员工
         service:
           service: hrm.get_need_detect_escape_employee_list
+          agency_id: "[agency_id]"
           limit: "[employee_limit]"
         save_field: need_detect_employee_list
       - key: service2field
@@ -161,6 +491,9 @@ service:
           service: hrm.detect_escape_order_and_save_bulk
           employee_list: "[need_detect_employee_list]"
           limit: "[limit]"
+          days: "[days]"
+          max_prompt_length: "[max_prompt_length]"
+          analyze_source: "[analyze_source]"
         save_field: bulk_result
     result_handler:
       - key: params2result
@@ -173,6 +506,8 @@ service:
   - key: get_need_detect_escape_employee_list
     module: sql
     params:
+      agency_id:
+        default: ""
       limit:
         default: 500
     data_file: get_need_detect_escape_employee_list.sql
@@ -223,11 +558,40 @@ service:
         default: 300
     data_file: get_chat_content.sql
 
+  - key: get_chat_content_escape_order
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 200
+      days:
+        default: 2
+    data_file: get_chat_content_escape_order.sql
+
+  - key: get_call_content_escape_order
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      limit:
+        default: 50
+      days:
+        default: 2
+    data_file: get_call_content_escape_order.sql
+
+
   - key: call_deepseek_detect
     module: http
     log: true
     http: true
     params:
+      system_prompt:
+        default: "你是一个专业的销售行为分析助手，负责分析员工沟通记录（微信聊天记录与电话录音转写文本），判断员工是否存在逃单行为。逃单行为包括：引导客户更换联系方式（如加私人微信、换号码）、暗示私下交易、规避公司监管等。"
       prompt_content:
         check:
           template: "{{must .prompt_content}}"
@@ -247,3 +611,74 @@ service:
             to: "[content]"
       - key: param2result
         field: "[content]"
+
+  - key: detect_escape_analyze_log_save
+    module: model_save
+    table: travel_escape_analyze_log
+    params:
+      log_id:
+        template: "{{uuid}}"
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      agency_id:
+        default: ""
+      employee_name:
+        default: ""
+      analyze_source:
+        default: manual
+      system_prompt:
+        default: ""
+      prompt_content:
+        default: ""
+      ai_result:
+        default: ""
+      is_escape:
+        default: 0
+        type: int
+      chat_count:
+        default: 0
+        type: int
+      call_count:
+        default: 0
+        type: int
+      chat_latest_message_time:
+        default: 0
+        type: int64
+      call_latest_phone_time:
+        default: 0
+        type: int64
+      create_time:
+        template: "{{if .create_time}}{{.create_time}}{{else}}{{current_date_time}}{{end}}"
+      create_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+
+  - key: detect_escape_analyze_log_list
+    http: true
+    module: sql
+    params:
+      employee_id:
+        check:
+          template: "{{must .employee_id}}"
+          err_msg: employee_id不能为空
+      agency_id:
+        default: ""
+      page:
+        type: int
+        default: 1
+      size:
+        type: int
+        default: 20
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+    data_file: detect_escape_analyze_log_list.sql
+    count_file: detect_escape_analyze_log_count.sql
+    pagination: pagination
+    count: "[count]"

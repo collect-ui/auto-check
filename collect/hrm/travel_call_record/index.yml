@@ -222,7 +222,7 @@ service:
     batch:
       foreach: "[data_list]"
       item: item
-      loop_max: 30
+      loop_max: 5
       service:
         service: hrm.transcribe_call_record_one
         allow: "[params.allow]"

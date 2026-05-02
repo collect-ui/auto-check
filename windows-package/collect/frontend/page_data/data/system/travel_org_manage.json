@@ -10,7 +10,7 @@
     "employeeSelection": [],
     "agencySearchForm": {
       "page": 1,
-      "size": 50,
+      "size": 1,
       "search": ""
     },
     "employeeSearchForm": {
@@ -32,7 +32,9 @@
       "wx_sync_role_id": "",
       "wx_sync_company_id": "",
       "wx_last_sync_time": "",
-      "wx_sync_error_count": 0
+      "wx_sync_error_count": 0,
+      "escape_system_prompt": "",
+      "escape_user_prompt": ""
     },
     "employeeForm": {
       "escape_is_escape": 0,
@@ -46,13 +48,52 @@
     "employeeCount": 0,
     "selectedEmployee": null,
     "selectedContact": null,
+    "debugMode": false,
+    "syncAllLoading": false,
+    "syncAllDialogVisible": false,
+    "syncAllForm": {
+      "message_time_from": "${(()=>{const d=new Date(Date.now()-24*60*60*1000);const y=d.getFullYear();const m=('0'+(d.getMonth()+1)).slice(-2);const dd=('0'+d.getDate()).slice(-2);return y+'-'+m+'-'+dd;})()}",
+      "message_time_to": "${(()=>{const d=new Date();const y=d.getFullYear();const m=('0'+(d.getMonth()+1)).slice(-2);const dd=('0'+d.getDate()).slice(-2);return y+'-'+m+'-'+dd;})()}",
+      "sync_modules": [
+        "wechat_user",
+        "chat_contact",
+        "chat_record",
+        "call_record",
+        "gen_file_text",
+        "gen_call_record_text"
+      ]
+    },
+    "syncCallLoading": false,
+    "voiceTextLoading": false,
+    "escapeAnalyzeLoading": false,
+    "analyzeStrategyDialogVisible": false,
+    "analyzeStrategyForm": {
+      "analyze_strategy": "incremental"
+    },
+    "singleEscapeAnalyzeLoading": false,
+    "previewPromptLoading": false,
+    "previewPromptDialogVisible": false,
+    "previewPromptData": {},
+    "escapeSummaryCollapsed": false,
+    "escapeLogDialogVisible": false,
+    "escapeLogDetailDialogVisible": false,
+    "escapeLogLoading": false,
+    "escapeLogList": [],
+    "escapeLogCount": 0,
+    "selectedEscapeLog": null,
+    "escapeLogSearchForm": {
+      "page": 1,
+      "size": 20
+    },
     "contactList": [],
     "contactCount": 0,
     "chatList": [
 
     ],
     "chatDetailList": [],
-    "callRecordList": []
+    "callRecordList": [],
+    "callAudioTestingUid": "",
+    "playingCallUid": ""
   },
   "initAction": [
     {
@@ -60,11 +101,17 @@
       "group": "agencyList",
       "api": "post:/template_data/data?service=hrm.travel_agency_list",
       "appendFields": "${agencySearchForm}",
-      "appendFormFields": "agency-search-form",
       "adapt": {
         "agencyList": "${data}",
-        "agencyCount": "${count}"
+        "agencyCount": "${count}",
+        "currentAgency": "${(data&&data.length>0)?data[0]:{}}",
+        "agencySelection": "${(data&&data.length>0)?[data[0]]:[]}"
       }
+    },
+    {
+      "tag": "reload-init-action",
+      "enable": "${!!currentAgency.agency_id}",
+      "group": "employeeList"
     },
     {
       "tag": "ajax",
@@ -97,9 +144,12 @@
         {
           "tag": "panel",
           "id": "left_agency_panel",
-          "defaultSize": 20,
-          "minSize": 16,
+          "defaultSize": 0,
+          "minSize": 0,
           "className": "h100 padding-right10",
+          "style": {
+            "display": "none"
+          },
           "children": [
             {
               "tag": "layout-fit",
@@ -170,7 +220,7 @@
                       "tag": "ajax",
                       "api": "post:/template_data/data?service=hrm.travel_agency_delete",
                       "data": {
-                        "agency_id_list": "${agencySelection.map(item=>item.agency_id)}"
+                        "agency_id": "${agencySelection[0].agency_id}"
                       }
                     },
                     {
@@ -415,6 +465,7 @@
         {
           "tag": "panel-resize",
           "style": {
+            "display": "none",
             "width": "8px",
             "backgroundColor": "#f2f3f5",
             "cursor": "col-resize"
@@ -423,9 +474,9 @@
         {
           "tag": "panel",
           "id": "right_relation_panel",
-          "defaultSize": 80,
-          "minSize": 35,
-          "className": "h100 padding-left10",
+          "defaultSize": 100,
+          "minSize": 100,
+          "className": "h100",
           "children": [
             {
               "tag": "div",
@@ -458,7 +509,7 @@
                         "lineHeight": "32px",
                         "marginBottom": "6px"
                       },
-                      "children": "请选择左侧旅行社开始组织管理"
+                      "children": "请先维护旅行社基础信息"
                     },
                     {
                       "tag": "div",
@@ -468,7 +519,7 @@
                         "lineHeight": "22px",
                         "marginBottom": "16px"
                       },
-                      "children": "选中旅行社后，可管理成员、新增销售/主管并维护直属关系。未创建旅行社时可先快捷新增。"
+                      "children": "当前仅支持维护一个旅行社，请先创建后再进行成员与沟通记录管理。"
                     },
                     {
                       "tag": "row",
@@ -606,7 +657,7 @@
                           "tag": "button",
                           "type": "primary",
                           "icon": "PlusOutlined",
-                          "children": "快捷新增旅行社",
+                          "children": "新增旅行社信息",
                           "action": [
                             {
                               "tag": "update-store",
@@ -634,7 +685,7 @@
                         "lineHeight": "22px",
                         "color": "#334155"
                       },
-                      "children": "使用建议：先新增旅行社并在左侧选中，再新增组织成员；若成员角色为销售，需在表单中选择直属主管。"
+                      "children": "说明：旅行社数据为单条维护，保存后会自动加载并用于成员管理。"
                     }
                   ]
                 }
@@ -644,8 +695,173 @@
               "tag": "layout-fit",
               "visible": "${!!currentAgency.agency_id}",
               "className": "h100",
-              "title": "",
-              "topRight": [],
+              "title": "${currentAgency.agency_name||'旅行社信息'}",
+              "topRight": [
+                {
+                  "tag": "div",
+                  "style": {
+                    "display": "inline-flex",
+                    "alignItems": "center",
+                    "gap": "8px"
+                  },
+                  "children": [
+                    {
+                      "tag": "span",
+                      "style": {
+                        "fontSize": "12px",
+                        "color": "#6b7280"
+                      },
+                      "children": "调试模式"
+                    },
+                    {
+                      "tag": "switch",
+                      "checked": "${debugMode}",
+                      "checkedChildren": "开",
+                      "unCheckedChildren": "关",
+                      "action": [
+                        {
+                          "tag": "update-store",
+                          "value": {
+                            "debugMode": "${value}"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "type": "primary",
+                  "size": "small",
+                  "icon": "EditOutlined",
+                  "title": "维护旅行社信息",
+                  "children": "编辑旅行社信息",
+                  "visible": "${debugMode}",
+                  "action": [
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "agencyDialogVisible": true,
+                        "agencyOp": "edit",
+                        "agencySelection": "${[currentAgency]}"
+                      }
+                    },
+                    {
+                      "tag": "reset-form",
+                      "formName": "agencyForm"
+                    },
+                    {
+                      "tag": "update-form",
+                      "formName": "agencyForm",
+                      "value": "${currentAgency}"
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "type": "primary",
+                  "size": "small",
+                  "icon": "SyncOutlined",
+                  "title": "全量同步",
+                  "children": "全量同步",
+                  "loading": "${syncAllLoading}",
+                  "disabled": "${syncAllLoading}",
+                  "action": [
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "syncAllDialogVisible": true
+                      }
+                    },
+                    {
+                      "tag": "reset-form",
+                      "formName": "syncAllForm"
+                    },
+                    {
+                      "tag": "update-form",
+                      "formName": "syncAllForm",
+                      "value": {
+                        "message_time_from": "${(()=>{const d=new Date(Date.now()-24*60*60*1000);const y=d.getFullYear();const m=('0'+(d.getMonth()+1)).slice(-2);const dd=('0'+d.getDate()).slice(-2);return y+'-'+m+'-'+dd;})()}",
+                        "message_time_to": "${(()=>{const d=new Date();const y=d.getFullYear();const m=('0'+(d.getMonth()+1)).slice(-2);const dd=('0'+d.getDate()).slice(-2);return y+'-'+m+'-'+dd;})()}",
+                        "sync_modules": [
+                          "wechat_user",
+                          "chat_contact",
+                          "chat_record",
+                          "call_record",
+                          "gen_file_text",
+                          "gen_call_record_text"
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "size": "small",
+                  "loading": "${escapeAnalyzeLoading}",
+                  "disabled": "${escapeAnalyzeLoading}",
+                  "title": "全量分析",
+                  "children": "全量分析",
+                  "action": [
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "analyzeStrategyDialogVisible": true
+                      }
+                    },
+                    {
+                      "tag": "reset-form",
+                      "formName": "analyzeStrategyForm"
+                    },
+                    {
+                      "tag": "update-form",
+                      "formName": "analyzeStrategyForm",
+                      "value": {
+                        "analyze_strategy": "incremental"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "tag": "button",
+                  "danger": true,
+                  "size": "small",
+                  "icon": "DeleteOutlined",
+                  "title": "删除旅行社",
+                  "children": "删除旅行社",
+                  "visible": "${debugMode}",
+                  "confirm": {
+                    "title": "确认删除吗？",
+                    "description": "删除后不可恢复，是否继续删除当前旅行社？"
+                  },
+                  "action": [
+                    {
+                      "tag": "ajax",
+                      "api": "post:/template_data/data?service=hrm.travel_agency_delete",
+                      "data": {
+                        "agency_id": "${currentAgency.agency_id}"
+                      }
+                    },
+                    {
+                      "tag": "update-store",
+                      "value": {
+                        "selectedEmployee": null,
+                        "selectedContact": null,
+                        "employeeSelection": [],
+                        "contactList": [],
+                        "contactCount": 0,
+                        "chatList": [],
+                        "chatDetailList": [],
+                        "callRecordList": []
+                      }
+                    },
+                    {
+                      "tag": "reload-init-action",
+                      "group": "agencyList"
+                    }
+                  ]
+                }
+              ],
               "searchToolBar": [],
               "children": [
                 {
@@ -674,9 +890,10 @@
                               "size": "small",
                               "title": "同步微信用户",
                               "children": "同步微信",
+                              "visible": "${debugMode}",
                               "confirm": {
                                 "title": "确认同步吗？",
-                                "description": "将从微信同步用户数据，新增的会创建，修改的会更新，本地有但微信没有的会删除"
+                                "description": "将从微信同步用户数据，并更新当前页面显示。"
                               },
                               "action": [
                                 {
@@ -697,6 +914,7 @@
                               "type": "primary",
                               "icon": "PlusOutlined",
                               "size": "small",
+                              "visible": "${debugMode}",
                               "title": "新增员工",
                               "children": "",
                               "action": [
@@ -719,6 +937,7 @@
                               "size": "small",
                               "title": "编辑员工",
                               "children": "",
+                              "visible": "${debugMode}",
                               "disabled": "${employeeSelection.length != 1}",
                               "action": [
                                 {
@@ -743,6 +962,7 @@
                               "tag": "button",
                               "icon": "DeleteOutlined",
                               "size": "small",
+                              "visible": "${debugMode}",
                               "title": "删除员工",
                               "children": "",
                               "danger": true,
@@ -848,7 +1068,11 @@
                                   "value": {
                                     "selectedEmployee": "${row}",
                                     "employeeSelection": "${[row]}",
-                                    "callRecordList": []
+                                    "selectedContact": null,
+                                    "contactList": [],
+                                    "chatDetailList": [],
+                                    "callRecordList": [],
+                                    "playingCallUid": ""
                                   }
                                 },
                                 {
@@ -943,19 +1167,28 @@
                                           {
                                             "tag": "row",
                                             "style": {
+                                              "display": "flex",
+                                              "flexWrap": "nowrap",
                                               "alignItems": "center",
-                                              "marginBottom": "4px"
+                                              "marginBottom": "4px",
+                                              "columnGap": "2px",
+                                              "overflow": "hidden"
                                             },
                                             "children": [
                                               {
                                                 "tag": "col",
                                                 "span": 16,
                                                 "style": {
-                                                  "minWidth": 0
+                                                  "minWidth": 0,
+                                                  "flex": "1 1 0",
+                                                  "maxWidth": "calc(100% - 92px)",
+                                                  "width": "0",
+                                                  "overflow": "hidden"
                                                 },
                                                 "children": [
                                                   {
                                                     "tag": "div",
+                                                    "title": "${row.nick_name||'-'}",
                                                     "style": {
                                                       "fontSize": "14px",
                                                       "lineHeight": "22px",
@@ -973,48 +1206,99 @@
                                                 "tag": "col",
                                                 "span": 8,
                                                 "style": {
-                                                  "textAlign": "right"
+                                                  "flex": "0 0 auto",
+                                                  "width": "auto",
+                                                  "minWidth": "90px",
+                                                  "display": "inline-flex",
+                                                  "alignItems": "center",
+                                                  "justifyContent": "flex-end",
+                                                  "textAlign": "right",
+                                                  "whiteSpace": "nowrap"
                                                 },
                                                 "children": [
                                                   {
                                                     "tag": "span",
                                                     "title": "${'分析时间：'+(row.escape_last_analyze_time||'未分析')+'\\n分析结论：'+(row.escape_ai_content||'暂无')}",
                                                     "style": {
-                                                      "display": "inline-block",
-                                                      "padding": "1px 8px",
+                                                      "display": "inline-flex",
+                                                      "alignItems": "center",
+                                                      "justifyContent": "center",
+                                                      "width": "14px",
+                                                      "height": "14px",
                                                       "borderRadius": "999px",
-                                                      "fontSize": "12px",
-                                                      "fontWeight": 600,
-                                                      "background": "${!row.escape_last_analyze_time?'#f3f4f6':(row.escape_is_escape==1?'#fee2e2':'#dcfce7')}",
-                                                      "color": "${!row.escape_last_analyze_time?'#6b7280':(row.escape_is_escape==1?'#dc2626':'#16a34a')}"
+                                                      "background": "${!row.escape_last_analyze_time?'#f3f4f6':(row.escape_is_escape==1?'#fee2e2':(row.escape_is_escape==2?'#fef3c7':'#dcfce7'))}",
+                                                      "color": "${!row.escape_last_analyze_time?'#6b7280':(row.escape_is_escape==1?'#dc2626':(row.escape_is_escape==2?'#d97706':'#16a34a'))}"
                                                     },
-                                                    "children": "${!row.escape_last_analyze_time?'未分析':(row.escape_is_escape==1?'有逃单':'无逃单')}"
+                                                    "children": [
+                                                      {
+                                                        "tag": "icon",
+                                                        "icon": "${!row.escape_last_analyze_time?'ClockCircleOutlined':(row.escape_is_escape==1?'CloseCircleOutlined':(row.escape_is_escape==2?'ExclamationCircleOutlined':'CheckCircleOutlined'))}",
+                                                        "style": {
+                                                          "fontSize": "9px"
+                                                        }
+                                                      }
+                                                    ]
                                                   },
                                                   {
                                                     "tag": "span",
                                                     "style": {
                                                       "display": "inline-flex",
                                                       "alignItems": "center",
-                                                      "gap": "4px",
-                                                      "marginLeft": "6px",
-                                                      "padding": "1px 8px",
+                                                      "gap": "1px",
+                                                      "marginLeft": "2px",
+                                                      "padding": "0 1px",
+                                                      "height": "16px",
                                                       "borderRadius": "999px",
-                                                      "fontSize": "12px",
+                                                      "fontSize": "9px",
                                                       "fontWeight": 600,
-                                                      "background": "${(row.call_count||0)>0?'#eff6ff':'#f3f4f6'}",
+                                                      "background": "transparent",
                                                       "color": "${(row.call_count||0)>0?'#2563eb':'#6b7280'}"
                                                     },
+                                                    "title": "${'电话记录：'+(row.call_count||0)+'次'}",
                                                     "children": [
                                                       {
                                                         "tag": "icon",
                                                         "icon": "PhoneOutlined",
                                                         "style": {
-                                                          "fontSize": "11px"
+                                                          "fontSize": "9px"
                                                         }
                                                       },
                                                       {
                                                         "tag": "span",
-                                                        "children": "${(row.call_count||0)+'次'}"
+                                                        "children": "${row.call_count||0}"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "span",
+                                                    "title": "${'聊天联系人：个人'+(row.chat_person_count||0)+'，群聊'+(row.chat_group_count||0)+'；电话记录：'+(row.call_count||0)+'次'}",
+                                                    "style": {
+                                                      "display": "inline-flex",
+                                                      "alignItems": "center",
+                                                      "gap": "2px",
+                                                      "marginLeft": "2px",
+                                                      "padding": "0 1px",
+                                                      "height": "16px",
+                                                      "borderRadius": "999px",
+                                                      "fontSize": "9px",
+                                                      "fontWeight": 600,
+                                                      "background": "${((row.chat_person_count||0)+(row.chat_group_count||0))>0?'#ecfeff':'#f3f4f6'}",
+                                                      "color": "${((row.chat_person_count||0)+(row.chat_group_count||0))>0?'#0e7490':'#6b7280'}"
+                                                    },
+                                                    "children": [
+                                                      {
+                                                        "tag": "icon",
+                                                        "icon": "MessageOutlined",
+                                                        "style": {
+                                                          "fontSize": "9px"
+                                                        }
+                                                      },
+                                                      {
+                                                        "tag": "span",
+                                                        "style": {
+                                                          "letterSpacing": "-0.2px"
+                                                        },
+                                                        "children": "${(row.chat_person_count||0)+'/'+(row.chat_group_count||0)}"
                                                       }
                                                     ]
                                                   }
@@ -1114,23 +1398,187 @@
                           "title": "${selectedEmployee?.nick_name+' · '+(selectedEmployee?.phone||selectedEmployee?.wx_id||'-')}",
                           "topRight": [
                              {
-                              "tag": "button",
+                             "tag": "button",
                               "type": "primary",
                               "icon": "SyncOutlined",
                               "size": "small",
-                              "title": "同步语音",
-                              "disabled": "${employeeSelection.length != 1}",
-                              "children": "同步语音",
+                              "title": "语音转文字",
+                              "visible": "${debugMode}",
+                              "disabled": "${employeeSelection.length != 1||voiceTextLoading}",
+                              "loading": "${voiceTextLoading}",
+                              "children": "语音转文字",
                               "confirm": {
-                                "title": "确认同步吗？",
-                                "description": "分析语音数据"
+                                "title": "确认执行语音转文字吗？",
+                                "description": "将对当前员工的微信语音与电话录音进行转写"
                               },
                               "action": [
                                 {
                                   "tag": "ajax",
-                                  "api": "post:/template_data/data?service=hrm.gen_file_text",
+                                  "api": "post:/template_data/data?service=hrm.gen_voice_text",
+                                  "data": {
+                                    "agency_id": "${selectedEmployee.agency_id}",
+                                    "employee_id": "${employeeSelection[0].employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}",
+                                    "chat_limit": 10000,
+                                    "call_limit": 10000,
+                                    "list_limit": 10000
+                                  }
+                                  ,
+                                  "start": {
+                                    "voiceTextLoading": true
+                                  },
+                                  "end": {
+                                    "voiceTextLoading": false
+                                  },
+                                  "adapt": {
+                                    "callRecordList": "${(data&&data.call_record_list)||[]}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "SyncOutlined",
+                              "size": "small",
+                              "title": "同步电话记录",
+                              "children": "同步电话记录",
+                              "visible": "${debugMode}",
+                              "disabled": "${employeeSelection.length != 1||syncCallLoading}",
+                              "loading": "${syncCallLoading}",
+                              "confirm": {
+                                "title": "确认同步电话记录吗？",
+                                "description": "仅同步当前选中员工近30天电话记录"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.sync_call_record",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${selectedEmployee.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}"
+                                  },
+                                  "start": {
+                                    "syncCallLoading": true
+                                  },
+                                  "end": {
+                                    "syncCallLoading": false
+                                  }
+                                },
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.travel_call_record_list",
+                                  "data": {
+                                    "agency_id": "${currentAgency.agency_id}",
+                                    "employee_id": "${selectedEmployee.employee_id}",
+                                    "start_time": "${Date.now()-30*24*60*60*1000}",
+                                    "end_time": "${Date.now()}",
+                                    "limit": 10000
+                                  },
+                                  "adapt": {
+                                    "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "RadarChartOutlined",
+                              "size": "small",
+                              "title": "预览提示",
+                              "children": "预览提示",
+                              "visible": "${debugMode}",
+                              "loading": "${previewPromptLoading}",
+                              "disabled": "${previewPromptLoading || employeeSelection.length != 1}",
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.detect_escape_prompt_preview",
                                   "data": {
                                     "employee_id": "${employeeSelection[0].employee_id}"
+                                  },
+                                  "start": {
+                                    "previewPromptLoading": true
+                                  },
+                                  "end": {
+                                    "previewPromptLoading": false
+                                  },
+                                  "adapt": {
+                                    "previewPromptData": "${(data&&data.data)?data.data:data}"
+                                  }
+                                },
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "previewPromptDialogVisible": true
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "RadarChartOutlined",
+                              "size": "small",
+                              "title": "个人逃单分析",
+                              "children": "个人分析",
+                              "visible": "${debugMode}",
+                              "loading": "${singleEscapeAnalyzeLoading}",
+                              "disabled": "${singleEscapeAnalyzeLoading || employeeSelection.length != 1}",
+                              "confirm": {
+                                "title": "确认执行个人逃单分析吗？",
+                                "description": "将仅分析当前选中员工的聊天记录，并回写分析结果。"
+                              },
+                              "action": [
+                                {
+                                  "tag": "ajax",
+                                  "api": "post:/template_data/data?service=hrm.detect_escape_order_and_save",
+                                  "data": {
+                                    "employee_id": "${employeeSelection[0].employee_id}",
+                                    "analyze_source": "debug_single"
+                                  },
+                                  "start": {
+                                    "singleEscapeAnalyzeLoading": true
+                                  },
+                                  "end": {
+                                    "singleEscapeAnalyzeLoading": false
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "employeeList"
+                                }
+                              ]
+                            },
+                            {
+                              "tag": "button",
+                              "type": "default",
+                              "icon": "TeamOutlined",
+                              "size": "small",
+                              "title": "分析记录",
+                              "children": "分析记录",
+                              "visible": "${debugMode}",
+                              "disabled": "${employeeSelection.length != 1 || escapeLogLoading}",
+                              "loading": "${escapeLogLoading}",
+                              "action": [
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "escapeLogSearchForm.page": 1
+                                  }
+                                },
+                                {
+                                  "tag": "reload-init-action",
+                                  "group": "escapeLogList"
+                                },
+                                {
+                                  "tag": "update-store",
+                                  "value": {
+                                    "escapeLogDialogVisible": true
                                   }
                                 }
                               ]
@@ -1142,6 +1590,7 @@
                               "size": "small",
                               "title": "同步通讯录",
                               "children": "同步通讯录",
+                              "visible": "${debugMode}",
                               "disabled": "${employeeSelection.length != 1}",
                               "confirm": {
                                 "title": "确认同步通讯录吗？",
@@ -1159,6 +1608,119 @@
                                 {
                                   "tag": "reload-init-action",
                                   "group": "contactList"
+                                }
+                              ]
+                            }
+                          ],
+                          "bottomToolBar": [
+                            {
+                              "tag": "div",
+                              "style": {
+                                "display": "flex",
+                                "flexDirection": "column",
+                                "gap": "6px",
+                                "padding": "8px",
+                                "border": "1px solid #e5e7eb",
+                                "borderRadius": "10px",
+                                "background": "#fafafa"
+                              },
+                              "children": [
+                                {
+                                  "tag": "div",
+                                  "style": {
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "space-between",
+                                    "gap": "8px"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "span",
+                                      "style": {
+                                        "fontSize": "12px",
+                                        "fontWeight": 600,
+                                        "color": "#374151"
+                                      },
+                                      "children": "结构分析"
+                                    },
+                                    {
+                                      "tag": "button",
+                                      "type": "link",
+                                      "size": "small",
+                                      "children": "${escapeSummaryCollapsed?'展开':'收起'}",
+                                      "action": [
+                                        {
+                                          "tag": "update-store",
+                                          "value": {
+                                            "escapeSummaryCollapsed": "${!escapeSummaryCollapsed}"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "tag": "div",
+                                  "visible": "${!escapeSummaryCollapsed}",
+                                  "style": {
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "gap": "8px",
+                                    "flexWrap": "wrap"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "span",
+                                      "style": {
+                                        "display": "inline-flex",
+                                        "alignItems": "center",
+                                        "padding": "1px 8px",
+                                        "borderRadius": "999px",
+                                        "fontSize": "12px",
+                                        "fontWeight": 600,
+                                        "background": "${!selectedEmployee.escape_last_analyze_time?'#f3f4f6':(selectedEmployee.escape_is_escape==1?'#fee2e2':(selectedEmployee.escape_is_escape==2?'#fef3c7':'#dcfce7'))}",
+                                        "color": "${!selectedEmployee.escape_last_analyze_time?'#6b7280':(selectedEmployee.escape_is_escape==1?'#dc2626':(selectedEmployee.escape_is_escape==2?'#d97706':'#16a34a'))}"
+                                      },
+                                      "children": "${!selectedEmployee.escape_last_analyze_time?'未分析':(selectedEmployee.escape_is_escape==1?'有逃单':(selectedEmployee.escape_is_escape==2?'存疑':'无逃单'))}"
+                                    },
+                                    {
+                                      "tag": "span",
+                                      "style": {
+                                        "fontSize": "12px",
+                                        "color": "#6b7280"
+                                      },
+                                      "children": "${'分析时间：'+(selectedEmployee.escape_last_analyze_time||'-')}"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "tag": "div",
+                                  "visible": "${!escapeSummaryCollapsed}",
+                                  "style": {
+                                    "fontSize": "12px",
+                                    "color": "#6b7280",
+                                    "lineHeight": "18px"
+                                  },
+                                  "children": [
+                                    {
+                                      "tag": "div",
+                                      "title": "${selectedEmployee.escape_ai_content||'暂无分析结论'}",
+                                      "style": {
+                                        "padding": "6px 8px",
+                                        "borderRadius": "8px",
+                                        "border": "1px solid #e5e7eb",
+                                        "background": "#ffffff",
+                                        "color": "#374151",
+                                        "whiteSpace": "pre-wrap",
+                                        "wordBreak": "break-word",
+                                        "lineHeight": "18px",
+                                        "maxHeight": "180px",
+                                        "overflowY": "auto",
+                                        "overflowX": "hidden"
+                                      },
+                                      "children": "${selectedEmployee.escape_ai_content||'暂无分析结论'}"
+                                    }
+                                  ]
                                 }
                               ]
                             }
@@ -1379,14 +1941,10 @@
                                                                    "fontSize": "12px",
                                                                    "color": "#6b7280",
                                                                    "display": "flex",
-                                                                   "justifyContent": "space-between",
+                                                                   "justifyContent": "flex-end",
                                                                    "alignItems": "center"
                                                                  },
                                                                  "children": [
-                                                                   {
-                                                                     "tag": "span",
-                                                                       "children": "${row.wx_alias||row.wx_id||'未知微信'}"
-                                                                   },
                                                                    {
                                                                      "tag": "span",
                                                                      "children": "${row.message_time_formatted}"
@@ -1431,6 +1989,7 @@
                                                    "icon": "ReloadOutlined",
                                                    "title": "刷新聊天记录",
                                                    "children": "刷新",
+                                                   "visible": "${debugMode}",
                                                    "disabled": "${!selectedContact}",
                                                    "action": [
                                                      {
@@ -1454,6 +2013,7 @@
                                                    "icon": "CloudSyncOutlined",
                                                    "title": "同步聊天记录",
                                                    "children": "同步",
+                                                   "visible": "${debugMode}",
                                                    "disabled": "${!selectedContact}",
                                                    "confirm": {
                                                      "title": "确认同步聊天记录吗？",
@@ -1519,6 +2079,7 @@
                                                          "tag": "listview",
                                                          "visible": "${selectedContact&&chatDetailList.length>0}",
                                                          "keyField": "id",
+                                                         "autoScrollToBottom": true,
                                                          "itemData": "${chatDetailList}",
                                                         "itemAttr": {
                                                           "tag": "div",
@@ -1831,18 +2392,165 @@
                                                 ]
                                               },
                                               {
+                                                "tag": "tooltip",
+                                                "placement": "topLeft",
+                                                "overlayStyle": {
+                                                  "maxWidth": "960px"
+                                                },
+                                                "overlayInnerStyle": {
+                                                  "maxWidth": "960px",
+                                                  "whiteSpace": "normal",
+                                                  "wordBreak": "break-all",
+                                                  "lineHeight": "20px"
+                                                },
+                                                "title": "${row.phone_record_text||row.phoneRecordText||row.parsed_text||row.parsedText||((row.phone_record_address||row.phoneRecordAddress)?'有录音，未转写':'无录音')}",
+                                                "children": [
+                                                  {
+                                                    "tag": "div",
+                                                    "style": {
+                                                      "height": "32px",
+                                                      "marginTop": "4px",
+                                                      "fontSize": "12px",
+                                                      "lineHeight": "16px",
+                                                      "color": "#94a3b8",
+                                                      "whiteSpace": "nowrap",
+                                                      "overflow": "hidden",
+                                                      "textOverflow": "ellipsis"
+                                                    },
+                                                    "children": "${row.phone_record_text||row.phoneRecordText||row.parsed_text||row.parsedText||((row.phone_record_address||row.phoneRecordAddress)?'有录音，未转写':'无录音')}"
+                                                  }
+                                                ]
+                                              },
+                                              {
                                                 "tag": "div",
                                                 "style": {
-                                                  "minHeight": "16px",
-                                                  "marginTop": "4px",
-                                                  "fontSize": "12px",
-                                                  "lineHeight": "16px",
-                                                  "color": "#94a3b8",
-                                                  "whiteSpace": "nowrap",
-                                                  "overflow": "hidden",
-                                                  "textOverflow": "ellipsis"
+                                                  "display": "flex",
+                                                  "gap": "8px",
+                                                  "alignItems": "center",
+                                                  "marginTop": "6px"
                                                 },
-                                                "children": "${row.phone_record_text||row.phoneRecordText||''}"
+                                                "children": [
+                                                  {
+                                                    "tag": "button",
+                                                    "size": "small",
+                                                    "type": "text",
+                                                    "icon": "PlayCircleOutlined",
+                                                    "title": "播放",
+                                                    "children": "",
+                                                    "style": {
+                                                      "paddingInline": "4px"
+                                                    },
+                                                    "disabled": "${!(row.phone_record_address||row.phoneRecordAddress)}",
+                                                    "action": [
+                                                      {
+                                                        "tag": "update-store",
+                                                        "value": {
+                                                          "playingCallUid": "${playingCallUid===row.uid?'':row.uid}"
+                                                        }
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "button",
+                                                    "size": "small",
+                                                    "type": "text",
+                                                    "icon": "ExperimentOutlined",
+                                                    "title": "单条解析",
+                                                    "children": "",
+                                                    "visible": "${debugMode}",
+                                                    "style": {
+                                                      "paddingInline": "4px"
+                                                    },
+                                                    "loading": "${callAudioTestingUid===row.uid}",
+                                                    "disabled": "${!(row.phone_record_address||row.phoneRecordAddress)}",
+                                                    "action": [
+                                                      {
+                                                        "tag": "ajax",
+                                                        "api": "post:/template_data/data?service=hrm.transcribe_call_record_one",
+                                                        "data": {
+                                                          "uid": "${row.uid}",
+                                                          "phone_record_address": "${row.phone_record_address||row.phoneRecordAddress}",
+                                                          "phone_record_text": "${row.phone_record_text||row.phoneRecordText||''}"
+                                                        },
+                                                        "start": {
+                                                          "callAudioTestingUid": "${row.uid}"
+                                                        }
+                                                      },
+                                                      {
+                                                        "tag": "ajax",
+                                                        "api": "post:/template_data/data?service=hrm.travel_call_record_list",
+                                                        "data": {
+                                                          "agency_id": "${currentAgency.agency_id}",
+                                                          "employee_id": "${selectedEmployee.employee_id}",
+                                                          "start_time": "${Date.now()-30*24*60*60*1000}",
+                                                          "end_time": "${Date.now()}",
+                                                          "limit": 10000
+                                                        },
+                                                        "end": {
+                                                          "callAudioTestingUid": ""
+                                                        },
+                                                        "adapt": {
+                                                          "callRecordList": "${Array.isArray(data)?data:((data&&data.list)||[])}"
+                                                        }
+                                                      },
+                                                      {
+                                                        "tag": "message",
+                                                        "type": "success",
+                                                        "content": "单条解析入库完成，电话记录已刷新"
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "tag": "button",
+                                                    "size": "small",
+                                                    "type": "text",
+                                                    "icon": "CopyOutlined",
+                                                    "title": "复制路径",
+                                                    "children": "",
+                                                    "style": {
+                                                      "paddingInline": "4px"
+                                                    },
+                                                    "disabled": "${!(row.phone_record_address||row.phoneRecordAddress)}",
+                                                    "action": [
+                                                      {
+                                                        "tag": "copy-text",
+                                                        "value": "${'https://df.qi.work/'+(row.phone_record_address||row.phoneRecordAddress||'')}"
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "tag": "div",
+                                                "visible": "${playingCallUid===row.uid && !!(row.phone_record_address||row.phoneRecordAddress)}",
+                                                "style": {
+                                                  "marginTop": "6px",
+                                                  "padding": "6px 8px",
+                                                  "background": "#eff6ff",
+                                                  "border": "1px solid #dbeafe",
+                                                  "borderRadius": "8px"
+                                                },
+                                                "children": [
+                                                  {
+                                                    "tag": "attachment-show",
+                                                    "path": "${'https://df.qi.work/'+(row.phone_record_address||row.phoneRecordAddress||'')}",
+                                                    "height": 56,
+                                                    "width": "100%"
+                                                  },
+                                                  {
+                                                    "tag": "div",
+                                                    "style": {
+                                                      "marginTop": "4px",
+                                                      "fontSize": "11px",
+                                                      "lineHeight": "16px",
+                                                      "color": "#64748b",
+                                                      "whiteSpace": "normal",
+                                                      "wordBreak": "break-all"
+                                                    },
+                                                    "title": "${'https://df.qi.work/'+(row.phone_record_address||row.phoneRecordAddress||'')}",
+                                                    "children": "${'https://df.qi.work/'+(row.phone_record_address||row.phoneRecordAddress||'')}"
+                                                  }
+                                                ]
                                               }
                                             ]
                                           }
@@ -1856,6 +2564,253 @@
                           ]
                         }
                       ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "全量分析策略",
+      "width": "36%",
+      "open": "${analyzeStrategyDialogVisible}",
+      "action": [
+        {
+          "tag": "submit-form",
+          "formName": "analyzeStrategyForm"
+        },
+        {
+          "tag": "update-store",
+          "value": {
+            "analyzeStrategyDialogVisible": false
+          }
+        },
+        {
+          "tag": "ajax",
+          "api": "post:/template_data/data?service=hrm.detect_escape_order_schedule",
+          "data": {
+            "agency_id": "${currentAgency.agency_id}",
+            "analyze_source": "manual_bulk",
+            "analyze_strategy": "${getFormValue('analyzeStrategyForm','analyze_strategy')||'incremental'}"
+          },
+          "start": {
+            "escapeAnalyzeLoading": true
+          },
+          "end": {
+            "escapeAnalyzeLoading": false
+          }
+        },
+        {
+          "tag": "reload-init-action",
+          "enable": "${!!currentAgency.agency_id}",
+          "group": "employeeList"
+        }
+      ],
+      "children": [
+        {
+          "tag": "form",
+          "name": "analyzeStrategyForm",
+          "initialValues": "${analyzeStrategyForm}",
+          "labelCol": {
+            "span": 7
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "marginBottom": "10px",
+                "padding": "8px 10px",
+                "borderRadius": "8px",
+                "border": "1px solid #dbeafe",
+                "background": "#f8fbff",
+                "fontSize": "12px",
+                "lineHeight": "20px",
+                "color": "#334155"
+              },
+              "children": "可选择强制全量分析，或仅分析自上次分析后有聊天/电话增量的员工。"
+            },
+            {
+              "tag": "form-item",
+              "name": "analyze_strategy",
+              "label": "分析策略",
+              "rules": [
+                {
+                  "required": true,
+                  "message": "请选择分析策略"
+                }
+              ],
+              "children": [
+                {
+                  "tag": "select",
+                  "style": {
+                    "width": "100%"
+                  },
+                  "options": [
+                    {
+                      "label": "仅分析有增量消息员工",
+                      "value": "incremental"
+                    },
+                    {
+                      "label": "强制全员分析",
+                      "value": "force"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "全量同步配置",
+      "width": "46%",
+      "open": "${syncAllDialogVisible}",
+      "action": [
+        {
+          "tag": "submit-form",
+          "formName": "syncAllForm"
+        },
+        {
+          "tag": "update-store",
+          "value": {
+            "syncAllDialogVisible": false
+          }
+        },
+        {
+          "tag": "message",
+          "type": "info",
+          "content": "已开始全量同步，请稍候..."
+        },
+        {
+          "tag": "ajax",
+          "api": "post:/template_data/data?service=hrm.sync_agency_all_bulk",
+          "data": {
+            "message_time_from": "${new Date((getFormValue('syncAllForm','message_time_from')||'')+' 00:00:00').getTime()}",
+            "message_time_to": "${new Date((getFormValue('syncAllForm','message_time_to')||'')+' 23:59:59.999').getTime()}",
+            "sync_modules": "${(()=>{const v=getFormValue('syncAllForm','sync_modules');if(Array.isArray(v)){return v;}if(typeof v==='string'&&v.trim()){return v.split(',').map(s=>s.trim()).filter(Boolean);}return [];})()}"
+          },
+          "start": {
+            "syncAllLoading": true
+          },
+          "end": {
+            "syncAllLoading": false
+          }
+        },
+        {
+          "tag": "reload-init-action",
+          "group": "agencyList"
+        },
+        {
+          "tag": "reload-init-action",
+          "enable": "${!!currentAgency.agency_id}",
+          "group": "employeeList"
+        }
+      ],
+      "children": [
+        {
+          "tag": "form",
+          "name": "syncAllForm",
+          "initialValues": "${syncAllForm}",
+          "labelCol": {
+            "span": 7
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "marginBottom": "10px",
+                "padding": "8px 10px",
+                "borderRadius": "8px",
+                "border": "1px solid #dbeafe",
+                "background": "#f8fbff",
+                "fontSize": "12px",
+                "lineHeight": "20px",
+                "color": "#334155"
+              },
+              "children": "默认同步最近1天。可修改开始/结束时间，并按需勾选同步项目。"
+            },
+            {
+              "tag": "form-item",
+              "name": "message_time_from",
+              "label": "开始时间",
+              "rules": [
+                {
+                  "required": true,
+                  "message": "请选择开始时间"
+                }
+              ],
+              "children": [
+                {
+                  "tag": "date",
+                  "valueFormat": "YYYY-MM-DD",
+                  "style": {
+                    "width": "100%"
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "message_time_to",
+              "label": "结束时间",
+              "rules": [
+                {
+                  "required": true,
+                  "message": "请选择结束时间"
+                }
+              ],
+              "children": [
+                {
+                  "tag": "date",
+                  "valueFormat": "YYYY-MM-DD",
+                  "style": {
+                    "width": "100%"
+                  }
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "sync_modules",
+              "label": "同步内容",
+              "children": [
+                {
+                  "tag": "select",
+                  "mode": "multiple",
+                  "placeholder": "请选择同步项",
+                  "style": {
+                    "width": "100%"
+                  },
+                  "options": [
+                    {
+                      "label": "微信用户",
+                      "value": "wechat_user"
+                    },
+                    {
+                      "label": "微信通讯录",
+                      "value": "chat_contact"
+                    },
+                    {
+                      "label": "微信聊天记录",
+                      "value": "chat_record"
+                    },
+                    {
+                      "label": "电话记录",
+                      "value": "call_record"
+                    },
+                    {
+                      "label": "微信语音解析文本",
+                      "value": "gen_file_text"
+                    },
+                    {
+                      "label": "电话录音解析文本",
+                      "value": "gen_call_record_text"
                     }
                   ]
                 }
@@ -1887,7 +2842,7 @@
           "api": "post:/template_data/data?service=hrm.travel_agency_update",
           "appendFormFields": "agencyForm",
           "data": {
-            "agency_id": "${agencySelection[0].agency_id}"
+            "agency_id": "${currentAgency.agency_id}"
           }
         },
         {
@@ -1989,6 +2944,37 @@
                 {
                   "tag": "input",
                   "placeholder": "可填写旅行社组织说明"
+                }
+              ]
+            },
+            {
+              "tag": "divider",
+              "orientation": "left",
+              "children": "逃单分析提示词"
+            },
+            {
+              "tag": "form-item",
+              "name": "escape_system_prompt",
+              "label": "系统提示词",
+              "children": [
+                {
+                  "tag": "input",
+                  "isTextarea": true,
+                  "rows": 3,
+                  "placeholder": "可选：为空时使用系统默认系统提示词"
+                }
+              ]
+            },
+            {
+              "tag": "form-item",
+              "name": "escape_user_prompt",
+              "label": "普通提示词",
+              "children": [
+                {
+                  "tag": "input",
+                  "isTextarea": true,
+                  "rows": 4,
+                  "placeholder": "可选：填写分析指令正文，聊天与电话记录会由系统自动拼接"
                 }
               ]
             },
@@ -2280,6 +3266,399 @@
     },
     {
       "tag": "dialog",
+      "title": "${'分析记录 - '+((selectedEmployee&&selectedEmployee.nick_name)||'')}",
+      "width": "85%",
+      "open": "${escapeLogDialogVisible}",
+      "action": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeLogDialogVisible": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "tag": "layout-fit",
+          "className": "h100",
+          "topRight": [
+            {
+              "tag": "button",
+              "size": "small",
+              "icon": "ReloadOutlined",
+              "title": "刷新记录",
+              "children": "刷新",
+              "loading": "${escapeLogLoading}",
+              "action": [
+                {
+                  "tag": "reload-init-action",
+                  "group": "escapeLogList"
+                }
+              ]
+            }
+          ],
+          "bottomToolBar": [
+            {
+              "tag": "pagination",
+              "showSizeChanger": true,
+              "align": "end",
+              "pageSize": "${escapeLogSearchForm.size}",
+              "current": "${escapeLogSearchForm.page}",
+              "total": "${escapeLogCount}",
+              "action": [
+                {
+                  "tag": "reload-init-action",
+                  "group": "escapeLogList"
+                }
+              ],
+              "showTotal": true
+            }
+          ],
+          "children": [
+            {
+              "tag": "listview",
+              "keyField": "log_id",
+              "itemData": "${escapeLogList}",
+              "emptyContent": "暂无分析记录",
+              "itemAttr": {
+                "tag": "card",
+                "size": "small",
+                "style": {
+                  "marginBottom": "10px",
+                  "borderRadius": "10px",
+                  "border": "1px solid #e5e7eb"
+                },
+                "bodyStyle": {
+                  "padding": "12px"
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "style": {
+                      "display": "flex",
+                      "alignItems": "center",
+                      "justifyContent": "space-between",
+                      "gap": "8px",
+                      "marginBottom": "8px"
+                    },
+                    "children": [
+                      {
+                        "tag": "div",
+                        "style": {
+                          "fontSize": "13px",
+                          "fontWeight": 600,
+                          "color": "#111827"
+                        },
+                        "children": "${(row.create_time||'-')+' · '+(row.analyze_source||'manual')}"
+                      },
+                      {
+                        "tag": "div",
+                        "style": {
+                          "fontSize": "12px",
+                          "color": "${row.is_escape==1?'#dc2626':(row.is_escape==2?'#d97706':'#16a34a')}"
+                        },
+                        "children": "${row.is_escape==1?'有逃单':(row.is_escape==2?'存疑':'无逃单')}"
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "style": {
+                      "fontSize": "12px",
+                      "lineHeight": "18px",
+                      "color": "#64748b",
+                      "marginBottom": "8px"
+                    },
+                    "children": "${'员工ID：'+(row.employee_id||'-')+'，聊天条数：'+(row.chat_count||0)+'，电话条数：'+(row.call_count||0)}"
+                  },
+                  {
+                    "tag": "div",
+                    "style": {
+                      "fontSize": "12px",
+                      "lineHeight": "18px",
+                      "color": "#334155",
+                      "whiteSpace": "normal",
+                      "wordBreak": "break-all",
+                      "maxHeight": "54px",
+                      "overflow": "hidden",
+                      "marginBottom": "8px"
+                    },
+                    "children": "${row.ai_result||'-'}"
+                  },
+                  {
+                    "tag": "button",
+                    "size": "small",
+                    "children": "查看详情",
+                    "action": [
+                      {
+                        "tag": "update-store",
+                        "value": {
+                          "selectedEscapeLog": "${row}",
+                          "escapeLogDetailDialogVisible": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "分析记录详情",
+      "width": "85%",
+      "open": "${escapeLogDetailDialogVisible}",
+      "action": [
+        {
+          "tag": "update-store",
+          "value": {
+            "escapeLogDetailDialogVisible": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "tag": "div",
+          "style": {
+            "display": "flex",
+            "flexDirection": "column",
+            "gap": "10px"
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "12px",
+                "color": "#475569"
+              },
+              "children": "${'时间：'+((selectedEscapeLog&&selectedEscapeLog.create_time)||'-')+'；员工ID：'+((selectedEscapeLog&&selectedEscapeLog.employee_id)||'-')+'；来源：'+((selectedEscapeLog&&selectedEscapeLog.analyze_source)||'-')}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "系统提示词"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "180px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(selectedEscapeLog&&selectedEscapeLog.system_prompt)||'-'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "普通提示词（最终输入）"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "220px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(selectedEscapeLog&&selectedEscapeLog.prompt_content)||'-'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "大模型输出"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "220px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(selectedEscapeLog&&selectedEscapeLog.ai_result)||'-'}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
+      "title": "预览大模型提示",
+      "width": "85%",
+      "open": "${previewPromptDialogVisible}",
+      "action": [
+        {
+          "tag": "update-store",
+          "value": {
+            "previewPromptDialogVisible": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "tag": "div",
+          "style": {
+            "display": "flex",
+            "flexDirection": "column",
+            "gap": "10px"
+          },
+          "children": [
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "12px",
+                "color": "#475569"
+              },
+              "children": "${'员工：'+((selectedEmployee&&selectedEmployee.nick_name)||'-')+'（'+((selectedEmployee&&selectedEmployee.employee_id)||'-')+'）'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "12px",
+                "color": "#475569"
+              },
+              "children": "${'聊天条数：'+((previewPromptData&&previewPromptData.chat_count)||0)+'，电话条数：'+((previewPromptData&&previewPromptData.call_count)||0)}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "系统提示词（system_prompt）"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "180px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(previewPromptData&&previewPromptData.system_prompt)||'-'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "最终发送内容（prompt_content）"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "260px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(previewPromptData&&previewPromptData.prompt_content)||'-'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "聊天拼接（chat_content）"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "220px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(previewPromptData&&previewPromptData.chat_content)||'-'}"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": 600,
+                "color": "#0f172a"
+              },
+              "children": "电话拼接（call_content）"
+            },
+            {
+              "tag": "div",
+              "style": {
+                "whiteSpace": "pre-wrap",
+                "wordBreak": "break-all",
+                "maxHeight": "160px",
+                "overflow": "auto",
+                "background": "#f8fafc",
+                "border": "1px solid #e2e8f0",
+                "borderRadius": "8px",
+                "padding": "8px",
+                "fontSize": "12px",
+                "lineHeight": "18px"
+              },
+              "children": "${(previewPromptData&&previewPromptData.call_content)||'-'}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "dialog",
       "title": "${employeeOp=='add'?'新增用户':'编辑用户'}",
       "open": "${employeeDialogVisible}",
       "confirmAndContinue": "${employeeOp=='add'}",
@@ -2471,6 +3850,10 @@
                     {
                       "label": "有逃单",
                       "value": 1
+                    },
+                    {
+                      "label": "存疑",
+                      "value": 2
                     }
                   ]
                 }
@@ -2545,7 +3928,33 @@
         },
         "adapt": {
           "employeeList": "${data}",
-          "employeeCount": "${count}"
+          "employeeCount": "${count}",
+          "selectedEmployee": "${(selectedEmployee&&Array.isArray(data))?(data.find(item=>item.employee_id===selectedEmployee.employee_id)||null):selectedEmployee}",
+          "employeeSelection": "${(selectedEmployee&&Array.isArray(data))?((data.find(item=>item.employee_id===selectedEmployee.employee_id))?[data.find(item=>item.employee_id===selectedEmployee.employee_id)]:[]):employeeSelection}"
+        }
+      }
+    ],
+    "escapeLogList": [
+      {
+        "tag": "ajax",
+        "enable": "${selectedEmployee&&selectedEmployee.employee_id}",
+        "group": "escapeLogList",
+        "api": "post:/template_data/data?service=hrm.detect_escape_analyze_log_list",
+        "appendFields": "${escapeLogSearchForm}",
+        "data": {
+          "employee_id": "${selectedEmployee.employee_id}",
+          "pagination": true,
+          "count": true
+        },
+        "start": {
+          "escapeLogLoading": true
+        },
+        "end": {
+          "escapeLogLoading": false
+        },
+        "adapt": {
+          "escapeLogList": "${data}",
+          "escapeLogCount": "${count}"
         }
       }
     ]

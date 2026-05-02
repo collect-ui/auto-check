@@ -2141,21 +2141,21 @@
               "name": "input_cache_hit_price_per_1m",
               "label": "输入缓存命中价/1M",
               "rules": [{ "required": true, "message": "请输入输入缓存命中价" }],
-              "children": [{ "tag": "input", "isNumber": true, "placeholder": "例如 0.5" }]
+              "children": [{ "tag": "input", "type": "number", "placeholder": "例如 0.5" }]
             },
             {
               "tag": "form-item",
               "name": "input_cache_miss_price_per_1m",
               "label": "输入未命中价/1M",
               "rules": [{ "required": true, "message": "请输入输入未命中价" }],
-              "children": [{ "tag": "input", "isNumber": true, "placeholder": "例如 2" }]
+              "children": [{ "tag": "input", "type": "number", "placeholder": "例如 2" }]
             },
             {
               "tag": "form-item",
               "name": "output_price_per_1m",
               "label": "输出价/1M",
               "rules": [{ "required": true, "message": "请输入输出价" }],
-              "children": [{ "tag": "input", "isNumber": true, "placeholder": "例如 8" }]
+              "children": [{ "tag": "input", "type": "number", "placeholder": "例如 8" }]
             },
             {
               "tag": "form-item",

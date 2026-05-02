@@ -1109,7 +1109,7 @@ service:
         item: item
         fields:
           - field: uid
-            template: "[item.uid]"
+            template: "{{.agency_id}}::{{.item.uid}}"
           - field: agency_id
             template: "[agency_id]"
 

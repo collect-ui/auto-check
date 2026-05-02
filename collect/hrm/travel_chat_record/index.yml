@@ -115,7 +115,7 @@ service:
         name: 更新字段
         fields:
           - field: file_url
-            template: "{{if or (str_contains .file_url `http://`) (str_contains .file_url `https://`)}}{{.file_url}}{{else}}{{get_key `qi_work_file_base_url`}}/{{.file_url}}{{end}}"
+            template: "{{if or (str_contains .file_url `http://`) (str_contains .file_url `https://`)}}{{.file_url}}{{else}}{{if (get_key `qi_work_file_base_url`)}}{{get_key `qi_work_file_base_url`}}/{{.file_url}}{{else}}https://df.qi.work/{{.file_url}}{{end}}{{end}}"
     http_json: transcribe.json
     result_handler:
       - key: result2params
@@ -132,19 +132,33 @@ service:
             to: "[tencent_secret_id_masked]"
           - from: "[cache_hit]"
             to: "[cache_hit]"
+          - from: "[data]"
+            to: "[data]"
+          - from: "[data.status]"
+            to: "[data_status]"
+          - from: "[data.text]"
+            to: "[data_text]"
+          - from: "[data.error]"
+            to: "[data_error]"
+          - from: "[data.tencent_account_name]"
+            to: "[data_tencent_account_name]"
+          - from: "[data.tencent_secret_id_masked]"
+            to: "[data_tencent_secret_id_masked]"
+          - from: "[data.cache_hit]"
+            to: "[data_cache_hit]"
       - key: params2result
         fields:
-          - from: "[status]"
+          - from: "{{if .status}}{{.status}}{{else}}{{.data_status}}{{end}}"
             to: status
-          - from: "[text]"
+          - from: "{{if .text}}{{.text}}{{else}}{{if .data_text}}{{.data_text}}{{else}}{{if and .data (ne (printf `%v` .data) `<nil>`) (ne (printf `%v` .data) `map[]`)}}{{printf `%v` .data}}{{end}}{{end}}{{end}}"
             to: text
-          - from: "[error]"
+          - from: "{{if .error}}{{.error}}{{else}}{{.data_error}}{{end}}"
             to: error
-          - from: "[tencent_account_name]"
+          - from: "{{if .tencent_account_name}}{{.tencent_account_name}}{{else}}{{.data_tencent_account_name}}{{end}}"
             to: tencent_account_name
-          - from: "[tencent_secret_id_masked]"
+          - from: "{{if .tencent_secret_id_masked}}{{.tencent_secret_id_masked}}{{else}}{{.data_tencent_secret_id_masked}}{{end}}"
             to: tencent_secret_id_masked
-          - from: "[cache_hit]"
+          - from: "{{if ne (printf `%v` .cache_hit) `<nil>`}}{{.cache_hit}}{{else}}{{.data_cache_hit}}{{end}}"
             to: cache_hit
 
   - key: transcribe_bulk
@@ -157,7 +171,7 @@ service:
     batch:
       foreach: "[data_list]"
       item: item
-      loop_max: 30
+      loop_max: 5
       service:
         service: hrm.transcribe
         allow: "[params.allow]"
@@ -295,7 +309,7 @@ service:
     batch:
       foreach: "[data_list]"
       item: item
-      loop_max: 30
+      loop_max: 5
       service:
         service: hrm.transcribe_chat_record_one
         allow: "[params.allow]"
