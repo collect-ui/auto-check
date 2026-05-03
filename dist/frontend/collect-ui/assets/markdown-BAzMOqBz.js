@@ -1,0 +1,1 @@
+import{j as t,M as i}from"./markdown-CgwQ5XYj.js";import{h as r}from"./index-uDbUozil.js";import"./monaco-CFZzn4WB.js";import"./excalidraw-BlOnPZvx.js";import"./antd-B_OYQmTK.js";import"./echarts-Dv-dGHXQ.js";import"./docx-Bp8PsUSL.js";const c=o=>{const{className:a,visible:e,...s}=r.transferProp(o,"logs");return r.getVisible(o)?t.jsx(i,{...s}):null};export{c as default};

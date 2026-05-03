@@ -1,4 +1,0 @@
-# 项目点路由
-service:
-  - name: "test"
-    path: "test/index.yml"

@@ -1,0 +1,1509 @@
+service:
+  - key: travel_checkin_validate_account
+    http: true
+    must_login: false
+    module: empty
+    params:
+      username:
+        check:
+          template: "{{must .username}}"
+          err_msg: 同步账号不能为空
+      password:
+        check:
+          template: "{{must .password}}"
+          err_msg: 同步密码不能为空
+      login_password:
+        template: "{{ if .password }}{{if eq (len .password) 32}}{{.password}}{{else}}{{md5 .password}}{{end}}{{ end }}"
+    handler_params:
+      - key: service2field
+        service:
+          service: spider_qi_work.login
+          username: "[username]"
+          password: "[login_password]"
+          to_obj: true
+        save_field: login_info
+    result_handler:
+      - key: param2result
+        field: "[login_info]"
+
+  - key: travel_checkin_apply_list
+    http: true
+    module: sql
+    params:
+      apply_id:
+        default: ""
+      apply_id_list:
+        default: []
+      exclude_apply_id:
+        default: ""
+      agency_code:
+        default: ""
+      username:
+        default: ""
+      login_username:
+        default: ""
+      user_id:
+        default: ""
+      status:
+        default: ""
+      status_list:
+        default: []
+      active_only:
+        default: false
+      search:
+        template: "{{ if .search }}%{{.search}}%{{ end }}"
+      page:
+        type: int
+        default: 1
+      size:
+        type: int
+        default: 20
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+      to_obj:
+        default: false
+    data_file: travel_checkin_apply_list.sql
+    count_file: travel_checkin_apply_count.sql
+    pagination: pagination
+    count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_checkin_relation_list
+    http: true
+    module: sql
+    params:
+      relation_id:
+        default: ""
+      agency_id:
+        default: ""
+      user_id:
+        default: ""
+      role_type:
+        default: ""
+      status:
+        default: ""
+      pagination:
+        default: false
+    data_file: travel_checkin_relation_list.sql
+
+  - key: travel_checkin_user_role_list
+    http: true
+    module: sql
+    params:
+      user_id:
+        check:
+          template: "{{must .user_id}}"
+          err_msg: 用户ID不能为空
+      role_id:
+        default: ""
+      pagination:
+        default: false
+    data_file: travel_checkin_user_role_list.sql
+
+  - key: travel_agency_accessible_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+      agency_code:
+        default: ""
+      checkin_status:
+        default: ""
+      wx_sync_enabled:
+        default: ""
+      search:
+        template: "{{ if .search }}%{{.search}}%{{ end }}"
+      page:
+        type: int
+        default: 1
+      size:
+        default: 20
+        type: int
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+      to_obj:
+        default: false
+    data_file: travel_agency_accessible_list.sql
+    count_file: travel_agency_accessible_count.sql
+    pagination: pagination
+    count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_agency_manage_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        default: ""
+      agency_code:
+        default: ""
+      checkin_status:
+        default: ""
+      wx_sync_enabled:
+        default: ""
+      search:
+        template: "{{ if .search }}%{{.search}}%{{ end }}"
+      page:
+        type: int
+        default: 1
+      size:
+        default: 20
+        type: int
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+      to_obj:
+        default: false
+    data_file: travel_agency_manage_list.sql
+    count_file: travel_agency_manage_count.sql
+    pagination: pagination
+    count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_agency_manage_bindable_user_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      search:
+        template: "{{ if .search }}%{{.search}}%{{ end }}"
+      pagination:
+        default: false
+    data_file: travel_agency_manage_bindable_user_list.sql
+
+  - key: travel_agency_usage_detail_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      start_date:
+        default: ""
+      end_date:
+        default: ""
+      page:
+        type: int
+        default: 1
+      size:
+        default: 20
+        type: int
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+    data_file: travel_agency_usage_detail_list.sql
+    count_file: travel_agency_usage_detail_count.sql
+    pagination: pagination
+    count: "[count]"
+
+  - key: travel_agency_usage_detail_summary
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      start_date:
+        default: ""
+      end_date:
+        default: ""
+    data_file: travel_agency_usage_detail_summary.sql
+
+  - key: travel_agency_usage_date_range
+    http: true
+    module: sql
+    params:
+      quick_type:
+        default: today
+    data_file: travel_agency_usage_date_range.sql
+
+  - key: travel_model_price_list
+    http: true
+    module: sql
+    params:
+      model_price_id:
+        default: ""
+      provider:
+        default: ""
+      currency:
+        default: ""
+      search:
+        template: "{{ if .search }}%{{.search}}%{{ end }}"
+      page:
+        type: int
+        default: 1
+      size:
+        default: 20
+        type: int
+      start:
+        template: " ({{.page}}-1) * {{.size}}"
+        exec: true
+        type: int
+      pagination:
+        default: true
+      count:
+        default: true
+      to_obj:
+        default: false
+    data_file: travel_model_price_list.sql
+    count_file: travel_model_price_count.sql
+    pagination: pagination
+    count: "[count]"
+    result_handler:
+      - key: arr2obj
+        enable: "[to_obj]"
+
+  - key: travel_model_price_save
+    http: true
+    module: model_save
+    table: travel_model_price
+    params:
+      model_price_id:
+        template: "{{uuid}}"
+      provider:
+        default: deepseek
+      model_name:
+        check:
+          template: "{{must .model_name}}"
+          err_msg: 模型名称不能为空
+      currency:
+        default: CNY
+      input_cache_hit_price_per_1m:
+        default: 0
+        type: float64
+      input_cache_miss_price_per_1m:
+        default: 0
+        type: float64
+      output_price_per_1m:
+        default: 0
+        type: float64
+      description:
+        default: ""
+      status:
+        default: normal
+      create_time:
+        template: "{{current_date_time}}"
+      create_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+
+  - key: travel_model_price_update
+    http: true
+    module: model_update
+    table: travel_model_price
+    params:
+      model_price_id:
+        check:
+          template: "{{must .model_price_id}}"
+          err_msg: 模型价格ID不能为空
+      provider:
+        default: deepseek
+      model_name:
+        check:
+          template: "{{must .model_name}}"
+          err_msg: 模型名称不能为空
+      currency:
+        default: CNY
+      input_cache_hit_price_per_1m:
+        default: 0
+        type: float64
+      input_cache_miss_price_per_1m:
+        default: 0
+        type: float64
+      output_price_per_1m:
+        default: 0
+        type: float64
+      description:
+        default: ""
+      modify_time:
+        template: "{{current_date_time}}"
+      modify_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+    filter:
+      model_price_id: "[model_price_id]"
+    update_fields:
+      - provider
+      - model_name
+      - currency
+      - input_cache_hit_price_per_1m
+      - input_cache_miss_price_per_1m
+      - output_price_per_1m
+      - description
+      - modify_time
+      - modify_user
+
+  - key: travel_model_price_delete
+    http: true
+    module: model_delete
+    table: travel_model_price
+    params:
+      model_price_id:
+        check:
+          template: "{{must .model_price_id}}"
+          err_msg: 模型价格ID不能为空
+    filter:
+      model_price_id: "[model_price_id]"
+
+  - key: travel_checkin_apply_save_raw
+    http: true
+    must_login: false
+    module: model_save
+    table: travel_agency_checkin_apply
+    params:
+      apply_id:
+        template: "{{uuid}}"
+      agency_name:
+        check:
+          template: "{{must .agency_name}}"
+          err_msg: 旅行社名称不能为空
+      agency_code:
+        check:
+          template: "{{must .agency_code}}"
+          err_msg: 旅行社编码不能为空
+      contact_name:
+        check:
+          template: "{{must .contact_name}}"
+          err_msg: 联系人不能为空
+      contact_phone:
+        check:
+          template: "{{must .contact_phone}}"
+          err_msg: 联系手机号不能为空
+      username:
+        check:
+          template: "{{must .username}}"
+          err_msg: 用户名不能为空
+      password:
+        check:
+          template: "{{must .password}}"
+          err_msg: 密码不能为空
+      user_id:
+        default: ""
+      login_username:
+        default: ""
+      status:
+        default: pending
+      reject_reason:
+        default: ""
+      agency_id:
+        default: ""
+      audit_time:
+        default: ""
+      audit_user:
+        default: ""
+      create_time:
+        template: "{{current_date_time}}"
+
+  - key: travel_checkin_apply_update_raw
+    http: true
+    module: model_update
+    table: travel_agency_checkin_apply
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+    filter:
+      apply_id: "[apply_id]"
+
+  - key: travel_checkin_apply_delete_raw
+    http: true
+    module: model_delete
+    table: travel_agency_checkin_apply
+    params:
+      apply_id_list:
+        check:
+          template: "{{must .apply_id_list}}"
+          err_msg: 申请ID不能为空
+    filter:
+      apply_id__in: "[apply_id_list]"
+
+  - key: travel_checkin_relation_save_raw
+    http: true
+    module: model_save
+    table: travel_agency_user_rel
+    params:
+      relation_id:
+        template: "{{uuid}}"
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      user_id:
+        check:
+          template: "{{must .user_id}}"
+          err_msg: 用户ID不能为空
+      role_type:
+        default: admin
+      supervisor_user_id:
+        default: ""
+      status:
+        default: normal
+      create_time:
+        template: "{{current_date_time}}"
+      create_user:
+        template: "{{if .session_user_id}}{{.session_user_id}}{{else}}system{{end}}"
+      description:
+        default: ""
+
+  - key: travel_checkin_relation_delete_by_agency
+    http: true
+    module: model_delete
+    table: travel_agency_user_rel
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    filter:
+      agency_id: "[agency_id]"
+
+  - key: travel_checkin_relation_delete_admin_by_agency
+    http: true
+    module: model_delete
+    table: travel_agency_user_rel
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+    filter:
+      agency_id: "[agency_id]"
+      role_type: admin
+      status: normal
+
+  - key: travel_checkin_relation_update_status_by_relation_id_list
+    http: true
+    module: model_update
+    table: travel_agency_user_rel
+    params:
+      relation_id_list:
+        check:
+          template: "{{must .relation_id_list}}"
+          err_msg: 关联关系ID不能为空
+      status:
+        default: invalid
+    filter:
+      relation_id__in: "[relation_id_list]"
+    update_fields:
+      - status
+
+  - key: travel_checkin_relation_user_list_by_agency_exclude
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      user_id_list:
+        check:
+          template: "{{must .user_id_list}}"
+          err_msg: 用户ID不能为空
+      pagination:
+        default: false
+    data_file: travel_checkin_relation_user_list_by_agency_exclude.sql
+
+  - key: travel_checkin_revoke_company_role_user_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      pagination:
+        default: false
+    data_file: travel_checkin_revoke_company_role_user_list.sql
+
+  - key: travel_checkin_revoke_soft_delete_user_list
+    http: true
+    module: sql
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      pagination:
+        default: false
+    data_file: travel_checkin_revoke_soft_delete_user_list.sql
+
+  - key: travel_checkin_user_role_user_list
+    http: true
+    module: sql
+    params:
+      user_id_list:
+        check:
+          template: "{{must .user_id_list}}"
+          err_msg: 用户ID不能为空
+      exclude_role_id:
+        default: ""
+      pagination:
+        default: false
+    data_file: travel_checkin_user_role_user_list.sql
+
+  - key: travel_agency_manage_update
+    http: true
+    module: empty
+    params:
+      agency_id:
+        check:
+          template: "{{must .agency_id}}"
+          err_msg: 旅行社ID不能为空
+      agency_name:
+        check:
+          template: "{{must .agency_name}}"
+          err_msg: 旅行社名称不能为空
+      agency_code:
+        check:
+          template: "{{must .agency_code}}"
+          err_msg: 旅行社编码不能为空
+      relation_user_id:
+        check:
+          template: "{{must .relation_user_id}}"
+          err_msg: 关联用户不能为空
+      wx_sync_error_count:
+        default: 0
+        type: int
+      wx_sync_expire_time:
+        default: 0
+        type: int
+      deepseek_api_key:
+        default: ""
+      escape_system_prompt:
+        default: ""
+      escape_user_prompt:
+        default: ""
+      escape_repeat_ad_keywords:
+        default: ""
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_agency_manage_list
+          agency_id: "[agency_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: current_agency_info
+        template: "{{must .current_agency_info.agency_id}}"
+        err_msg: 旅行社不存在
+      - key: service2field
+        service:
+          service: hrm.user_list
+          user_id: "[relation_user_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: relation_user_info
+        template: "{{must .relation_user_info.user_id}}"
+        err_msg: 关联用户不存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_relation_list
+          user_id: "[relation_user_id]"
+          role_type: admin
+          status: normal
+        save_field: target_relation_list
+      - key: filter_arr
+        foreach: "[target_relation_list]"
+        item: item
+        if_template: "{{ne .item.agency_id .agency_id}}"
+        save_field: target_other_agency_relation_list
+      - key: prop_arr
+        enable: "{{gt (len .target_other_agency_relation_list) 0}}"
+        foreach: "[target_other_agency_relation_list]"
+        value: "[relation_id]"
+        save_field: target_other_agency_relation_id_list
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_relation_list
+          agency_id: "[agency_id]"
+          role_type: admin
+          status: normal
+        save_field: current_agency_relation_list
+      - key: filter_arr
+        foreach: "[current_agency_relation_list]"
+        item: item
+        if_template: "{{ne .item.user_id .relation_user_id}}"
+        save_field: current_agency_other_relation_list
+      - key: prop_arr
+        enable: "{{gt (len .current_agency_other_relation_list) 0}}"
+        foreach: "[current_agency_other_relation_list]"
+        value: "[relation_id]"
+        save_field: current_agency_other_relation_id_list
+      - key: update_field
+        fields:
+          - field: biz_type
+            template: "{{if .biz_type}}{{.biz_type}}{{else}}{{.current_agency_info.biz_type}}{{end}}"
+          - field: status
+            template: "{{if .status}}{{.status}}{{else}}{{.current_agency_info.status}}{{end}}"
+          - field: checkin_status
+            template: "{{if .checkin_status}}{{.checkin_status}}{{else}}{{.current_agency_info.checkin_status}}{{end}}"
+          - field: wx_sync_enabled
+            template: "{{if .wx_sync_enabled}}{{.wx_sync_enabled}}{{else}}{{.current_agency_info.wx_sync_enabled}}{{end}}"
+      - key: service2field
+        service:
+          service: hrm.travel_agency_update
+          agency_id: "[agency_id]"
+          agency_name: "[agency_name]"
+          agency_code: "[agency_code]"
+          biz_type: "[biz_type]"
+          status: "[status]"
+          checkin_status: "[checkin_status]"
+          wx_sync_enabled: "[wx_sync_enabled]"
+          wx_sync_error_count: "[current_agency_info.wx_sync_error_count]"
+          wx_sync_expire_time: "[current_agency_info.wx_sync_expire_time]"
+          wx_sync_account: "[wx_sync_account]"
+          wx_sync_password: "[wx_sync_password]"
+          wx_sync_access_token: "[current_agency_info.wx_sync_access_token]"
+          wx_sync_user_id: "[current_agency_info.wx_sync_user_id]"
+          wx_sync_department_id: "[current_agency_info.wx_sync_department_id]"
+          wx_sync_role_id: "[current_agency_info.wx_sync_role_id]"
+          wx_sync_company_id: "[current_agency_info.wx_sync_company_id]"
+          wx_last_sync_time: "[current_agency_info.wx_last_sync_time]"
+          deepseek_api_key: "[deepseek_api_key]"
+          logo_path: "[current_agency_info.logo_path]"
+          description: "[description]"
+          escape_system_prompt: "[current_agency_info.escape_system_prompt]"
+          escape_user_prompt: "[current_agency_info.escape_user_prompt]"
+          escape_repeat_ad_keywords: "[current_agency_info.escape_repeat_ad_keywords]"
+        save_field: update_agency_result
+      - key: service2field
+        enable: "{{gt (len .target_other_agency_relation_id_list) 0}}"
+        service:
+          service: hrm.travel_checkin_relation_update_status_by_relation_id_list
+          relation_id_list: "[target_other_agency_relation_id_list]"
+          status: invalid
+        save_field: target_relation_invalidate_result
+      - key: service2field
+        enable: "{{gt (len .current_agency_other_relation_id_list) 0}}"
+        service:
+          service: hrm.travel_checkin_relation_update_status_by_relation_id_list
+          relation_id_list: "[current_agency_other_relation_id_list]"
+          status: invalid
+        save_field: current_relation_invalidate_result
+      - key: service2field
+        enable: "{{ne .current_agency_info.relation_user_id .relation_user_id}}"
+        service:
+          service: hrm.travel_checkin_relation_save_raw
+          agency_id: "[agency_id]"
+          user_id: "[relation_user_id]"
+          role_type: admin
+          description: "旅行社管理页修改关联用户"
+        save_field: relation_save_result
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_user_company_role_ensure
+          user_id: "[relation_user_id]"
+        save_field: role_ensure_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[agency_id]"
+            to: agency_id
+          - from: "[relation_user_id]"
+            to: relation_user_id
+
+  - key: travel_checkin_apply_submit
+    http: true
+    must_login: false
+    module: empty
+    params:
+      agency_name:
+        check:
+          template: "{{must .agency_name}}"
+          err_msg: 旅行社名称不能为空
+      agency_code:
+        check:
+          template: "{{must .agency_code}}"
+          err_msg: 旅行社编码不能为空
+      contact_name:
+        check:
+          template: "{{must .contact_name}}"
+          err_msg: 联系人不能为空
+      contact_phone:
+        check:
+          template: "{{must .contact_phone}}"
+          err_msg: 联系手机号不能为空
+      username:
+        check:
+          template: "{{must .username}}"
+          err_msg: 同步账号不能为空
+      password:
+        check:
+          template: "{{must .password}}"
+          err_msg: 密码不能为空
+      active_status_list:
+        default: ["pending", "approved"]
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_validate_account
+          username: "[username]"
+          password: "[password]"
+        save_field: login_info
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          login_username: "[agency_code]"
+          status_list: "[active_status_list]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_login_username_apply_list
+        template: "{{eq (len .active_login_username_apply_list) 0}}"
+        err_msg: 当前登录账号已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.user_list
+          username: "[agency_code]"
+          pagination: false
+          count: false
+        save_field: local_login_user_list
+        template: "{{eq (len .local_login_user_list) 0}}"
+        err_msg: 当前登录账号已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          agency_code: "[agency_code]"
+          status_list: "[active_status_list]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_code_apply_list
+        template: "{{eq (len .active_code_apply_list) 0}}"
+        err_msg: 当前旅行社编码已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.travel_agency_list
+          agency_code: "[agency_code]"
+          pagination: false
+          count: false
+        save_field: local_agency_list
+        template: "{{eq (len .local_agency_list) 0}}"
+        err_msg: 当前旅行社编码已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_save_raw
+          agency_name: "[agency_name]"
+          agency_code: "[agency_code]"
+          contact_name: "[contact_name]"
+          contact_phone: "[contact_phone]"
+          username: "[username]"
+          login_username: "[agency_code]"
+          password: "[password]"
+          user_id: ""
+        save_field: save_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[save_result.apply_id]"
+            to: apply_id
+          - from: "[agency_name]"
+            to: agency_name
+          - from: "[agency_code]"
+            to: agency_code
+          - from: "[username]"
+            to: username
+          - from: "[agency_code]"
+            to: login_username
+          - from: pending
+            to: status
+
+  - key: travel_checkin_apply_admin_create
+    http: true
+    module: empty
+    params:
+      agency_name:
+        check:
+          template: "{{must .agency_name}}"
+          err_msg: 旅行社名称不能为空
+      agency_code:
+        check:
+          template: "{{must .agency_code}}"
+          err_msg: 旅行社编码不能为空
+      contact_name:
+        check:
+          template: "{{must .contact_name}}"
+          err_msg: 联系人不能为空
+      contact_phone:
+        check:
+          template: "{{must .contact_phone}}"
+          err_msg: 联系手机号不能为空
+      username:
+        check:
+          template: "{{must .username}}"
+          err_msg: 同步账号不能为空
+      password:
+        check:
+          template: "{{must .password}}"
+          err_msg: 密码不能为空
+      active_status_list:
+        default: ["pending", "approved"]
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_validate_account
+          username: "[username]"
+          password: "[password]"
+        save_field: login_info
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          login_username: "[agency_code]"
+          status_list: "[active_status_list]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_login_username_apply_list
+        template: "{{eq (len .active_login_username_apply_list) 0}}"
+        err_msg: 当前登录账号已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.user_list
+          username: "[agency_code]"
+          pagination: false
+          count: false
+        save_field: local_login_user_list
+        template: "{{eq (len .local_login_user_list) 0}}"
+        err_msg: 当前登录账号已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          agency_code: "[agency_code]"
+          status_list: "[active_status_list]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_code_apply_list
+        template: "{{eq (len .active_code_apply_list) 0}}"
+        err_msg: 当前旅行社编码已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.travel_agency_list
+          agency_code: "[agency_code]"
+          pagination: false
+          count: false
+        save_field: local_agency_list
+        template: "{{eq (len .local_agency_list) 0}}"
+        err_msg: 当前旅行社编码已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_save_raw
+          agency_name: "[agency_name]"
+          agency_code: "[agency_code]"
+          contact_name: "[contact_name]"
+          contact_phone: "[contact_phone]"
+          username: "[username]"
+          login_username: "[agency_code]"
+          password: "[password]"
+          user_id: ""
+        save_field: save_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[save_result.apply_id]"
+            to: apply_id
+          - from: "[agency_name]"
+            to: agency_name
+          - from: "[agency_code]"
+            to: agency_code
+          - from: "[username]"
+            to: username
+          - from: "[agency_code]"
+            to: login_username
+          - from: pending
+            to: status
+
+  - key: travel_checkin_apply_detail
+    http: true
+    module: empty
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: apply_info
+        template: "{{must .apply_info.apply_id}}"
+        err_msg: 申请记录不存在
+    result_handler:
+      - key: param2result
+        field: "[apply_info]"
+
+  - key: travel_checkin_apply_update
+    http: true
+    module: empty
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+      agency_name:
+        check:
+          template: "{{must .agency_name}}"
+          err_msg: 旅行社名称不能为空
+      agency_code:
+        check:
+          template: "{{must .agency_code}}"
+          err_msg: 旅行社编码不能为空
+      contact_name:
+        check:
+          template: "{{must .contact_name}}"
+          err_msg: 联系人不能为空
+      contact_phone:
+        check:
+          template: "{{must .contact_phone}}"
+          err_msg: 联系手机号不能为空
+      username:
+        check:
+          template: "{{must .username}}"
+          err_msg: 同步账号不能为空
+      password:
+        check:
+          template: "{{must .password}}"
+          err_msg: 密码不能为空
+      active_status_list:
+        default: ["pending", "approved"]
+      editable_status_list:
+        default: ["pending", "rejected"]
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: apply_info
+        template: "{{must .apply_info.apply_id}}"
+        err_msg: 申请记录不存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          status_list: "[editable_status_list]"
+          pagination: false
+          count: false
+        save_field: editable_apply_list
+        template: "{{eq (len .editable_apply_list) 1}}"
+        err_msg: 当前申请状态不允许编辑
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_validate_account
+          username: "[username]"
+          password: "[password]"
+        save_field: login_info
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          login_username: "[agency_code]"
+          status_list: "[active_status_list]"
+          exclude_apply_id: "[apply_id]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_login_username_apply_list
+        template: "{{eq (len .active_login_username_apply_list) 0}}"
+        err_msg: 当前登录账号已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.user_list
+          username: "[agency_code]"
+          exclude: "[apply_info.user_id]"
+          pagination: false
+          count: false
+        save_field: local_login_user_list
+        template: "{{eq (len .local_login_user_list) 0}}"
+        err_msg: 当前登录账号已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          agency_code: "[agency_code]"
+          status_list: "[active_status_list]"
+          exclude_apply_id: "[apply_id]"
+          active_only: true
+          pagination: false
+          count: false
+        save_field: active_code_apply_list
+        template: "{{eq (len .active_code_apply_list) 0}}"
+        err_msg: 当前旅行社编码已存在待审或已通过的入住申请
+      - key: service2field
+        service:
+          service: hrm.travel_agency_list
+          agency_code: "[agency_code]"
+          pagination: false
+          count: false
+        save_field: local_agency_list
+        template: "{{or (eq (len .local_agency_list) 0) (and (must .apply_info.agency_id) (eq (len .local_agency_list) 1) (eq (index .local_agency_list 0).agency_id .apply_info.agency_id))}}"
+        err_msg: 当前旅行社编码已存在
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_update_raw
+          apply_id: "[apply_id]"
+          agency_name: "[agency_name]"
+          agency_code: "[agency_code]"
+          contact_name: "[contact_name]"
+          contact_phone: "[contact_phone]"
+          username: "[username]"
+          login_username: "[agency_code]"
+          password: "[password]"
+          user_id: "[apply_info.user_id]"
+          status: pending
+          reject_reason: ""
+          audit_time: ""
+          audit_user: ""
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[apply_id]"
+            to: apply_id
+          - from: pending
+            to: status
+
+  - key: travel_checkin_apply_delete
+    http: true
+    module: empty
+    params:
+      apply_id_list:
+        check:
+          template: "{{must .apply_id_list}}"
+          err_msg: 请选择要删除的申请记录
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_delete_raw
+          apply_id_list: "[apply_id_list]"
+        save_field: delete_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[apply_id_list]"
+            to: apply_id_list
+
+  - key: travel_checkin_user_company_role_ensure
+    http: true
+    module: empty
+    params:
+      user_id:
+        check:
+          template: "{{must .user_id}}"
+          err_msg: 用户ID不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_user_role_list
+          user_id: "[user_id]"
+          role_id: company
+        save_field: company_role_list
+      - key: service2field
+        enable: "{{eq (len .company_role_list) 0}}"
+        service:
+          service: hrm.user_role_add
+          user_id: "[user_id]"
+          role_id_list: ["company"]
+
+  - key: travel_checkin_apply_approve
+    http: true
+    module: empty
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+      deepseek_api_key:
+        check:
+          template: "{{must .deepseek_api_key}}"
+          err_msg: DeepSeek Key不能为空
+      escape_system_prompt:
+        default: |
+          角色定义
+          你是资深旅游销售风控分析助手，专注于识别员工在与客户沟通中可能存在的“逃单/飞单”风险行为。
+          基本原则
+          仅基于提供的微信聊天记录与电话转写文本进行分析。
+          不臆测、不补造任何事实。
+          每一条风险判断必须可追溯到原文证据。
+          需要识别的风险行为类型（明确或疑似）
+          引导客户脱离公司渠道
+          要求更换沟通工具（如微信、电话、QQ、Telegram 等）
+          建议绕过公司系统下单、签约或咨询
+          交换私人联系方式
+          发送或索要个人手机号、私人微信号、QQ号、邮箱等
+          使用谐音、拆分、数字变体（如“加V”“138 0000 1111”“幺三八”“薇”）
+          私下收款或成交
+          要求客户转账至个人账户、非公司账户
+          提及“不走平台”“线下付”“对公不方便就转我”等
+          规避公司监管
+          建议删除或撤回聊天记录
+          要求“不要告诉公司”“别截图”“改备注”
+          使用阅后即焚类工具或话术
+          拒绝或不配合公司流程
+          明确表示不走标准流程
+          引导客户直接联系员工个人而非公司客服/销售系统
+      escape_user_prompt:
+        default: |
+          一、重点识别的高风险特征（包括但不限于谐音、变体、拆分形式）：
+          更换沟通渠道/平台：
+          明确要求：“加个V”、“换个地方说”、“这个软件不方便”、“我们私下聊”、“加个QQ”。
+          谐音/变体：+V/＋微/薇/X（代指微信）、企鹅/秋秋（代指QQ）、钉/ding（代指钉钉）、电报/纸飞机（代指Telegram）、泡泡/抱抱（代指Bubble）。
+          交换联系方式（尤其强调私下）：
+          手机/电话：直接发数字、分三段发（如 138 0000 1111）、谐音（“幺三八”、“亿三八”、“亿三叭”）、英文数字组合（one three eight）。
+          微信号：VX/微X/威信、账号/号/码、用“我加你”、“你扫我”代替直接文字。
+          其他：邮箱（尤其非公司邮箱）、个人手机号短信联系。
+          绕开公司流程或诱导私下交易：
+          绕过平台下单：“别在系统上付”、“不走平台”、“线下转给我”、“对公账户不要用”、“个人转给你”。
+          绕过客服/销售：“直接联系我”、“不要找其他人”、“这是秘密”。
+          使用非公司支付工具：支/宝、某宝、某信、数字（金额后跟“转我”）。
+          要求删除、隐藏或伪造证据：
+          删除记录：“删了聊天记录”、“把这条撤回去”、“别说我找过你”、“别截图”。
+          修改沟通记录：“你把我备注改一下”、“改个名字”。
+          使用阅后即焚或撤回功能。
+          其他可疑话术：
+          “便宜点我直接转给你”、“不要发票能少多少”、“你个人收行不行”、“别告诉公司”。
+          长串无意义数字（需检查是否为隐藏电话号码或订单号）。
+          二、分析结论要求：
+          请结合上下文对每条沟通记录判断为以下三类之一：
+          明确行为：客户或员工已明确表达或执行了上述高风险动作（例如：“加我微信138xxxx”）。
+          疑似倾向：存在强烈暗示、谐音、拆解数字、试探性话语（例如：“这个聊不方便”、“有没有更直接的方式”、“1-3-8…”），但未完整表达。
+          无相关迹象：全程使用公司指定沟通工具、未索要/提供个人联系方式、未提及线下交易或删除证据
+          不管有没有成交，结果如果，只要出现了迹象都算逃单，只要出现了加个人微信的想法，都算逃单，不管是员工有没有同意，客户有没有同意
+      escape_repeat_ad_keywords:
+        default: |
+          特价秒杀,限时抢购,私聊优惠,全网最低价,加V详谈
+    handler_params:
+      - key: update_field
+        fields:
+          - field: audit_time_value
+            template: "{{current_date_time}}"
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: apply_info
+        template: "{{must .apply_info.apply_id}}"
+        err_msg: 申请记录不存在
+      - key: check_field
+        fields:
+          - field: status
+            template: "{{eq .apply_info.status `pending`}}"
+            err_msg: 当前申请状态不是待审核
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_validate_account
+          username: "[apply_info.username]"
+          password: "[apply_info.password]"
+        save_field: login_info
+      - key: service2field
+        service:
+          service: hrm.travel_agency_list
+          agency_code: "[apply_info.agency_code]"
+          pagination: false
+          count: false
+        save_field: local_agency_list
+        template: "{{eq (len .local_agency_list) 0}}"
+        err_msg: 当前旅行社编码已存在
+      - key: service2field
+        enable: "{{ if .apply_info.user_id }}true{{ end }}"
+        service:
+          service: hrm.user_list
+          user_id: "[apply_info.user_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: local_login_user
+        template: "{{eq .local_login_user.username .apply_info.agency_code}}"
+        err_msg: 当前申请绑定用户与登录账号不一致
+      - key: service2field
+        enable: "{{ if .apply_info.user_id }}true{{ end }}"
+        service:
+          service: hrm.travel_checkin_relation_list
+          user_id: "[apply_info.user_id]"
+          role_type: admin
+          status: normal
+        save_field: relation_list
+        template: "{{eq (len .relation_list) 0}}"
+        err_msg: 当前账号已绑定其他旅行社管理员
+      - key: service2field
+        enable: "{{ if .apply_info.user_id }}false{{ else }}true{{ end }}"
+        service:
+          service: hrm.create_user_flow
+          username: "[apply_info.agency_code]"
+          nick: "[apply_info.contact_name]"
+          phone: "[apply_info.contact_phone]"
+          password: "[apply_info.password]"
+          role_id_list: ["company"]
+          status: trial
+        save_field: created_user_id
+      - key: service2field
+        enable: "{{ if .apply_info.user_id }}false{{ else }}true{{ end }}"
+        service:
+          service: hrm.travel_checkin_apply_update_raw
+          apply_id: "[apply_id]"
+          user_id: "[created_user_id]"
+        save_field: update_user_id_result
+      - key: update_field
+        fields:
+          - field: resolved_user_id
+            template: "{{if .apply_info.user_id}}{{.apply_info.user_id}}{{else}}{{.created_user_id}}{{end}}"
+      - key: service2field
+        service:
+          service: hrm.travel_agency_save
+          agency_name: "[apply_info.agency_name]"
+          agency_code: "[apply_info.agency_code]"
+          biz_type: travel
+          status: normal
+          checkin_status: checked_in
+          wx_sync_enabled: "yes"
+          wx_sync_account: "[apply_info.username]"
+          wx_sync_password: "[apply_info.password]"
+          deepseek_api_key: "[deepseek_api_key]"
+          escape_system_prompt: "[escape_system_prompt]"
+          escape_user_prompt: "[escape_user_prompt]"
+          escape_repeat_ad_keywords: "[escape_repeat_ad_keywords]"
+          description: "入住申请审批通过自动创建"
+        save_field: agency_save_result
+      - key: service2field
+        service:
+          service: hrm.travel_agency_list
+          agency_code: "[apply_info.agency_code]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: saved_agency_info
+        template: "{{must .saved_agency_info.agency_id}}"
+        err_msg: 审批后未查询到新建旅行社
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_relation_save_raw
+          agency_id: "[saved_agency_info.agency_id]"
+          user_id: "[resolved_user_id]"
+          role_type: admin
+          description: "入住申请审批通过自动绑定"
+        save_field: relation_save_result
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_user_company_role_ensure
+          user_id: "[resolved_user_id]"
+        save_field: role_ensure_result
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_update_raw
+          apply_id: "[apply_id]"
+          status: approved
+          agency_id: "[saved_agency_info.agency_id]"
+          user_id: "[resolved_user_id]"
+          audit_time: "[audit_time_value]"
+          audit_user: "[session_user_id]"
+          reject_reason: ""
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[apply_id]"
+            to: apply_id
+          - from: "[saved_agency_info.agency_id]"
+            to: agency_id
+          - from: approved
+            to: status
+
+  - key: travel_checkin_apply_reject
+    http: true
+    module: empty
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+      reject_reason:
+        check:
+          template: "{{must .reject_reason}}"
+          err_msg: 驳回原因不能为空
+    handler_params:
+      - key: update_field
+        fields:
+          - field: audit_time_value
+            template: "{{current_date_time}}"
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: apply_info
+        template: "{{must .apply_info.apply_id}}"
+        err_msg: 申请记录不存在
+      - key: check_field
+        fields:
+          - field: status
+            template: "{{eq .apply_info.status `pending`}}"
+            err_msg: 当前申请状态不是待审核
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_update_raw
+          apply_id: "[apply_id]"
+          status: rejected
+          reject_reason: "[reject_reason]"
+          audit_time: "[audit_time_value]"
+          audit_user: "[session_user_id]"
+        save_field: update_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[apply_id]"
+            to: apply_id
+          - from: rejected
+            to: status
+
+  - key: travel_checkin_apply_revoke
+    http: true
+    module: empty
+    params:
+      apply_id:
+        check:
+          template: "{{must .apply_id}}"
+          err_msg: 申请ID不能为空
+    handler_params:
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_list
+          apply_id: "[apply_id]"
+          to_obj: true
+          pagination: false
+          count: false
+        save_field: apply_info
+        template: "{{must .apply_info.apply_id}}"
+        err_msg: 申请记录不存在
+      - key: check_field
+        fields:
+          - field: status
+            template: "{{eq .apply_info.status `approved`}}"
+            err_msg: 仅已通过申请支持撤销
+          - field: agency_id
+            template: "{{must .apply_info.agency_id}}"
+            err_msg: 当前申请未关联旅行社，无法撤销
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_relation_list
+          agency_id: "[apply_info.agency_id]"
+          status: normal
+        save_field: relation_list
+      - key: prop_arr
+        enable: "{{gt (len .relation_list) 0}}"
+        foreach: "[relation_list]"
+        value: "[user_id]"
+        save_field: relation_user_id_list
+      - key: service2field
+        enable: "{{gt (len .relation_list) 0}}"
+        service:
+          service: hrm.travel_checkin_revoke_company_role_user_list
+          agency_id: "[apply_info.agency_id]"
+        save_field: company_role_remove_user_list
+      - key: prop_arr
+        enable: "{{gt (len .company_role_remove_user_list) 0}}"
+        foreach: "[company_role_remove_user_list]"
+        value: "[user_id]"
+        save_field: company_role_remove_user_id_list
+      - key: service2field
+        enable: "{{gt (len .relation_list) 0}}"
+        service:
+          service: hrm.travel_checkin_revoke_soft_delete_user_list
+          agency_id: "[apply_info.agency_id]"
+        save_field: soft_delete_user_list
+      - key: prop_arr
+        enable: "{{gt (len .soft_delete_user_list) 0}}"
+        foreach: "[soft_delete_user_list]"
+        value: "[user_id]"
+        save_field: soft_delete_user_id_list
+      - key: service2field
+        enable: "{{must .apply_info.agency_id}}"
+        service:
+          service: hrm.travel_checkin_relation_delete_by_agency
+          agency_id: "[apply_info.agency_id]"
+        save_field: relation_delete_result
+      - key: service2field
+        enable: "{{gt (len .company_role_remove_user_id_list) 0}}"
+        service:
+          service: hrm.user_role_id_list_remove
+          role_id: company
+          user_id_list: "[company_role_remove_user_id_list]"
+        save_field: company_role_remove_result
+      - key: service2field
+        enable: "{{gt (len .soft_delete_user_id_list) 0}}"
+        service:
+          service: hrm.delete_user_by_user_id_list
+          user_id_list: "[soft_delete_user_id_list]"
+        save_field: user_delete_result
+      - key: service2field
+        service:
+          service: hrm.travel_agency_delete
+          agency_id: "[apply_info.agency_id]"
+        save_field: agency_delete_result
+      - key: service2field
+        service:
+          service: hrm.travel_checkin_apply_update_raw
+          apply_id: "[apply_id]"
+          status: revoked
+        save_field: apply_revoke_result
+    result_handler:
+      - key: params2result
+        fields:
+          - from: "[apply_id]"
+            to: apply_id
+          - from: "[apply_info.agency_id]"
+            to: agency_id
+          - from: "[relation_user_id_list]"
+            to: relation_user_id_list
+          - from: "[company_role_remove_user_id_list]"
+            to: removed_company_role_user_id_list
+          - from: "[soft_delete_user_id_list]"
+            to: soft_deleted_user_id_list
+          - from: revoked
+            to: status

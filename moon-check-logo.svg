@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#0B3A5B"/>
+    </linearGradient>
+    <linearGradient id="moon" x1="70" y1="56" x2="170" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#7DD3FC"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(188 62) rotate(90) scale(70)">
+      <stop stop-color="#93C5FD" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#93C5FD" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="42" y="38" width="172" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#bg)"/>
+  <circle cx="188" cy="62" r="70" fill="url(#glow)"/>
+
+  <g filter="url(#shadow)">
+    <path d="M149.627 52.388C132.09 46.526 112.283 48.895 96.7397 60.0714C67.0881 81.3966 60.3388 122.721 81.6641 152.372C102.989 182.024 144.313 188.773 173.965 167.448C186.628 158.341 195.527 145.516 200 131.411C188.616 140.382 173.618 144.446 158.47 141.905C142.113 139.161 127.686 129.631 118.365 116.668C109.044 103.705 105.951 86.7062 109.912 70.641C113.581 55.7576 123.346 43.1628 136.978 35C141.116 40.3821 145.325 46.1777 149.627 52.388Z" fill="url(#moon)"/>
+    <path d="M154.663 42.6288C142.452 46.0358 132.051 54.9483 126.722 66.4467C120.125 80.6844 120.888 97.5887 128.776 111.905C136.663 126.221 150.679 136.154 166.469 138.723C179.214 140.796 191.975 137.683 202.195 130.319" stroke="#E2E8F0" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.68"/>
+    <path d="M105 145L124 164L161 127" stroke="#F8FAFC" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <path d="M190 58L194.073 69.927L206 74L194.073 78.073L190 90L185.927 78.073L174 74L185.927 69.927L190 58Z" fill="#FDE68A"/>
+  <circle cx="65" cy="70" r="6" fill="#BFDBFE" opacity="0.9"/>
+</svg>

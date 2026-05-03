@@ -1,4 +1,0 @@
-# 项目点路由
-service:
-  - name: "issue"
-    path: "issue/index.yml"

@@ -1,0 +1,66 @@
+{
+  "pageUrl": "http://192.168.232.130:8016/collect-ui#/collect-ui/framework/travel_checkin_manage",
+  "loginSuccess": true,
+  "metrics": {
+    "buttons": [
+      {
+        "text": "今日",
+        "left": 54,
+        "right": 100.89,
+        "width": 46.89,
+        "marginLeft": "0px",
+        "marginRight": "0px",
+        "className": "ant-btn css-mncuj7 ant-btn-primary ant-btn-color-primary ant-btn-variant-solid ant-btn-sm co-ui-button"
+      },
+      {
+        "text": "本月",
+        "left": 106.89,
+        "right": 153.78,
+        "width": 46.89,
+        "marginLeft": "6px",
+        "marginRight": "0px",
+        "className": "ant-btn css-mncuj7 ant-btn-default ant-btn-color-default ant-btn-variant-outlined ant-btn-sm co-ui-button"
+      },
+      {
+        "text": "上月",
+        "left": 159.78,
+        "right": 206.67,
+        "width": 46.89,
+        "marginLeft": "6px",
+        "marginRight": "0px",
+        "className": "ant-btn css-mncuj7 ant-btn-default ant-btn-color-default ant-btn-variant-outlined ant-btn-sm co-ui-button"
+      },
+      {
+        "text": "自定义",
+        "left": 212.67,
+        "right": 270.67,
+        "width": 58,
+        "marginLeft": "6px",
+        "marginRight": "0px",
+        "className": "ant-btn css-mncuj7 ant-btn-default ant-btn-color-default ant-btn-variant-outlined ant-btn-sm co-ui-button"
+      }
+    ],
+    "gaps": [
+      {
+        "from": "今日",
+        "to": "本月",
+        "gap": 6
+      },
+      {
+        "from": "本月",
+        "to": "上月",
+        "gap": 6
+      },
+      {
+        "from": "上月",
+        "to": "自定义",
+        "gap": 6
+      }
+    ]
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "screenshotPath": "/data/project/auto-check/test/travel_checkin_manage/pre-fix-usage-detail.png",
+  "ts": "2026-05-01T23:19:05.131Z"
+}
