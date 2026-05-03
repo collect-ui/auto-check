@@ -1,8 +1,0 @@
-{
-  "url": "{{get_key `to_text_base_url`}}/tencent/quota",
-  "method": "GET",
-  "result_json": true,
-  "data": {
-    "refresh": "[refresh]"
-  }
-}

@@ -36,3 +36,8 @@ linux-start-dev.sh
 run-dev.log
 run-dev.pid
 *.pid
+
+# Local build/test outputs
+dist/
+release/
+test-results/

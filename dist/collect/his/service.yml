@@ -1,4 +1,0 @@
-# 项目点路由
-service:
-  - name: "page_data"
-    path: "page_data/index.yml"
